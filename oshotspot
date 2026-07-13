@@ -37,10 +37,16 @@ show_help() {
     echo "  status      Show hotspot status"
     echo "  clients     Show connected clients"
     echo "  monitor     Real-time monitoring (refreshes every 3s)"
-    echo "  config      Show current configuration"
+    echo ""
+    echo "Configuration:"
+    echo "  config                  Show current configuration"
+    echo "  config reset            Reset configuration to defaults"
     echo "  qr          Show QR code to connect your phone"
     echo "  doctor      Run diagnostic checks"
     echo "  interfaces  List available WiFi interfaces"
+    echo "  logs        View and follow hotspot logs"
+    echo "  enable      Enable hotspot at boot"
+    echo "  disable     Disable hotspot at boot"
     echo ""
     echo "Change settings:"
     echo "  set ssid <name>           Change hotspot name"
@@ -163,7 +169,27 @@ main() {
             exec bash "${SCRIPTS_DIR}/monitor.sh"
             ;;
         config)
-            show_config
+            local subcmd="${1:-}"
+            case "${subcmd}" in
+                reset)
+                    local config="/etc/oshotspot/config.conf"
+                    local example="/usr/lib/oshotspot/configs/../config.conf.example"
+                    if [[ ! -f "${example}" ]]; then
+                        example="/usr/local/share/oshotspot/config.conf.example"
+                    fi
+                    if [[ ! -f "${example}" ]]; then
+                        echo -e "${RED}Template not found. Reinstall OSHotspot.${NC}"
+                        exit 1
+                    fi
+                    cp "${example}" "${config}"
+                    chmod 600 "${config}"
+                    echo -e "${GREEN}Configuration reset to defaults.${NC}"
+                    echo "Edit: sudo nano ${config}"
+                    ;;
+                *)
+                    show_config
+                    ;;
+            esac
             ;;
         qr)
             exec bash "${SCRIPTS_DIR}/qr.sh"
@@ -173,6 +199,25 @@ main() {
             ;;
         interfaces)
             bash -c 'source /usr/lib/oshotspot/scripts/utils.sh; echo ""; echo "Available WiFi interfaces:"; echo ""; for entry in $(list_wifi_interfaces); do name="${entry%%:*}"; rest="${entry#*:}"; state="${rest%%:*}"; mac="${rest#*:}"; printf "  %-15s %-8s %s\n" "${name}" "${state}" "${mac}"; done; echo ""'
+            ;;
+        logs)
+            exec bash "${SCRIPTS_DIR}/logs.sh" "$@"
+            ;;
+        enable)
+            if [[ "${EUID}" -ne 0 ]]; then
+                echo -e "${RED}This command must be run as root (use sudo).${NC}"
+                exit 1
+            fi
+            systemctl enable oshotspot.service 2>/dev/null
+            echo -e "${GREEN}Hotspot will start automatically at boot.${NC}"
+            ;;
+        disable)
+            if [[ "${EUID}" -ne 0 ]]; then
+                echo -e "${RED}This command must be run as root (use sudo).${NC}"
+                exit 1
+            fi
+            systemctl disable oshotspot.service 2>/dev/null
+            echo -e "${GREEN}Hotspot will NOT start at boot.${NC}"
             ;;
         set)
             local key="${1:-}"

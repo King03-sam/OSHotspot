@@ -10,6 +10,12 @@
 
 set -euo pipefail
 
+PURGE=false
+
+if [[ "${1:-}" == "--purge" || "${1:-}" == "-p" ]]; then
+    PURGE=true
+fi
+
 if [[ -t 1 ]]; then
     RED='\033[0;31m'
     GREEN='\033[0;32m'
@@ -38,6 +44,12 @@ main() {
     log_info "Stopping hotspot if running..."
     /usr/local/bin/oshotspot stop 2>/dev/null || true
 
+    # Clean firewall rules BEFORE removing scripts
+    if [[ -f /usr/lib/oshotspot/scripts/firewall.sh ]]; then
+        log_info "Cleaning up firewall rules..."
+        bash /usr/lib/oshotspot/scripts/firewall.sh cleanup 2>/dev/null || true
+    fi
+
     # Remove CLI
     if [[ -f /usr/local/bin/oshotspot ]]; then
         rm -f /usr/local/bin/oshotspot
@@ -50,10 +62,29 @@ main() {
         log_info "Removed /usr/lib/oshotspot/"
     fi
 
-    # Remove bash completion
+    # Remove completions
     if [[ -f /etc/bash_completion.d/oshotspot ]]; then
         rm -f /etc/bash_completion.d/oshotspot
         log_info "Removed bash completion"
+    fi
+
+    if [[ -f /usr/share/zsh/site-functions/_oshotspot ]]; then
+        rm -f /usr/share/zsh/site-functions/_oshotspot
+        log_info "Removed zsh completion"
+    fi
+
+    if [[ -f /usr/share/fish/vendor_completions.d/oshotspot.fish ]]; then
+        rm -f /usr/share/fish/vendor_completions.d/oshotspot.fish
+        log_info "Removed fish completion"
+    fi
+
+    # Remove NetworkManager config
+    if [[ -f /etc/NetworkManager/conf.d/oshotspot.conf ]]; then
+        rm -f /etc/NetworkManager/conf.d/oshotspot.conf
+        log_info "Removed NetworkManager config for ap0"
+        if command -v systemctl &>/dev/null && systemctl is-active --quiet NetworkManager 2>/dev/null; then
+            systemctl reload NetworkManager 2>/dev/null || true
+        fi
     fi
 
     # Remove systemd services
@@ -67,7 +98,7 @@ main() {
             removed=1
         fi
     done
-    [[ ${removed} -eq 1 ]] && systemctl daemon-reload
+    [[ ${removed} -eq 1 ]] && systemctl daemon-reload || true
 
     # Remove persistent sysctl
     if [[ -f /etc/sysctl.d/oshotspot.conf ]]; then
@@ -79,17 +110,24 @@ main() {
     rm -f /run/oshotspot-hostapd.pid /run/oshotspot-dnsmasq.pid
 
     # Optionally remove config and logs
-    echo ""
-    read -rp "Remove configuration files in /etc/oshotspot/? [y/N] " ans
-    if [[ "${ans}" =~ ^[Yy]$ ]]; then
+    if ${PURGE}; then
         rm -rf /etc/oshotspot
-        log_info "Removed /etc/oshotspot/"
-    fi
-
-    read -rp "Remove log files in /var/log/oshotspot/? [y/N] " ans
-    if [[ "${ans}" =~ ^[Yy]$ ]]; then
+        log_info "Removed /etc/oshotspot/ (--purge)"
         rm -rf /var/log/oshotspot
-        log_info "Removed /var/log/oshotspot/"
+        log_info "Removed /var/log/oshotspot/ (--purge)"
+    else
+        echo ""
+        read -rp "Remove configuration files in /etc/oshotspot/? [y/N] " ans
+        if [[ "${ans}" =~ ^[Yy]$ ]]; then
+            rm -rf /etc/oshotspot
+            log_info "Removed /etc/oshotspot/"
+        fi
+
+        read -rp "Remove log files in /var/log/oshotspot/? [y/N] " ans
+        if [[ "${ans}" =~ ^[Yy]$ ]]; then
+            rm -rf /var/log/oshotspot
+            log_info "Removed /var/log/oshotspot/"
+        fi
     fi
 
     echo ""

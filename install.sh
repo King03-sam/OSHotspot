@@ -145,6 +145,20 @@ install_files() {
     mkdir -p "${completion_dir}"
     cp "${SRC}/completions/oshotspot" "${completion_dir}/oshotspot"
     log_info "Bash completion installed to ${completion_dir}/oshotspot"
+
+    # Zsh completion
+    local zsh_dir="/usr/share/zsh/site-functions"
+    if [[ -d "${zsh_dir}" ]]; then
+        cp "${SRC}/completions/oshotspot.zsh" "${zsh_dir}/_oshotspot"
+        log_info "Zsh completion installed to ${zsh_dir}/_oshotspot"
+    fi
+
+    # Fish completion
+    local fish_dir="/usr/share/fish/vendor_completions.d"
+    if [[ -d "${fish_dir}" ]]; then
+        cp "${SRC}/completions/oshotspot.fish" "${fish_dir}/oshotspot.fish"
+        log_info "Fish completion installed to ${fish_dir}/oshotspot.fish"
+    fi
 }
 
 update_script_paths() {
