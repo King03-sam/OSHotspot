@@ -1,0 +1,73 @@
+# OSHotspot .gitignore
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editor / IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+.classpath
+.history/
+*.code-workspace
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime / PID files
+*.pid
+*.pid.lock
+*.sock
+*.pid.old
+
+# Build / packaging artifacts
+dist/
+build/
+out/
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.p12
+
+# NetworkManager runtime
+NetworkManager.state
+
+# hostapd / dnsmasq runtime
+hostapd.conf
+dnsmasq.conf
+
+# Misc
+.cache/
+tmp/
+temp/
+*.bak
+*.orig
+*.old

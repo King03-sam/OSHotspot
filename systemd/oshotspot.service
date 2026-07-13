@@ -1,0 +1,23 @@
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+[Unit]
+Description=OSHotspot WiFi Hotspot Service
+After=NetworkManager-wait-online.service
+Wants=NetworkManager-wait-online.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/oshotspot start
+ExecStop=/usr/local/bin/oshotspot stop
+ExecReload=/usr/local/bin/oshotspot repair
+
+User=root
+
+[Install]
+WantedBy=multi-user.target

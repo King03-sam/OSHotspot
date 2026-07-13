@@ -1,0 +1,23 @@
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+[Unit]
+Description=OSHotspot Dedicated dnsmasq DHCP Server
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/oshotspot-dnsmasq.pid
+ExecStart=/usr/sbin/dnsmasq --conf-file=/etc/oshotspot/dnsmasq.conf --pid-file=/run/oshotspot-dnsmasq.pid
+ExecStop=/bin/kill -9 $MAINPID
+Restart=on-failure
+RestartSec=5
+
+User=root
+
+[Install]
+WantedBy=multi-user.target

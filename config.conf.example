@@ -1,0 +1,45 @@
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+# OSHotspot Configuration
+# Copy this file to /etc/oshotspot/config.conf and edit as needed.
+
+# WiFi Hotspot Name (SSID)
+SSID="UbuntuHotspot"
+
+# WiFi Hotspot Password (min 8 characters for WPA2)
+PASSWORD="ChangeMe123"
+
+# WiFi channel (1-13, default: 6)
+CHANNEL=6
+
+# WiFi hardware mode (g for 2.4GHz, a for 5GHz)
+HW_MODE="g"
+
+# Country code (FR, US, GB, etc.) - required by some drivers
+COUNTRY_CODE="FR"
+
+# Hostname shown on the network
+HOSTNAME="oshotspot"
+
+# AP interface name (created automatically)
+AP_IFACE="ap0"
+
+# Your internet-connected WiFi interface (auto-detected if empty)
+WIFI_IFACE=""
+
+# Hotspot subnet
+SUBNET="192.168.50.0"
+AP_IP="192.168.50.1"
+AP_CIDR="24"
+DHCP_RANGE_START="192.168.50.10"
+DHCP_RANGE_END="192.168.50.100"
+DHCP_LEASE="12h"
+
+# DNS servers
+DNS_PRIMARY="8.8.8.8"
+DNS_SECONDARY="1.1.1.1"

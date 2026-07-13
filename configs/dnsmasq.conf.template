@@ -1,0 +1,16 @@
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+interface=__AP_IFACE__
+bind-interfaces
+
+dhcp-range=__DHCP_RANGE_START__,__DHCP_RANGE_END__,__DHCP_LEASE__
+
+dhcp-option=3,__AP_IP__
+dhcp-option=6,__DNS_PRIMARY__,__DNS_SECONDARY__
+
+log-dhcp

@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+# start.sh - Bring up the WiFi hotspot (AP interface, hostapd, dnsmasq, NAT).
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=utils.sh
+source "${SCRIPT_DIR}/utils.sh"
+
+start_hostapd() {
+    log_step "Starting hostapd..."
+
+    if is_running "${OSHOTSPOT_PID_HOSTAPD}"; then
+        local old_pid
+        old_pid=$(cat "${OSHOTSPOT_PID_HOSTAPD}")
+        log_warn "Stopping existing hostapd (PID ${old_pid})..."
+        kill "${old_pid}" 2>/dev/null || true
+        sleep 1
+        remove_pid "${OSHOTSPOT_PID_HOSTAPD}"
+    fi
+
+    ensure_log_dir
+
+    hostapd -B "${OSHOTSPOT_HOSTAPD_CONF}" \
+        -P "${OSHOTSPOT_PID_HOSTAPD}" \
+        >> "${OSHOTSPOT_HOSTAPD_LOG}" 2>&1
+
+    sleep 2
+    if is_running "${OSHOTSPOT_PID_HOSTAPD}"; then
+        log_info "hostapd started (PID $(cat "${OSHOTSPOT_PID_HOSTAPD}"))."
+    else
+        log_error "hostapd failed to start. Check ${OSHOTSPOT_HOSTAPD_LOG}"
+        exit 1
+    fi
+}
+
+start_dnsmasq() {
+    log_step "Starting dedicated dnsmasq instance..."
+
+    if is_running "${OSHOTSPOT_PID_DNSMASQ}"; then
+        local old_pid
+        old_pid=$(cat "${OSHOTSPOT_PID_DNSMASQ}")
+        log_warn "Stopping existing dnsmasq (PID ${old_pid})..."
+        kill "${old_pid}" 2>/dev/null || true
+        sleep 1
+        remove_pid "${OSHOTSPOT_PID_DNSMASQ}"
+    fi
+
+    ensure_log_dir
+
+    if ! command -v dnsmasq &>/dev/null; then
+        log_error "dnsmasq is not installed."
+        exit 1
+    fi
+
+    # Let dnsmasq daemonize itself so it writes the PID file properly
+    dnsmasq \
+        --conf-file="${OSHOTSPOT_DNSMASQ_CONF}" \
+        --pid-file="${OSHOTSPOT_PID_DNSMASQ}" \
+        --log-facility="${OSHOTSPOT_DNSMASQ_LOG}"
+
+    local retries=0
+    while ! is_running "${OSHOTSPOT_PID_DNSMASQ}" && [[ ${retries} -lt 10 ]]; do
+        sleep 0.5
+        retries=$((retries + 1))
+    done
+
+    if is_running "${OSHOTSPOT_PID_DNSMASQ}"; then
+        log_info "Dedicated dnsmasq started (PID $(cat "${OSHOTSPOT_PID_DNSMASQ}"))."
+    else
+        log_error "dnsmasq failed to start. Check ${OSHOTSPOT_DNSMASQ_LOG}"
+        exit 1
+    fi
+}
+
+start_hotspot() {
+    require_root
+    load_config
+    check_commands
+
+    echo ""
+    echo -e "${BOLD}========================================${NC}"
+    echo -e "${BOLD}       OSHotspot - Starting Hotspot      ${NC}"
+    echo -e "${BOLD}========================================${NC}"
+    echo ""
+
+    check_ap_support "${WIFI_IFACE}"
+
+    # Tell NetworkManager to ignore ap0 so it doesn't interfere with hostapd
+    local nm_conf="/etc/NetworkManager/conf.d/oshotspot.conf"
+    if [[ -d /etc/NetworkManager/conf.d ]] && [[ ! -f "${nm_conf}" ]]; then
+        mkdir -p /etc/NetworkManager/conf.d
+        echo -e "[keyfile]\nunmanaged-devices=interface-name:ap0" > "${nm_conf}"
+        systemctl reload NetworkManager 2>/dev/null || true
+        log_info "NetworkManager configured to ignore ${AP_IFACE}."
+    fi
+
+    create_ap_interface "${AP_IFACE}"
+    configure_ap_ip "${AP_IFACE}" "${AP_IP}" "${AP_CIDR}"
+    generate_hostapd_conf
+    generate_dnsmasq_conf
+    enable_ip_forward
+    "${SCRIPT_DIR}/firewall.sh" setup
+    start_hostapd
+    start_dnsmasq
+
+    echo ""
+    log_info "========================================"
+    log_info "  Hotspot is running!"
+    log_info "  SSID:      ${SSID}"
+    log_info "  Interface: ${AP_IFACE}"
+    log_info "  IP:        ${AP_IP}"
+    log_info "  Channel:   ${CHANNEL}"
+    log_info "========================================"
+    echo ""
+}
+
+start_hotspot

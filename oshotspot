@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+# oshotspot - Main CLI for managing the WiFi hotspot.
+
+set -euo pipefail
+
+readonly SCRIPTS_DIR="/usr/lib/oshotspot/scripts"
+
+if [[ -t 1 ]]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[0;33m'
+    BLUE='\033[0;34m'
+    BOLD='\033[1m'
+    NC='\033[0m'
+else
+    RED='' GREEN='' YELLOW='' BLUE='' BOLD='' NC=''
+fi
+
+show_help() {
+    echo ""
+    echo -e "${BOLD}OSHotspot - WiFi Hotspot Manager${NC}"
+    echo ""
+    echo "Usage: sudo oshotspot <command>"
+    echo ""
+    echo "Commands:"
+    echo "  start       Start the WiFi hotspot"
+    echo "  stop        Stop the WiFi hotspot"
+    echo "  restart     Stop and start the hotspot"
+    echo "  repair      Repair hotspot (after suspend/resume)"
+    echo "  status      Show hotspot status"
+    echo "  clients     Show connected clients"
+    echo "  monitor     Real-time monitoring (refreshes every 3s)"
+    echo "  config      Show current configuration"
+    echo ""
+    echo "Change settings:"
+    echo "  set ssid <name>       Change hotspot name"
+    echo "  set password <pass>   Change hotspot password"
+    echo ""
+    echo "Examples:"
+    echo "  sudo oshotspot start"
+    echo "  sudo oshotspot status"
+    echo "  sudo oshotspot set ssid MyHotspot"
+    echo "  sudo oshotspot set password MySecret123"
+    echo ""
+}
+
+show_config() {
+    local config="/etc/oshotspot/config.conf"
+    if [[ ! -f "${config}" ]]; then
+        echo -e "${RED}Configuration not found:${NC} ${config}"
+        exit 1
+    fi
+    echo ""
+    echo -e "${BOLD}Current Configuration:${NC}"
+    echo ""
+    grep -v '^#' "${config}" | grep -v '^$' | while IFS= read -r line; do
+        echo "  ${line}"
+    done
+    echo ""
+    echo "  Edit: sudo nano ${config}"
+    echo ""
+}
+
+set_config() {
+    local key="$1"
+    local value="$2"
+    local config="/etc/oshotspot/config.conf"
+
+    if [[ ! -f "${config}" ]]; then
+        echo -e "${RED}Configuration not found:${NC} ${config}"
+        exit 1
+    fi
+
+    local upper_key
+    upper_key=$(echo "${key}" | tr '[:lower:]' '[:upper:]')
+
+    case "${upper_key}" in
+        SSID)
+            if [[ ${#value} -lt 1 || ${#value} -gt 32 ]]; then
+                echo -e "${RED}SSID must be 1-32 characters.${NC}"
+                exit 1
+            fi
+            ;;
+        PASSWORD)
+            if [[ ${#value} -lt 8 ]]; then
+                echo -e "${RED}Password must be at least 8 characters.${NC}"
+                exit 1
+            fi
+            ;;
+        *)
+            echo -e "${RED}Unknown setting:${NC} ${key}"
+            echo "Valid settings: ssid, password"
+            exit 1
+            ;;
+    esac
+
+    if grep -q "^${upper_key}=" "${config}"; then
+        sed -i "s|^${upper_key}=.*|${upper_key}=\"${value}\"|" "${config}"
+    else
+        echo "${upper_key}=\"${value}\"" >> "${config}"
+    fi
+
+    echo -e "${GREEN}${upper_key} updated to:${NC} ${value}"
+    echo ""
+
+    # Auto-restart hotspot if it's running
+    local pid_file="/run/oshotspot-hostapd.pid"
+    if [[ -f "${pid_file}" ]] && kill -0 "$(cat "${pid_file}")" 2>/dev/null; then
+        echo -e "${YELLOW}Hotspot is currently running. Restarting to apply changes...${NC}"
+        bash /usr/lib/oshotspot/scripts/stop.sh 2>/dev/null
+        bash /usr/lib/oshotspot/scripts/start.sh
+    fi
+    echo ""
+}
+
+main() {
+    local cmd="${1:-}"
+    shift || true
+
+    case "${cmd}" in
+        start)
+            exec bash "${SCRIPTS_DIR}/start.sh"
+            ;;
+        stop)
+            exec bash "${SCRIPTS_DIR}/stop.sh"
+            ;;
+        restart)
+            bash "${SCRIPTS_DIR}/stop.sh"
+            bash "${SCRIPTS_DIR}/start.sh"
+            ;;
+        repair)
+            exec bash "${SCRIPTS_DIR}/repair.sh"
+            ;;
+        status)
+            exec bash "${SCRIPTS_DIR}/status.sh"
+            ;;
+        clients)
+            exec bash "${SCRIPTS_DIR}/clients.sh"
+            ;;
+        monitor)
+            exec bash "${SCRIPTS_DIR}/monitor.sh"
+            ;;
+        config)
+            show_config
+            ;;
+        set)
+            local key="${1:-}"
+            local value="${2:-}"
+            if [[ -z "${key}" || -z "${value}" ]]; then
+                echo "Usage: sudo oshotspot set <setting> <value>"
+                echo "Settings: ssid, password, channel"
+                exit 1
+            fi
+            set_config "${key}" "${value}"
+            ;;
+        help|-h|--help|"")
+            show_help
+            ;;
+        *)
+            echo -e "${RED}Unknown command:${NC} ${cmd}"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

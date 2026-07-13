@@ -1,0 +1,26 @@
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+ctrl_interface=/var/run/hostapd
+ctrl_interface_group=0
+
+interface=__AP_IFACE__
+driver=nl80211
+ssid=__SSID__
+hw_mode=__HW_MODE__
+channel=__CHANNEL__
+country_code=__COUNTRY_CODE__
+
+ieee80211n=1
+wmm_enabled=1
+ht_capab=[HT20][SHORT-GI-20]
+
+auth_algs=1
+wpa=2
+wpa_passphrase=__PASSWORD__
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
