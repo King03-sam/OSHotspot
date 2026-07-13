@@ -12,7 +12,7 @@
     "solution": "Creates a virtual AP interface (ap0) and configures routing, DHCP and NAT automatically. Works alongside NetworkManager without disabling it.",
     "use_cases": [
       "Share WiFi from laptop to phone",
-      "Create临时 hotspot in hotels/cafes",
+      "Create a temporary hotspot in hotels/cafes",
       "Replace broken NetworkManager hotspot"
     ]
   },
