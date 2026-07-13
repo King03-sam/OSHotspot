@@ -44,6 +44,7 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - Change SSID or password instantly with `set ssid` / `set password`
 - Real-time monitoring of connected clients and traffic
 - QR code display to share hotspot with phones instantly
+- Bash tab completion for the CLI
 - Supports Ubuntu, Debian, Mint, Fedora, Arch, and more
 
 ---
@@ -289,6 +290,26 @@ A suspend/resume hook is automatically installed so the hotspot repairs itself a
 
 ---
 
+# Bash Completion
+
+Tab completion is installed automatically. After installation, press `<TAB>` to auto-complete commands:
+
+```bash
+sudo oshotspot <TAB>
+# start  stop  restart  repair  status  clients  monitor  config  qr  set  help
+
+sudo oshotspot set <TAB>
+# ssid  password
+```
+
+If completion doesn't work immediately, run:
+
+```bash
+source /etc/bash_completion.d/oshotspot
+```
+
+---
+
 # Uninstallation
 
 ```bash
@@ -517,6 +538,8 @@ OSHotspot/
 │   ├── hostapd.conf.template    # hostapd config template
 │   ├── dnsmasq.conf.template    # dnsmasq config template
 │   └── nm-oshotspot.conf        # NetworkManager ignore ap0
+├── completions/
+│   └── oshotspot                # Bash tab completion
 └── systemd/
     ├── oshotspot.service        # Main systemd unit
     └── oshotspot-dnsmasq.service

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# OSHotspot
+# Copyright 2026 OLOJEDE Samuel
+#
+# Licensed under the Apache License, Version 2.0
+#
+
+# Bash completion for oshotspot
+
+_oshotspot() {
+    local cur prev commands set_commands
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    commands="start stop restart repair status clients monitor config qr set help"
+
+    if [[ ${COMP_CWORD} -eq 1 ]]; then
+        COMPREPLY=($(compgen -W "${commands}" -- "${cur}"))
+        return 0
+    fi
+
+    case "${COMP_WORDS[1]}" in
+        set)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                set_commands="ssid password"
+                COMPREPLY=($(compgen -W "${set_commands}" -- "${cur}"))
+            fi
+            return 0
+            ;;
+    esac
+}
+
+complete -F _oshotspot oshotspot

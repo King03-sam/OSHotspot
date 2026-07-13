@@ -104,6 +104,12 @@ install_files() {
     mkdir -p "${configs_dir}"
     cp "${SRC}/configs/"*.conf.template "${configs_dir}/"
     log_info "Templates installed to ${configs_dir}/"
+
+    # Bash completion
+    local completion_dir="/etc/bash_completion.d"
+    mkdir -p "${completion_dir}"
+    cp "${SRC}/completions/oshotspot" "${completion_dir}/oshotspot"
+    log_info "Bash completion installed to ${completion_dir}/oshotspot"
 }
 
 update_script_paths() {

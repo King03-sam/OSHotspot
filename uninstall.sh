@@ -50,6 +50,12 @@ main() {
         log_info "Removed /usr/lib/oshotspot/"
     fi
 
+    # Remove bash completion
+    if [[ -f /etc/bash_completion.d/oshotspot ]]; then
+        rm -f /etc/bash_completion.d/oshotspot
+        log_info "Removed bash completion"
+    fi
+
     # Remove systemd services
     local removed=0
     for svc in oshotspot.service oshotspot-dnsmasq.service oshotspot-resume.service; do
