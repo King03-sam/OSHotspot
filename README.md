@@ -1,5 +1,11 @@
 # OSHotspot
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![OS](https://img.shields.io/badge/OS-Linux-lightgrey.svg)](https://linux.org)
+[![Bash](https://img.shields.io/badge/Language-Bash-4EAA25.svg)](https://www.gnu.org/software/bash/)
+[![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9C%93-brightgreen.svg)](https://github.com/King03-sam/OSHotspot)
+[![Contributions](https://img.shields.io/badge/Contributions-Welcome-orange.svg)](https://github.com/King03-sam/OSHotspot/pulls)
+
 <p align="center">
   <b>Automatic WiFi Hotspot Manager for Linux</b><br>
   Share your computer's WiFi Internet connection with any device, even when NetworkManager hotspot fails.
