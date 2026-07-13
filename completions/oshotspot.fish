@@ -14,6 +14,7 @@ complete -c oshotspot -n "__fish_use_subcommand" -a qr -d "Show QR code to conne
 complete -c oshotspot -n "__fish_use_subcommand" -a doctor -d "Run diagnostic checks"
 complete -c oshotspot -n "__fish_use_subcommand" -a interfaces -d "List available WiFi interfaces"
 complete -c oshotspot -n "__fish_use_subcommand" -a logs -d "View and follow hotspot logs"
+complete -c oshotspot -n "__fish_use_subcommand" -a web -d "Launch web dashboard in browser"
 complete -c oshotspot -n "__fish_use_subcommand" -a enable -d "Enable hotspot at boot"
 complete -c oshotspot -n "__fish_use_subcommand" -a disable -d "Disable hotspot at boot"
 complete -c oshotspot -n "__fish_use_subcommand" -a set -d "Change configuration setting"

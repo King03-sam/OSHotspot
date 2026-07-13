@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSHotspot Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <span class="topbar-logo">OS</span>
+            <span class="topbar-title">Hotspot</span>
+            <span class="topbar-subtitle">Dashboard</span>
+        </div>
+        <div class="topbar-right">
+            <span id="statusBadge" class="badge badge-off">OFFLINE</span>
+            <span class="topbar-uptime" id="uptime"></span>
+        </div>
+    </header>
+
+    <main class="layout">
+        <!-- Status Row -->
+        <section class="status-row">
+            <div class="stat-card" id="statHostapd">
+                <div class="stat-label">hostapd</div>
+                <div class="stat-value" id="valHostapd">--</div>
+            </div>
+            <div class="stat-card" id="statDnsmasq">
+                <div class="stat-label">dnsmasq</div>
+                <div class="stat-value" id="valDnsmasq">--</div>
+            </div>
+            <div class="stat-card" id="statClients">
+                <div class="stat-label">Clients</div>
+                <div class="stat-value" id="valClients">0</div>
+            </div>
+            <div class="stat-card" id="statForwarding">
+                <div class="stat-label">IP Fwd</div>
+                <div class="stat-value" id="valForwarding">--</div>
+            </div>
+            <div class="stat-card" id="statNat">
+                <div class="stat-label">NAT</div>
+                <div class="stat-value" id="valNat">--</div>
+            </div>
+        </section>
+
+        <!-- Controls Row -->
+        <section class="controls-row">
+            <button class="btn btn-start" id="btnStart" onclick="doAction('start')">Start</button>
+            <button class="btn btn-stop" id="btnStop" onclick="doAction('stop')">Stop</button>
+            <button class="btn btn-restart" id="btnRestart" onclick="doAction('restart')">Restart</button>
+            <button class="btn btn-qr" onclick="showQR()">QR Code</button>
+            <button class="btn btn-doctor" onclick="runDoctor()">Diagnostics</button>
+        </section>
+
+        <!-- Info + Config Row -->
+        <div class="two-col">
+            <!-- Config Panel -->
+            <section class="panel">
+                <div class="panel-header" onclick="togglePanel('configBody')">
+                    <span class="panel-title">Configuration</span>
+                    <span class="panel-toggle" id="configToggle">&#9660;</span>
+                </div>
+                <div class="panel-body collapsed" id="configBody">
+                    <form id="configForm" onsubmit="return submitConfig(event)">
+                        <div class="form-row">
+                            <label for="cfgSsid">SSID</label>
+                            <input type="text" id="cfgSsid" maxlength="32" placeholder="Network name">
+                        </div>
+                        <div class="form-row">
+                            <label for="cfgPassword">Password</label>
+                            <input type="password" id="cfgPassword" minlength="8" placeholder="Min 8 chars">
+                        </div>
+                        <div class="form-row form-half">
+                            <div>
+                                <label for="cfgChannel">Channel</label>
+                                <select id="cfgChannel">
+                                    <script>for(var i=1;i<=13;i++)document.write('<option value="'+i+'">'+i+'</option>')</script>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="cfgHwMode">Mode</label>
+                                <select id="cfgHwMode">
+                                    <option value="g">g (2.4 GHz)</option>
+                                    <option value="a">a (5 GHz)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label for="cfgCountry">Country Code</label>
+                            <input type="text" id="cfgCountry" maxlength="2" placeholder="US" style="width:80px;text-transform:uppercase">
+                        </div>
+                        <div class="form-row">
+                            <button type="submit" class="btn btn-save">Save Configuration</button>
+                            <span id="configStatus" class="form-status"></span>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Network Info Panel -->
+            <section class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Network Info</span>
+                </div>
+                <div class="panel-body">
+                    <table class="info-table">
+                        <tr><td class="info-key">WiFi Interface</td><td id="infoWifiIface">--</td></tr>
+                        <tr><td class="info-key">AP Interface</td><td id="infoApIface">--</td></tr>
+                        <tr><td class="info-key">AP IP</td><td id="infoApIp">--</td></tr>
+                        <tr><td class="info-key">SSID</td><td id="infoSsid">--</td></tr>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Clients Table -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Connected Clients</span>
+                <span class="panel-badge" id="clientCount">0</span>
+            </div>
+            <div class="panel-body">
+                <table class="data-table" id="clientsTable">
+                    <thead>
+                        <tr>
+                            <th>MAC Address</th>
+                            <th>IP Address</th>
+                            <th>Hostname</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsBody">
+                        <tr><td colspan="4" class="empty-row">No clients connected</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- QR + Doctor Row -->
+        <div class="two-col">
+            <section class="panel" id="qrPanel" style="display:none">
+                <div class="panel-header">
+                    <span class="panel-title">WiFi QR Code</span>
+                    <button class="btn-close" onclick="hideQR()">&times;</button>
+                </div>
+                <div class="panel-body qr-body">
+                    <img id="qrImage" src="" alt="WiFi QR Code">
+                </div>
+            </section>
+
+            <section class="panel" id="doctorPanel" style="display:none">
+                <div class="panel-header">
+                    <span class="panel-title">Diagnostics</span>
+                    <button class="btn-close" onclick="hideDoctor()">&times;</button>
+                </div>
+                <div class="panel-body">
+                    <div id="doctorResults"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="/app.js"></script>
+</body>
+</html>

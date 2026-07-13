@@ -159,6 +159,13 @@ install_files() {
         cp "${SRC}/completions/oshotspot.fish" "${fish_dir}/oshotspot.fish"
         log_info "Fish completion installed to ${fish_dir}/oshotspot.fish"
     fi
+
+    # Web dashboard
+    local web_dir="/usr/lib/oshotspot/web"
+    mkdir -p "${web_dir}/static"
+    cp "${SRC}/web/server.py" "${web_dir}/server.py"
+    cp "${SRC}/web/static/"* "${web_dir}/static/"
+    log_info "Web dashboard installed to ${web_dir}/"
 }
 
 update_script_paths() {

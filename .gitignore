@@ -71,3 +71,7 @@ temp/
 *.bak
 *.orig
 *.old
+
+# Python
+__pycache__/
+*.pyc

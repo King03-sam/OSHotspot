@@ -14,7 +14,7 @@ _oshotspot() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    commands="start stop restart repair status clients monitor config qr doctor interfaces set help"
+    commands="start stop restart repair status clients monitor config qr doctor interfaces logs web enable disable set help"
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
         COMPREPLY=($(compgen -W "${commands}" -- "${cur}"))

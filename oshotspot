@@ -45,6 +45,7 @@ show_help() {
     echo "  doctor      Run diagnostic checks"
     echo "  interfaces  List available WiFi interfaces"
     echo "  logs        View and follow hotspot logs"
+    echo "  web         Launch web dashboard in browser"
     echo "  enable      Enable hotspot at boot"
     echo "  disable     Disable hotspot at boot"
     echo ""
@@ -202,6 +203,9 @@ main() {
             ;;
         logs)
             exec bash "${SCRIPTS_DIR}/logs.sh" "$@"
+            ;;
+        web)
+            exec bash "${SCRIPTS_DIR}/web.sh"
             ;;
         enable)
             if [[ "${EUID}" -ne 0 ]]; then
