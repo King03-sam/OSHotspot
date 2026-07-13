@@ -7,6 +7,9 @@
 #
 
 # install.sh - Install OSHotspot and its dependencies.
+# Works in two modes:
+#   1. Local:   sudo ./install.sh          (from cloned repo)
+#   2. Remote:  curl -fsSL URL | sudo bash (one-liner install)
 
 set -euo pipefail
 
@@ -33,8 +36,40 @@ fi
 
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/oshotspot"
-SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="/var/log/oshotspot"
+REPO_URL="https://github.com/King03-sam/OSHotspot"
+TEMP_DIR=""
+
+cleanup() {
+    if [[ -n "${TEMP_DIR}" && -d "${TEMP_DIR}" ]]; then
+        rm -rf "${TEMP_DIR}"
+    fi
+}
+
+trap cleanup EXIT
+
+download_source() {
+    log_step "Downloading OSHotspot from GitHub..."
+
+    if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
+        log_error "Neither curl nor wget is installed."
+        log_error "Install curl first: sudo apt install curl"
+        exit 1
+    fi
+
+    TEMP_DIR="$(mktemp -d)"
+    local archive="${TEMP_DIR}/oshotspot.tar.gz"
+
+    if command -v curl &>/dev/null; then
+        curl -fsSL "${REPO_URL}/archive/refs/heads/main.tar.gz" -o "${archive}"
+    else
+        wget -q "${REPO_URL}/archive/refs/heads/main.tar.gz" -O "${archive}"
+    fi
+
+    tar -xzf "${archive}" -C "${TEMP_DIR}"
+    SRC="${TEMP_DIR}/OSHotspot-main"
+    log_info "Downloaded and extracted to ${SRC}"
+}
 
 detect_pkg_manager() {
     if command -v apt-get &>/dev/null; then echo "apt"
@@ -207,6 +242,17 @@ main() {
     echo -e "${BOLD}========================================${NC}"
     echo ""
 
+    # Detect source: local directory or download from GitHub
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+    if [[ -f "${script_dir}/oshotspot" && -d "${script_dir}/scripts" ]]; then
+        SRC="${script_dir}"
+        log_info "Using local source files from ${SRC}"
+    else
+        download_source
+    fi
+
     install_dependencies
     echo ""
     setup_config
@@ -237,10 +283,13 @@ main() {
     echo "  3. Check status:"
     echo -e "     ${BOLD}sudo oshotspot status${NC}"
     echo ""
-    echo "  4. Stop the hotspot:"
+    echo "  4. Show QR code:"
+    echo -e "     ${BOLD}sudo oshotspot qr${NC}"
+    echo ""
+    echo "  5. Stop the hotspot:"
     echo -e "     ${BOLD}sudo oshotspot stop${NC}"
     echo ""
-    echo "  5. Repair after suspend:"
+    echo "  6. Repair after suspend:"
     echo -e "     ${BOLD}sudo oshotspot repair${NC}"
     echo ""
     echo -e "${BOLD}========================================${NC}"

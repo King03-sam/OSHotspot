@@ -132,27 +132,18 @@ sudo apt install hostapd dnsmasq iw iptables iproute2 qrencode
 
 # Installation
 
-Clone the repository:
+One-liner install:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/OSHotspot.git
+curl -fsSL https://raw.githubusercontent.com/King03-sam/OSHotspot/main/install.sh | sudo bash
 ```
 
-Enter the directory:
+Or clone and install manually:
 
 ```bash
+git clone https://github.com/King03-sam/OSHotspot.git
 cd OSHotspot
-```
-
-Give execution permission:
-
-```bash
 chmod +x install.sh oshotspot
-```
-
-Run installation:
-
-```bash
 sudo ./install.sh
 ```
 
