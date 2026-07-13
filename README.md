@@ -40,8 +40,9 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - Automatic iptables NAT and forwarding rules
 - 802.11n support for better device compatibility
 - Suspend/resume auto-repair
-- Simple CLI: `oshotspot start / stop / status / repair / clients / monitor / qr`
-- Change SSID or password instantly with `set ssid` / `set password`
+- Simple CLI: `oshotspot start / stop / status / repair / clients / monitor / qr / doctor`
+- Diagnostic tool to verify system readiness (`oshotspot doctor`)
+- Auto-detection of WiFi interfaces (supports wlan0, wlp2s0, wlx...)
 - Real-time monitoring of connected clients and traffic
 - QR code display to share hotspot with phones instantly
 - Bash tab completion for the CLI
@@ -265,6 +266,55 @@ sudo oshotspot qr
 
 Displays a QR code in the terminal that your phone can scan to connect to the hotspot instantly. No need to type the password manually.
 
+# Diagnostic
+
+```bash
+sudo oshotspot doctor
+```
+
+Runs a full diagnostic check on your system:
+
+```
+OSHotspot Diagnostic v1.0
+
+  [OK]    WiFi adapter detected (wlp2s0)
+  [OK]    AP mode supported (phy0)
+  [OK]    hostapd installed
+  [OK]    dnsmasq installed
+  [OK]    qrencode installed
+  [OK]    IP forwarding enabled
+  [OK]    NAT configured
+  [OK]    Configuration file exists
+  [OK]    NetworkManager configured
+  [WARN]  Hotspot is not running
+
+  Passed: 9  Warnings: 1  Failed: 0
+  System is ready.
+```
+
+# List WiFi Interfaces
+
+```bash
+sudo oshotspot interfaces
+```
+
+Shows all available WiFi adapters on your system. Useful when you have multiple adapters (built-in + USB):
+
+```
+Available WiFi interfaces:
+
+  wlp2s0          up       18:5e:0f:c7:90:48
+  wlx1234567890   down     aa:bb:cc:dd:ee:ff
+```
+
+# Choose WiFi Interface
+
+If you have multiple WiFi adapters, tell OSHotspot which one to use for internet:
+
+```bash
+sudo oshotspot set wifi_iface wlp2s0
+```
+
 ---
 
 # Systemd
@@ -287,10 +337,10 @@ Tab completion is installed automatically. After installation, press `<TAB>` to 
 
 ```bash
 sudo oshotspot <TAB>
-# start  stop  restart  repair  status  clients  monitor  config  qr  set  help
+# start  stop  restart  repair  status  clients  monitor  config  qr  doctor  interfaces  set  help
 
 sudo oshotspot set <TAB>
-# ssid  password
+# ssid  password  wifi_iface
 ```
 
 If completion doesn't work immediately, run:
@@ -524,7 +574,8 @@ OSHotspot/
 │   ├── status.sh                # Status display
 │   ├── clients.sh               # Show connected clients
 │   ├── monitor.sh               # Real-time monitoring
-│   └── qr.sh                    # QR code display
+│   ├── qr.sh                    # QR code display
+│   └── doctor.sh                # Diagnostic tool
 ├── configs/
 │   ├── hostapd.conf.template    # hostapd config template
 │   ├── dnsmasq.conf.template    # dnsmasq config template

@@ -30,6 +30,9 @@ HOSTNAME="oshotspot"
 AP_IFACE="ap0"
 
 # Your internet-connected WiFi interface (auto-detected if empty)
+# If you have multiple WiFi adapters, set the one connected to the internet:
+# WIFI_IFACE="wlp2s0"
+# Run 'sudo oshotspot interfaces' to see available adapters.
 WIFI_IFACE=""
 
 # Hotspot subnet

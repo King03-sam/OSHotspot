@@ -127,6 +127,39 @@ detect_wifi_interface() {
     echo "${iface}"
 }
 
+# List all wireless interfaces with details (skip ap0).
+# Output: iface_name:state:mac
+list_wifi_interfaces() {
+    local results=()
+
+    for dev in /sys/class/net/*/wireless; do
+        if [[ -d "${dev}" ]]; then
+            local name state mac
+            name="$(basename "$(dirname "${dev}")")"
+            if [[ "${name}" == "ap0" ]]; then
+                continue
+            fi
+            state="$(cat "/sys/class/net/${name}/operstate" 2>/dev/null || echo "unknown")"
+            mac="$(cat "/sys/class/net/${name}/address" 2>/dev/null || echo "xx:xx:xx:xx:xx:xx")"
+            results+=("${name}:${state}:${mac}")
+        fi
+    done
+
+    if [[ ${#results[@]} -eq 0 ]] && command -v iw &>/dev/null; then
+        while IFS= read -r line; do
+            local name state mac
+            name="${line}"
+            state="$(cat "/sys/class/net/${name}/operstate" 2>/dev/null || echo "unknown")"
+            mac="$(cat "/sys/class/net/${name}/address" 2>/dev/null || echo "xx:xx:xx:xx:xx:xx")"
+            results+=("${name}:${state}:${mac}")
+        done < <(iw dev 2>/dev/null | awk '/Interface/{print $2}' | grep -v "^ap0$")
+    fi
+
+    for r in "${results[@]}"; do
+        echo "${r}"
+    done
+}
+
 # Given a wireless interface, return its phy device (e.g. phy0).
 get_phy_device() {
     local iface="$1"

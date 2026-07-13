@@ -39,10 +39,13 @@ show_help() {
     echo "  monitor     Real-time monitoring (refreshes every 3s)"
     echo "  config      Show current configuration"
     echo "  qr          Show QR code to connect your phone"
+    echo "  doctor      Run diagnostic checks"
+    echo "  interfaces  List available WiFi interfaces"
     echo ""
     echo "Change settings:"
-    echo "  set ssid <name>       Change hotspot name"
-    echo "  set password <pass>   Change hotspot password"
+    echo "  set ssid <name>           Change hotspot name"
+    echo "  set password <pass>       Change hotspot password"
+    echo "  set wifi_iface <iface>    Choose WiFi interface for internet"
     echo ""
     echo "Examples:"
     echo "  sudo oshotspot start"
@@ -95,9 +98,20 @@ set_config() {
                 exit 1
             fi
             ;;
+        WIFI_IFACE)
+            if ! ip link show "${value}" &>/dev/null; then
+                echo -e "${RED}Interface ${value} does not exist.${NC}"
+                echo "Run 'sudo oshotspot interfaces' to see available interfaces."
+                exit 1
+            fi
+            if [[ ! -d "/sys/class/net/${value}/wireless" ]]; then
+                echo -e "${RED}${value} is not a WiFi interface.${NC}"
+                exit 1
+            fi
+            ;;
         *)
             echo -e "${RED}Unknown setting:${NC} ${key}"
-            echo "Valid settings: ssid, password"
+            echo "Valid settings: ssid, password, wifi_iface"
             exit 1
             ;;
     esac
@@ -154,12 +168,18 @@ main() {
         qr)
             exec bash "${SCRIPTS_DIR}/qr.sh"
             ;;
+        doctor)
+            exec bash "${SCRIPTS_DIR}/doctor.sh"
+            ;;
+        interfaces)
+            bash -c 'source /usr/lib/oshotspot/scripts/utils.sh; echo ""; echo "Available WiFi interfaces:"; echo ""; for entry in $(list_wifi_interfaces); do name="${entry%%:*}"; rest="${entry#*:}"; state="${rest%%:*}"; mac="${rest#*:}"; printf "  %-15s %-8s %s\n" "${name}" "${state}" "${mac}"; done; echo ""'
+            ;;
         set)
             local key="${1:-}"
             local value="${2:-}"
             if [[ -z "${key}" || -z "${value}" ]]; then
                 echo "Usage: sudo oshotspot set <setting> <value>"
-                echo "Settings: ssid, password, channel"
+                echo "Settings: ssid, password, wifi_iface"
                 exit 1
             fi
             set_config "${key}" "${value}"
