@@ -9,7 +9,7 @@
 # Copy this file to /etc/oshotspot/config.conf and edit as needed.
 
 # WiFi Hotspot Name (SSID)
-SSID="UbuntuHotspot"
+SSID="OSHotspot"
 
 # WiFi Hotspot Password (min 8 characters for WPA2)
 PASSWORD="ChangeMe123"

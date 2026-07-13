@@ -188,7 +188,7 @@ When the hotspot is running, changes are applied automatically (hotspot restarts
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `SSID` | `UbuntuHotspot` | WiFi network name (1-32 characters) |
+| `SSID` | `OSHotspot` | WiFi network name (1-32 characters) |
 | `PASSWORD` | `ChangeMe123` | WiFi password (minimum 8 characters, WPA2) |
 | `CHANNEL` | `6` | WiFi channel (1-13) |
 | `HW_MODE` | `g` | Hardware mode (`g` for 2.4GHz, `a` for 5GHz) |
@@ -211,7 +211,7 @@ sudo oshotspot start
 Your phone should see:
 
 ```
-UbuntuHotspot
+OSHotspot
 ```
 
 Connect using the configured password.
