@@ -136,10 +136,6 @@ def parse_status(output):
             status["ip_forward"] = "ENABLED" in line
         elif "NAT" in line or "MASQUERADE" in line:
             status["nat"] = "ACTIVE" in line
-        elif "Connected Clients:" in line:
-            m = re.search(r'(\d+)', line.split(":")[-1])
-            if m:
-                status["clients"] = int(m.group(1))
     return status
 
 
@@ -375,6 +371,11 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 return
             code, stdout, _ = run_script("status.sh")
             data = parse_status(stdout) if code == 0 else {"error": stdout}
+            # GET ACCURATE CLIENT COUNT FROM clients.sh INSTEAD OF TRUSTING status.sh
+            clients_code, clients_stdout, _ = run_script("clients.sh")
+            if clients_code == 0:
+                clients_list = parse_clients(clients_stdout)
+                data["clients"] = len(clients_list)  # Override with accurate count from DHCP leases
             self.send_json(data)
         elif path == "/api/clients":
             if not self.check_token():
@@ -457,11 +458,14 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
 
             write_config(validated)
             log_action(f"web:config:{list(validated.keys())}")
+            
+            # Add debug logging (without password) for troubleshooting
+            log_action(f"web:config_updated:{','.join(k for k in validated.keys() if k != 'PASSWORD')}")
 
             is_running = os.path.isfile("/run/oshotspot-hostapd.pid")
             if is_running:
                 run_script("stop.sh")
-                time.sleep(1)
+                time.sleep(1)  # Ensure clean shutdown
                 run_script("start.sh")
 
             self.send_json({"ok": True, "updated": list(validated.keys())})

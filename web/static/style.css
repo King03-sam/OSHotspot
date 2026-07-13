@@ -2,14 +2,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --bg-primary: #1a1d21;
-    --bg-secondary: #22262b;
-    --bg-tertiary: #2a2f36;
-    --bg-hover: #32383f;
-    --border: #383d44;
-    --text-primary: #d4d7dc;
-    --text-secondary: #9aa0a8;
-    --text-muted: #6b7280;
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-tertiary: #111111;
+    --bg-hover: #151515;
+    --border: #000000;
+    --text-primary: #000000;
+    --text-secondary: #000000;
+    --text-muted: #000000;
     --accent: #3b82f6;
     --accent-hover: #2563eb;
     --green: #22c55e;
@@ -55,8 +55,8 @@ html, body {
     font-family: var(--font-mono);
     font-weight: 700;
     font-size: 14px;
-    color: #fff;
-    background: var(--accent);
+    color: #000;
+    background: #fff;
     padding: 2px 6px;
     border-radius: 3px;
 }
@@ -312,7 +312,7 @@ html, body {
 
 .data-table td {
     padding: 6px 10px;
-    border-bottom: 1px solid rgba(56,61,68,0.5);
+    border-bottom: 1px solid rgba(0,0,0,0.5);
     color: var(--text-primary);
 }
 
@@ -339,7 +339,7 @@ html, body {
 
 .info-table td {
     padding: 5px 0;
-    border-bottom: 1px solid rgba(56,61,68,0.3);
+    border-bottom: 1px solid rgba(0,0,0,0.3);
 }
 
 .info-key {
@@ -431,7 +431,7 @@ html, body {
     align-items: flex-start;
     gap: 8px;
     padding: 5px 0;
-    border-bottom: 1px solid rgba(56,61,68,0.3);
+    border-bottom: 1px solid rgba(0,0,0,0.3);
     font-size: 12px;
 }
 
