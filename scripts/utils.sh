@@ -353,15 +353,33 @@ remove_pid() { rm -f "$1"; }
 # Make sure every required tool is installed.
 check_commands() {
     local missing=()
-    for cmd in ip iw sysctl iptables; do
+    for cmd in ip iw sysctl; do
         if ! command -v "${cmd}" &>/dev/null; then
             missing+=("${cmd}")
         fi
     done
 
+    # Check for firewall tool: iptables or nft
+    if command -v iptables &>/dev/null; then
+        FIREWALL_CMD="iptables"
+    elif command -v nft &>/dev/null; then
+        FIREWALL_CMD="nft"
+    else
+        missing+=("iptables|nft")
+    fi
+
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_error "Missing required commands: ${missing[*]}"
         exit 1
+    fi
+}
+
+# Firewall wrapper: run iptables or nft depending on what's available.
+fw() {
+    if [[ "${FIREWALL_CMD:-iptables}" == "nft" ]]; then
+        nft "$@"
+    else
+        iptables "$@"
     fi
 }
 

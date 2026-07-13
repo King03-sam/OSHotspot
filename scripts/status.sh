@@ -117,8 +117,19 @@ show_status() {
     fi
 
     # NAT
-    if iptables -t nat -C POSTROUTING -s "${SUBNET:-192.168.50.0}/${AP_CIDR:-24}" \
-        -o "${WIFI_IFACE:-wlp2s0}" -j MASQUERADE 2>/dev/null; then
+    local nat_ok=false
+    if command -v iptables &>/dev/null; then
+        if iptables -t nat -C POSTROUTING -s "${SUBNET:-192.168.50.0}/${AP_CIDR:-24}" \
+            -o "${WIFI_IFACE:-wlp2s0}" -j MASQUERADE 2>/dev/null; then
+            nat_ok=true
+        fi
+    fi
+    if ! ${nat_ok} && command -v nft &>/dev/null; then
+        if nft list ruleset 2>/dev/null | grep -q "masquerade"; then
+            nat_ok=true
+        fi
+    fi
+    if ${nat_ok}; then
         status_line "NAT (MASQUERADE):" "ACTIVE" "${GREEN}"
     else
         status_line "NAT (MASQUERADE):" "NOT CONFIGURED" "${YELLOW}"

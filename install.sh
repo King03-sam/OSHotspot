@@ -213,6 +213,11 @@ NMCONF
 setup_suspend_hook() {
     log_step "Setting up suspend/resume auto-repair..."
 
+    if ! command -v systemctl &>/dev/null; then
+        log_info "Skipping suspend hook (systemctl not available)."
+        return
+    fi
+
     local services_dir="/etc/systemd/system"
 
     cat > "${services_dir}/oshotspot-resume.service" <<'UNIT'

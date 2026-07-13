@@ -79,8 +79,10 @@ check_ip_forward() {
 }
 
 check_nat() {
-    if iptables -t nat -L -n 2>/dev/null | grep -q "MASQUERADE"; then
-        check_ok "NAT/MASQUERADE configured"
+    if command -v iptables &>/dev/null && iptables -t nat -L -n 2>/dev/null | grep -q "MASQUERADE"; then
+        check_ok "NAT/MASQUERADE configured (iptables)"
+    elif command -v nft &>/dev/null && nft list ruleset 2>/dev/null | grep -q "masquerade"; then
+        check_ok "NAT/MASQUERADE configured (nftables)"
     else
         check_warn "NAT not configured (hotspot will set it up on start)"
     fi
