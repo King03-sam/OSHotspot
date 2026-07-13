@@ -24,13 +24,9 @@ OSHotspot provides a reliable alternative by creating a virtual Access Point int
 
 ## Creator
 
-Created by **OLOJEDE Samuel**
+OSHotspot was created and is maintained by **OLOJEDE Samuel**.
 
-Systems & Network Engineering Student | Linux | Networking | Cybersecurity | AI Development
-
-GitHub: [King03-sam](https://github.com/King03-sam)
-
-OSHotspot is an open-source project created to help Linux users facing WiFi hotspot issues. It's designed to be a reliable, non-destructive solution that works alongside existing network configurations.
+The project was developed to provide an automated and reliable WiFi hotspot solution for Linux systems using native networking tools.
 
 ---
 
@@ -44,9 +40,10 @@ OSHotspot is an open-source project created to help Linux users facing WiFi hots
 - Automatic iptables NAT and forwarding rules
 - 802.11n support for better device compatibility
 - Suspend/resume auto-repair
-- Simple CLI: `oshotspot start / stop / status / repair / clients / monitor`
+- Simple CLI: `oshotspot start / stop / status / repair / clients / monitor / qr`
 - Change SSID or password instantly with `set ssid` / `set password`
 - Real-time monitoring of connected clients and traffic
+- QR code display to share hotspot with phones instantly
 - Supports Ubuntu, Debian, Mint, Fedora, Arch, and more
 
 ---
@@ -127,7 +124,7 @@ Example supported hardware:
 Required packages:
 
 ```bash
-sudo apt install hostapd dnsmasq iw iptables iproute2
+sudo apt install hostapd dnsmasq iw iptables iproute2 qrencode
 ```
 
 ---
@@ -160,7 +157,7 @@ sudo ./install.sh
 
 The installer will:
 
-1. Install `hostapd`, `dnsmasq`, `iw`, `iptables`, `iproute2`
+1. Install `hostapd`, `dnsmasq`, `iw`, `iptables`, `iproute2`, `qrencode`
 2. Create configuration directory at `/etc/oshotspot/`
 3. Install the `oshotspot` CLI to `/usr/local/bin/`
 4. Set up systemd services and suspend/resume hooks
@@ -267,6 +264,14 @@ This will stop broken components, wait for the WiFi interface to reappear, recre
 ```bash
 sudo oshotspot restart
 ```
+
+# Show QR Code
+
+```bash
+sudo oshotspot qr
+```
+
+Displays a QR code in the terminal that your phone can scan to connect to the hotspot instantly. No need to type the password manually.
 
 ---
 
@@ -506,7 +511,8 @@ OSHotspot/
 │   ├── repair.sh                # Repair after suspend
 │   ├── status.sh                # Status display
 │   ├── clients.sh               # Show connected clients
-│   └── monitor.sh               # Real-time monitoring
+│   ├── monitor.sh               # Real-time monitoring
+│   └── qr.sh                    # QR code display
 ├── configs/
 │   ├── hostapd.conf.template    # hostapd config template
 │   ├── dnsmasq.conf.template    # dnsmasq config template

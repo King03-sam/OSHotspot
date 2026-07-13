@@ -38,6 +38,7 @@ show_help() {
     echo "  clients     Show connected clients"
     echo "  monitor     Real-time monitoring (refreshes every 3s)"
     echo "  config      Show current configuration"
+    echo "  qr          Show QR code to connect your phone"
     echo ""
     echo "Change settings:"
     echo "  set ssid <name>       Change hotspot name"
@@ -149,6 +150,9 @@ main() {
             ;;
         config)
             show_config
+            ;;
+        qr)
+            exec bash "${SCRIPTS_DIR}/qr.sh"
             ;;
         set)
             local key="${1:-}"

@@ -51,19 +51,19 @@ install_dependencies() {
     case "$(detect_pkg_manager)" in
         apt)
             apt-get update -qq
-            apt-get install -y hostapd dnsmasq iptables iw iproute2
+            apt-get install -y hostapd dnsmasq iptables iw iproute2 qrencode
             ;;
         dnf)
-            dnf install -y hostapd dnsmasq iptables iw iproute
+            dnf install -y hostapd dnsmasq iptables iw iproute qrencode
             ;;
         pacman)
-            pacman -S --noconfirm hostapd dnsmasq iptables iw iproute2
+            pacman -S --noconfirm hostapd dnsmasq iptables iw iproute2 qrencode
             ;;
         zypper)
-            zypper install -y hostapd dnsmasq iptables iw iproute2
+            zypper install -y hostapd dnsmasq iptables iw iproute2 qrencode
             ;;
         *)
-            log_warn "Unknown package manager. Install manually: hostapd dnsmasq iptables iw iproute2"
+            log_warn "Unknown package manager. Install manually: hostapd dnsmasq iptables iw iproute2 qrencode"
             log_warn "Press Enter to continue or Ctrl+C to abort."
             read -r
             ;;
