@@ -399,11 +399,17 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 return
             png_data = generate_qr_png()
             if png_data:
-                import base64
-                b64 = base64.b64encode(png_data).decode()
-                self.send_json({"image": f"data:image/png;base64,{b64}"})
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(png_data)))
+                self.send_security_headers()
+                self.end_headers()
+                self.wfile.write(png_data)
             else:
-                self.send_json({"error": "Could not generate QR code"}, 500)
+                self.send_response(500)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"Could not generate QR code")
         elif path == "/api/doctor":
             if not self.check_token():
                 return
