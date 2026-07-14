@@ -8,6 +8,26 @@
 
 # firewall.sh - NAT and forwarding rules for OSHotspot.
 # Supports both iptables and nftables backends.
+#
+# When DNS_REDIRECT is enabled (default), two extra mechanisms ensure
+# all DNS traffic from hotspot clients flows through the local dnsmasq:
+#   1. DNS REDIRECT  — PREROUTING rules that hijack port 53 (UDP+TCP)
+#      from the AP subnet so clients can't bypass dnsmasq with a manual
+#      DNS server.
+#   2. DoH BLOCK     — FORWARD DROP rules that black-hole traffic from
+#      the AP subnet to known DNS-over-HTTPS resolver IPs on port 443,
+#      forcing browsers back to standard DNS.
+
+# Known DoH resolver IPs — blocked on port 443 from AP clients.
+DOH_IPS=(
+    1.1.1.1 1.0.0.1                       # Cloudflare
+    8.8.8.8 8.8.4.4                       # Google
+    9.9.9.9 149.112.112.112               # Quad9
+    45.90.28.0/24 45.90.30.0/24           # NextDNS
+    94.140.14.14 94.140.15.15             # AdGuard
+    194.242.2.2 194.242.2.9               # Mullvad
+    104.197.240.0/24                      # LibreDNS
+)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
@@ -48,6 +68,8 @@ setup_firewall() {
     else
         setup_firewall_iptables
     fi
+
+    apply_dns_policy
 
     log_info "Firewall configured."
 }
@@ -110,6 +132,164 @@ setup_firewall_nft() {
     fi
 }
 
+# -------------------------------------------------------------------
+# DNS redirect — force all port 53 traffic to local dnsmasq
+# -------------------------------------------------------------------
+
+setup_dns_redirect_iptables() {
+    if ! iptables -t nat -C PREROUTING -i "${AP_IFACE}" -p udp --dport 53 -j REDIRECT 2>/dev/null; then
+        iptables -t nat -A PREROUTING -i "${AP_IFACE}" -p udp --dport 53 -j REDIRECT
+        log_info "Added DNS REDIRECT: UDP port 53 -> dnsmasq"
+    else
+        log_info "DNS REDIRECT (UDP) already exists."
+    fi
+    if ! iptables -t nat -C PREROUTING -i "${AP_IFACE}" -p tcp --dport 53 -j REDIRECT 2>/dev/null; then
+        iptables -t nat -A PREROUTING -i "${AP_IFACE}" -p tcp --dport 53 -j REDIRECT
+        log_info "Added DNS REDIRECT: TCP port 53 -> dnsmasq"
+    else
+        log_info "DNS REDIRECT (TCP) already exists."
+    fi
+}
+
+setup_dns_redirect_nft() {
+    nft add table ip nat 2>/dev/null || true
+    nft add chain ip nat prerouting '{ type nat hook prerouting priority -100; }' 2>/dev/null || true
+
+    if ! nft list chain ip nat prerouting 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*udp dport 53.*redirect"; then
+        nft add rule ip nat prerouting iifname "${AP_IFACE}" udp dport 53 redirect
+        log_info "Added DNS REDIRECT: UDP port 53 -> dnsmasq"
+    else
+        log_info "DNS REDIRECT (UDP) already exists."
+    fi
+    if ! nft list chain ip nat prerouting 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*tcp dport 53.*redirect"; then
+        nft add rule ip nat prerouting iifname "${AP_IFACE}" tcp dport 53 redirect
+        log_info "Added DNS REDIRECT: TCP port 53 -> dnsmasq"
+    else
+        log_info "DNS REDIRECT (TCP) already exists."
+    fi
+}
+
+# -------------------------------------------------------------------
+# DoH block — drop traffic to known DoH resolver IPs on port 443
+# -------------------------------------------------------------------
+
+block_doh_iptables() {
+    local count=0
+    for ip in "${DOH_IPS[@]}"; do
+        if ! iptables -C FORWARD -i "${AP_IFACE}" -d "$ip" -p tcp --dport 443 -j DROP 2>/dev/null; then
+            iptables -I FORWARD -i "${AP_IFACE}" -d "$ip" -p tcp --dport 443 -j DROP
+            count=$((count + 1))
+        fi
+    done
+    if [[ ${count} -gt 0 ]]; then
+        log_info "Blocked DoH resolver IPs: ${count} rules added"
+    else
+        log_info "DoH block rules already exist."
+    fi
+}
+
+block_doh_nft() {
+    nft add table ip filter 2>/dev/null || true
+    nft add chain ip filter forward '{ type filter hook forward priority 0; }' 2>/dev/null || true
+
+    local count=0
+    for ip in "${DOH_IPS[@]}"; do
+        if ! nft list chain ip filter forward 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*${ip}.*tcp dport 443.*drop"; then
+            nft add rule ip filter forward iifname "${AP_IFACE}" ip daddr "$ip" tcp dport 443 drop
+            count=$((count + 1))
+        fi
+    done
+    if [[ ${count} -gt 0 ]]; then
+        log_info "Blocked DoH resolver IPs: ${count} rules added"
+    else
+        log_info "DoH block rules already exist."
+    fi
+}
+
+# -------------------------------------------------------------------
+# Cleanup helpers for DNS redirect and DoH block
+# -------------------------------------------------------------------
+
+cleanup_dns_redirect_iptables() {
+    while iptables -t nat -D PREROUTING -i "${AP_IFACE}" -p udp --dport 53 -j REDIRECT 2>/dev/null; do
+        log_info "Removed DNS REDIRECT: UDP port 53"
+    done
+    while iptables -t nat -D PREROUTING -i "${AP_IFACE}" -p tcp --dport 53 -j REDIRECT 2>/dev/null; do
+        log_info "Removed DNS REDIRECT: TCP port 53"
+    done
+}
+
+cleanup_dns_redirect_nft() {
+    local rules
+    rules=$(nft -a list chain ip nat prerouting 2>/dev/null || true)
+    if [[ -z "${rules}" ]]; then
+        return
+    fi
+    # Remove rules in reverse order (handle line number shifts)
+    local handle
+    while IFS= read -r line; do
+        handle=$(echo "$line" | grep -oP '# handle \K\d+' || true)
+        if [[ -n "${handle}" ]]; then
+            nft delete rule ip nat prerouting handle "${handle}" 2>/dev/null || true
+        fi
+    done < <(echo "$rules" | grep "iifname.*${AP_IFACE}.*dport 53.*redirect" | tac)
+}
+
+cleanup_doh_block_iptables() {
+    for ip in "${DOH_IPS[@]}"; do
+        while iptables -D FORWARD -i "${AP_IFACE}" -d "$ip" -p tcp --dport 443 -j DROP 2>/dev/null; do
+            :
+        done
+    done
+    log_info "Removed DoH block rules."
+}
+
+cleanup_doh_block_nft() {
+    local rules
+    rules=$(nft -a list chain ip filter forward 2>/dev/null || true)
+    if [[ -z "${rules}" ]]; then
+        return
+    fi
+    local handle
+    while IFS= read -r line; do
+        handle=$(echo "$line" | grep -oP '# handle \K\d+' || true)
+        if [[ -n "${handle}" ]]; then
+            nft delete rule ip filter forward handle "${handle}" 2>/dev/null || true
+        fi
+    done < <(echo "$rules" | grep "iifname.*${AP_IFACE}.*tcp dport 443.*drop" | tac)
+}
+
+# -------------------------------------------------------------------
+# Apply DNS redirect + DoH block (called from setup functions)
+# -------------------------------------------------------------------
+
+apply_dns_policy() {
+    if [[ "${DNS_REDIRECT}" != "true" ]]; then
+        log_info "DNS_REDIRECT is disabled, skipping DNS policy rules."
+        return
+    fi
+
+    log_step "Applying DNS traffic policy (redirect + DoH block)..."
+
+    if [[ "${FIREWALL}" == "nft" ]]; then
+        setup_dns_redirect_nft
+        block_doh_nft
+    else
+        setup_dns_redirect_iptables
+        block_doh_iptables
+    fi
+}
+
+remove_dns_policy() {
+    if [[ "${FIREWALL}" == "nft" ]]; then
+        cleanup_dns_redirect_nft
+        cleanup_doh_block_nft
+    else
+        cleanup_dns_redirect_iptables
+        cleanup_doh_block_iptables
+    fi
+}
+
 # Remove only the rules we added (leaves everything else untouched).
 cleanup_firewall() {
     require_root
@@ -123,6 +303,8 @@ cleanup_firewall() {
     else
         cleanup_firewall_iptables
     fi
+
+    remove_dns_policy
 
     log_info "Firewall cleanup complete."
 }

@@ -74,6 +74,7 @@ load_config() {
     DHCP_LEASE="${DHCP_LEASE:-12h}"
     DNS_PRIMARY="${DNS_PRIMARY:-8.8.8.8}"
     DNS_SECONDARY="${DNS_SECONDARY:-1.1.1.1}"
+    DNS_REDIRECT="${DNS_REDIRECT:-true}"
 
     if [[ -z "${WIFI_IFACE:-}" ]]; then
         WIFI_IFACE=$(detect_wifi_interface)
