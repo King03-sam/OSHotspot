@@ -25,5 +25,5 @@ wpa_passphrase=__PASSWORD__
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 
-macaddr_acl=2
+macaddr_acl=0
 deny_mac_file=/etc/oshotspot/deny_maclist.conf
