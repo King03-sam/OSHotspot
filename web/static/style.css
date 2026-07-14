@@ -2,58 +2,58 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    /* Premium Dark Theme Colors */
-    --bg-primary: #0f0f12;
-    --bg-secondary: #16161a;
-    --bg-tertiary: #1c1c21;
-    --bg-hover: #232329;
-    --bg-card: #18181c;
-    --bg-glass: rgba(22, 22, 26, 0.85);
-    
+    /* Monochrome UI Palette */
+    --bg-primary: #f5f6f8;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #eef1f4;
+    --bg-hover: #e5e9ee;
+    --bg-card: #ffffff;
+    --bg-glass: rgba(255, 255, 255, 0.94);
+
     /* Borders */
-    --border: #2a2a32;
-    --border-light: #35354a;
-    --border-glow: rgba(99, 102, 241, 0.2);
-    
+    --border: #d7dde4;
+    --border-light: #bfc7d1;
+    --border-glow: rgba(37, 99, 235, 0.12);
+
     /* Text */
-    --text-primary: #f4f4f5;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
-    
-    /* Accent Colors - Premium Gradient */
-    --accent: #6366f1;
-    --accent-hover: #818cf8;
-    --accent-light: rgba(99, 102, 241, 0.15);
-    --accent-glow: rgba(99, 102, 241, 0.4);
-    
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+
+    /* Accent Colors */
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: rgba(37, 99, 235, 0.1);
+    --accent-glow: rgba(37, 99, 235, 0.16);
+
     /* Status Colors */
-    --green: #22c55e;
-    --green-light: rgba(34, 197, 94, 0.15);
-    --green-glow: rgba(34, 197, 94, 0.4);
-    --red: #ef4444;
-    --red-light: rgba(239, 68, 68, 0.15);
-    --red-glow: rgba(239, 68, 68, 0.4);
-    --amber: #f59e0b;
-    --amber-light: rgba(245, 158, 11, 0.15);
-    --amber-glow: rgba(245, 158, 11, 0.4);
-    
+    --green: #16a34a;
+    --green-light: #ecfdf3;
+    --green-glow: rgba(22, 163, 74, 0.14);
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --red-glow: rgba(220, 38, 38, 0.14);
+    --amber: #f97316;
+    --amber-light: #fff7ed;
+    --amber-glow: rgba(249, 115, 22, 0.16);
+
     /* Fonts */
     --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
     --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    
-    /* Shadows - Premium Layered */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
-    --shadow-glow: 0 0 20px var(--accent-glow);
-    --shadow-green: 0 0 20px var(--green-glow);
-    --shadow-red: 0 0 20px var(--red-glow);
-    
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.12);
+    --shadow-glow: 0 0 18px var(--accent-glow);
+    --shadow-green: 0 0 12px var(--green-glow);
+    --shadow-red: 0 0 12px var(--red-glow);
+
     /* Transitions */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-    
+
     /* Spacing */
     --radius-sm: 6px;
     --radius-md: 10px;
@@ -66,10 +66,7 @@ html, body {
     font-size: 14px;
     line-height: 1.6;
     color: var(--text-primary);
-    background: var(--bg-primary);
-    background-image: 
-        radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 100% 100%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+    background: linear-gradient(135deg, #f7f8fa 0%, #eef2f6 100%);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -102,11 +99,10 @@ html, body {
     font-family: var(--font-mono);
     font-weight: 800;
     font-size: 15px;
-    color: var(--bg-primary);
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+    color: #ffffff;
+    background: #111827;
     padding: 4px 10px;
     border-radius: var(--radius-sm);
-    box-shadow: 0 2px 8px var(--accent-glow);
     letter-spacing: -0.5px;
 }
 
@@ -153,24 +149,21 @@ html, body {
 }
 
 .badge-on {
-    background: var(--green-light);
-    color: var(--green);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    box-shadow: 0 0 12px var(--green-glow);
-    animation: pulse-green 2s ease-in-out infinite;
+    background: var(--accent-light);
+    color: var(--accent-hover);
+    border: 1px solid rgba(37, 99, 235, 0.2);
 }
 
 .badge-off {
     background: var(--red-light);
     color: var(--red);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    box-shadow: 0 0 12px var(--red-glow);
+    border: 1px solid rgba(220, 38, 38, 0.2);
 }
 
 .badge-warn {
     background: var(--amber-light);
     color: var(--amber);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
 @keyframes pulse-green {
@@ -305,7 +298,7 @@ html, body {
     padding: 10px 20px;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--bg-tertiary);
+    background: #ffffff;
     color: var(--text-primary);
     cursor: pointer;
     transition: all var(--transition-normal);
@@ -315,21 +308,7 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-}
-
-.btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transition: left var(--transition-slow);
-}
-
-.btn:hover::before {
-    left: 100%;
+    box-shadow: var(--shadow-sm);
 }
 
 .btn:hover {
@@ -339,72 +318,80 @@ html, body {
     box-shadow: var(--shadow-md);
 }
 
-.btn:active { 
+.btn:active {
     transform: translateY(0) scale(0.98);
 }
 
 .btn:disabled {
-    opacity: 0.5;
+    opacity: 0.55;
     cursor: not-allowed;
     transform: none;
 }
 
-/* Action Buttons with Glow */
 .btn-start {
-    background: var(--green-light);
-    border-color: rgba(34, 197, 94, 0.4);
-    color: var(--green);
+    background: var(--accent-light);
+    border-color: rgba(37, 99, 235, 0.25);
+    color: var(--accent-hover);
 }
 .btn-start:hover {
-    background: rgba(34, 197, 94, 0.25);
-    border-color: var(--green);
-    box-shadow: var(--shadow-md), 0 0 20px var(--green-glow);
+    background: rgba(37, 99, 235, 0.16);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-stop {
     background: var(--red-light);
-    border-color: rgba(239, 68, 68, 0.4);
+    border-color: rgba(220, 38, 38, 0.25);
     color: var(--red);
 }
 .btn-stop:hover {
-    background: rgba(239, 68, 68, 0.25);
+    background: rgba(220, 38, 38, 0.16);
     border-color: var(--red);
-    box-shadow: var(--shadow-md), 0 0 20px var(--red-glow);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-restart {
     background: var(--amber-light);
-    border-color: rgba(245, 158, 11, 0.4);
+    border-color: rgba(249, 115, 22, 0.25);
     color: var(--amber);
 }
 .btn-restart:hover {
-    background: rgba(245, 158, 11, 0.25);
+    background: rgba(249, 115, 22, 0.16);
     border-color: var(--amber);
-    box-shadow: var(--shadow-md), 0 0 20px var(--amber-glow);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-qr, .btn-doctor {
     margin-left: auto;
     background: var(--accent-light);
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(37, 99, 235, 0.25);
     color: var(--accent-hover);
 }
+.btn-doctor {
+    background: var(--amber-light);
+    color: var(--amber);
+    border-color: rgba(249, 115, 22, 0.25);
+}
 .btn-qr:hover, .btn-doctor:hover {
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(37, 99, 235, 0.16);
     border-color: var(--accent);
-    box-shadow: var(--shadow-md), 0 0 20px var(--accent-glow);
+    box-shadow: var(--shadow-md);
+}
+.btn-doctor:hover {
+    background: rgba(249, 115, 22, 0.16);
+    border-color: var(--amber);
 }
 
 .btn-save {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+    background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: #ffffff;
     font-weight: 700;
 }
 .btn-save:hover {
-    background: linear-gradient(135deg, var(--accent-hover) 0%, #a5b4fc 100%);
+    background: var(--accent-hover);
     border-color: var(--accent-hover);
-    box-shadow: var(--shadow-md), 0 0 25px var(--accent-glow);
+    box-shadow: var(--shadow-md);
 }
 
 /* Two Column Layout */
