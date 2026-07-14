@@ -71,6 +71,10 @@ def parse_status(output):
             status["ip_forward"] = "ENABLED" in line
         elif "NAT" in line or "MASQUERADE" in line:
             status["nat"] = "ACTIVE" in line
+        elif "Connected Clients:" in line:
+            m = re.search(r'(\d+)', line)
+            if m:
+                status["clients"] = int(m.group(1))
     return status
 
 
