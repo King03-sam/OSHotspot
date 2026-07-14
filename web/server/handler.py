@@ -335,6 +335,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self._kick_client()
         elif path == "/api/unblock":
             self._unblock_client()
+        elif path == "/api/traffic-clear":
+            self._clear_traffic()
         else:
             self.send_json({"error": "Not found"}, 404)
 
@@ -509,3 +511,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             "output": stdout,
             "error": stderr if code != 0 else ""
         })
+
+    def _clear_traffic(self):
+        monitor.clear_data()
+        log_action("web:traffic-clear")
+        self.send_json({"ok": True})

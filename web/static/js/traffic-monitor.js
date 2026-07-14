@@ -20,7 +20,7 @@
         return h + ':' + m + ':' + s;
     }
 
-    functiongetClientFilter() {
+    function getClientFilter() {
         var el = OS.$('trafficClientFilter');
         return el ? el.value.trim() : '';
     }
@@ -167,5 +167,19 @@
 
     window.filterTraffic = function () {
         OS.refreshTrafficMonitor();
+    };
+
+    window.clearTrafficLogs = function () {
+        if (!confirm('Delete all DNS queries and connection records? This cannot be undone.')) return;
+        OS.api('/api/traffic-clear', 'POST').then(function (data) {
+            if (data && data.ok) {
+                OS.toast('Cleared', 'All traffic logs have been deleted', 'info');
+                OS.refreshTrafficMonitor();
+            } else {
+                OS.toast('Error', 'Failed to clear traffic logs', 'error');
+            }
+        }).catch(function () {
+            OS.toast('Error', 'Failed to clear traffic logs', 'error');
+        });
     };
 })(window.OS);

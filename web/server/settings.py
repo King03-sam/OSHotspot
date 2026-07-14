@@ -23,7 +23,7 @@ LOG_FILES = {
 }
 PROC_NET_DEV = "/proc/net/dev"
 PROC_NET_CONNTRACK = "/proc/net/nf_conntrack"
-DNS_LOG_FILE = os.path.join(LOG_DIR, "dnsmasq-dns.log")
+DNS_LOG_FILE = os.path.join(LOG_DIR, "dnsmasq.log")
 TRAFFIC_DB = os.path.join(LOG_DIR, "traffic.db")
 TRAFFIC_RETENTION_HOURS = 24
 HOSTAPD_PID = "/run/oshotspot-hostapd.pid"

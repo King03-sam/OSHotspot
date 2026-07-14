@@ -15,4 +15,3 @@ dhcp-option=6,__DNS_PRIMARY__,__DNS_SECONDARY__
 
 log-dhcp
 log-queries
-log-facility=/var/log/oshotspot/dnsmasq-dns.log

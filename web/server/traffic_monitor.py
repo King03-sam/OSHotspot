@@ -73,13 +73,17 @@ class TrafficMonitor:
         self._thread = None
         self._stop = threading.Event()
         self._db = None
-        self._dns_pos = 0  # file position for incremental tail
+        self._dns_pos = 0
+        self._seen_conns = set()
+        self._seen_conns_ts = 0
 
     def start(self):
         if self._thread and self._thread.is_alive():
             return
         self._stop.clear()
         self._dns_pos = 0
+        self._seen_conns = set()
+        self._seen_conns_ts = 0
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
@@ -136,13 +140,11 @@ class TrafficMonitor:
                     "total_queries": 0, "total_connections": 0,
                     "tracking_since": 0}
         try:
-            # Top queried domains
             top_domains = self._db.execute(
                 "SELECT domain, COUNT(*) as cnt FROM dns_queries "
                 "GROUP BY domain ORDER BY cnt DESC LIMIT ?", (limit,)
             ).fetchall()
 
-            # Most active clients
             active_clients = self._db.execute(
                 "SELECT client_ip, "
                 "  (SELECT COUNT(*) FROM dns_queries d WHERE d.client_ip = c.client_ip) as dns_cnt, "
@@ -192,6 +194,16 @@ class TrafficMonitor:
                     "total_queries": 0, "total_connections": 0,
                     "tracking_since": 0}
 
+    def clear_data(self):
+        if not self._db:
+            return
+        try:
+            self._db.execute("DELETE FROM dns_queries")
+            self._db.execute("DELETE FROM connections")
+            self._db.commit()
+        except Exception:
+            pass
+
     # ------------------------------------------------------------------
     # Background loop
     # ------------------------------------------------------------------
@@ -209,32 +221,40 @@ class TrafficMonitor:
             except Exception:
                 pass
             cycle += 1
-            if cycle % 120 == 0:  # every ~10 min at 5s intervals
+            if cycle % 120 == 0:
                 self._cleanup()
             self._stop.wait(5)
 
     def _tail_dns_log(self):
+        """Read new lines from the dnsmasq log using binary seek for
+        reliable file-position tracking across Python text-mode opens."""
         path = settings.DNS_LOG_FILE
         if not os.path.isfile(path):
             return
         try:
             size = os.path.getsize(path)
-            # If the file shrank, it was rotated — reset position
             if size < self._dns_pos:
                 self._dns_pos = 0
             if size == self._dns_pos:
                 return
-            with open(path, "r", errors="replace") as f:
+
+            with open(path, "rb") as f:
                 f.seek(self._dns_pos)
-                now = int(time.time())
-                batch = []
-                for line in f:
-                    m = _DNS_RE.search(line)
-                    if m:
-                        domain = m.group(2).rstrip(".")
-                        client_ip = m.group(3)
-                        batch.append((now, client_ip, domain))
+                raw = f.read()
                 self._dns_pos = f.tell()
+
+            if not raw:
+                return
+
+            now = int(time.time())
+            batch = []
+            for line in raw.decode("utf-8", errors="replace").splitlines():
+                m = _DNS_RE.search(line)
+                if m:
+                    domain = m.group(2).rstrip(".")
+                    client_ip = m.group(3)
+                    batch.append((now, client_ip, domain))
+
             if batch:
                 self._db.executemany(
                     "INSERT INTO dns_queries (ts, client_ip, domain) VALUES (?, ?, ?)",
@@ -245,11 +265,20 @@ class TrafficMonitor:
             pass
 
     def _poll_conntrack(self):
+        """Read /proc/net/nf_conntrack and insert only NEW connections
+        not already seen in the current dedup window (60s)."""
         path = settings.PROC_NET_CONNTRACK
         if not os.path.isfile(path):
             return
         try:
             now = int(time.time())
+
+            # Reset dedup set every 60 seconds so long-lived connections
+            # eventually re-appear (useful for session tracking).
+            if now - self._seen_conns_ts > 60:
+                self._seen_conns = set()
+                self._seen_conns_ts = now
+
             subnet = self._get_ap_subnet()
             batch = []
             with open(path, "r", errors="replace") as f:
@@ -260,14 +289,17 @@ class TrafficMonitor:
                     src_ip = m.group(1)
                     dst_ip = m.group(2)
                     dst_port = int(m.group(3))
-                    # Only track clients on the hotspot subnet
                     if subnet and not src_ip.startswith(subnet):
                         continue
-                    # Skip conntrack self-replies (local traffic)
                     if src_ip == dst_ip:
                         continue
                     proto = "tcp" if "tcp" in line[:20] else "udp"
+                    key = (src_ip, dst_ip, dst_port, proto)
+                    if key in self._seen_conns:
+                        continue
+                    self._seen_conns.add(key)
                     batch.append((now, src_ip, dst_ip, dst_port, proto))
+
             if batch:
                 self._db.executemany(
                     "INSERT INTO connections (ts, client_ip, dest_ip, dest_port, proto) "
@@ -289,7 +321,6 @@ class TrafficMonitor:
                             k, v = line.split("=", 1)
                             config[k.strip()] = v.strip()
             ap_ip = config.get("AP_IP", "192.168.50.1")
-            # /24 subnet from the AP IP
             parts = ap_ip.rsplit(".", 1)
             return parts[0] + "." if len(parts) == 2 else None
         except Exception:
@@ -301,7 +332,6 @@ class TrafficMonitor:
             self._db.execute("DELETE FROM dns_queries WHERE ts < ?", (cutoff,))
             self._db.execute("DELETE FROM connections WHERE ts < ?", (cutoff,))
             self._db.commit()
-            self._db.execute("VACUUM")
         except Exception:
             pass
 
