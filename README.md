@@ -55,7 +55,7 @@ The browser opens automatically with a secure, token-authenticated session. The 
 
 ## Creator
 
-OSHotspot was created and is maintained by **OLOJEDE Samuel**.
+OSHotspot was created by **OLOJEDE Samuel**. Contributions from the community are welcome and appreciated.
 
 I am also the creator of [**OS AI Chat**](https://osaix.vercel.app) and [**OS AI Agent**](https://osaix.vercel.app/agent) (a CLI AI agent).
 
