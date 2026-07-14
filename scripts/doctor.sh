@@ -17,9 +17,9 @@ PASS=0
 WARN=0
 FAIL=0
 
-check_ok()   { echo -e "  ${GREEN}[OK]${NC}    $*"; ((PASS++)); }
-check_warn() { echo -e "  ${YELLOW}[WARN]${NC}  $*"; ((WARN++)); }
-check_fail() { echo -e "  ${RED}[FAIL]${NC}  $*"; ((FAIL++)); }
+check_ok()   { echo -e "  ${GREEN}[OK]${NC}    $*"; PASS=$((PASS + 1)); }
+check_warn() { echo -e "  ${YELLOW}[WARN]${NC}  $*"; WARN=$((WARN + 1)); }
+check_fail() { echo -e "  ${RED}[FAIL]${NC}  $*"; FAIL=$((FAIL + 1)); }
 
 check_wifi_adapter() {
     local ifaces=()
