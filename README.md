@@ -57,6 +57,8 @@ The browser opens automatically with a secure, token-authenticated session. The 
 
 OSHotspot was created and is maintained by **OLOJEDE Samuel**.
 
+He is also the creator of [**OS AI Chat**](https://osaix.vercel.app) and [**OS AI Agent**](https://osaix.vercel.app/agent) (a CLI AI agent).
+
 The project was developed to provide an automated and reliable WiFi hotspot solution for Linux systems using native networking tools.
 
 ---
