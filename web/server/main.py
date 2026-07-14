@@ -21,6 +21,7 @@ import time
 from . import settings
 from . import auth
 from .handler import OShotspotHandler
+from .traffic_monitor import monitor
 
 
 def find_free_port(preferred):
@@ -110,6 +111,8 @@ def main():
     from http.server import ThreadingHTTPServer
     server = ThreadingHTTPServer((settings.HOST, port), OShotspotHandler)
     server.timeout = 1
+
+    monitor.start()
 
     url = f"http://{settings.HOST}:{port}/?token={auth.TOKEN}"
 

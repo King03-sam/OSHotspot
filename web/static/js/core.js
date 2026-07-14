@@ -24,7 +24,9 @@ window.OS = window.OS || {};
         trafficInterval: null,
         currentLogSource: 'hostapd',
         trafficHistory: { rx: [], tx: [], maxPoints: 40 },
-        lastTraffic: { ap_rx: 0, ap_tx: 0, ts: 0 }
+        lastTraffic: { ap_rx: 0, ap_tx: 0, ts: 0 },
+        trafficMonitorInterval: null,
+        currentTrafficTab: 'dns'
     };
 
     // Title/subtitle shown in the topbar for each section of the SPA.
@@ -36,6 +38,7 @@ window.OS = window.OS || {};
         qr:          { title: 'QR Code',       subtitle: 'Scan to connect a phone instantly' },
         diagnostics: { title: 'Diagnostics',   subtitle: 'Verify system readiness with health checks' },
         logs:        { title: 'Logs',          subtitle: 'Inspect hostapd, dnsmasq and web logs' },
+        traffic: { title: 'Traffic Monitor', subtitle: 'DNS queries and outbound connections from hotspot clients' },
         about:       { title: 'About',         subtitle: 'Project information and security details' }
     };
 

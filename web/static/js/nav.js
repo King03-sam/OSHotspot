@@ -47,6 +47,7 @@
         if (section === 'config') window.loadConfig();
         if (section === 'about') OS.loadVersionInfo();
         if (section === 'clients') OS.refreshClients();
+        if (section === 'traffic') OS.refreshTrafficMonitor();
 
         if (window.innerWidth <= 900) closeSidebar();
 

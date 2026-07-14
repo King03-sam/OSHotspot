@@ -72,6 +72,12 @@
                         </span>
                         <span class="nav-label">QR Code</span>
                     </a>
+                    <a href="#" class="nav-item" data-section="traffic" onclick="navigate('traffic'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        </span>
+                        <span class="nav-label">Traffic</span>
+                    </a>
                     <a href="#" class="nav-item" data-section="diagnostics" onclick="navigate('diagnostics'); return false;">
                         <span class="nav-icon">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
@@ -596,6 +602,129 @@
                     </div>
                 </section>
 
+                <!-- Traffic Monitor page -->
+                <section class="view" id="view-traffic">
+                    <!-- Summary stats -->
+                    <div class="traffic-stats" id="trafficStats">
+                        <div class="traffic-stat-card">
+                            <div class="traffic-stat-value" id="trafficTotalQueries">0</div>
+                            <div class="traffic-stat-label">DNS Queries</div>
+                        </div>
+                        <div class="traffic-stat-card">
+                            <div class="traffic-stat-value" id="trafficTotalConns">0</div>
+                            <div class="traffic-stat-label">Connections</div>
+                        </div>
+                        <div class="traffic-stat-card">
+                            <div class="traffic-stat-value" id="trafficActiveClients">0</div>
+                            <div class="traffic-stat-label">Active Clients</div>
+                        </div>
+                        <div class="traffic-stat-card">
+                            <div class="traffic-stat-value" id="trafficSince">—</div>
+                            <div class="traffic-stat-label">Tracking Since</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Traffic Monitor</h2>
+                            <div class="card-header-actions">
+                                <div class="segmented" id="trafficTabs">
+                                    <button class="seg active" data-tab="dns" onclick="switchTrafficTab('dns')">DNS Queries</button>
+                                    <button class="seg" data-tab="connections" onclick="switchTrafficTab('connections')">Connections</button>
+                                    <button class="seg" data-tab="summary" onclick="switchTrafficTab('summary')">Top Domains</button>
+                                </div>
+                                <div class="traffic-filter-wrap">
+                                    <input type="text" id="trafficClientFilter" class="traffic-filter" placeholder="Filter by client IP…" oninput="filterTraffic()">
+                                </div>
+                                <label class="toggle">
+                                    <input type="checkbox" id="trafficAutoRefresh" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Live</span>
+                                </label>
+                                <button class="btn btn-ghost btn-sm" onclick="refreshTrafficMonitor()">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="card-body no-pad">
+                            <!-- DNS Queries tab -->
+                            <div class="traffic-tab active" id="trafficTabDns">
+                                <div class="table-wrap">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Client IP</th>
+                                                <th>Domain</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dnsBody">
+                                            <tr><td colspan="3" class="empty-row">No DNS queries recorded yet</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Connections tab -->
+                            <div class="traffic-tab" id="trafficTabConnections">
+                                <div class="table-wrap">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Client IP</th>
+                                                <th>Destination IP</th>
+                                                <th>Port</th>
+                                                <th>Protocol</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="connBody">
+                                            <tr><td colspan="5" class="empty-row">No connections recorded yet</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Summary / Top Domains tab -->
+                            <div class="traffic-tab" id="trafficTabSummary">
+                                <div class="grid-2">
+                                    <div>
+                                        <h3 class="traffic-subtitle">Top Queried Domains</h3>
+                                        <div class="table-wrap">
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Domain</th>
+                                                        <th>Queries</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="topDomainsBody">
+                                                    <tr><td colspan="3" class="empty-row">No data yet</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="traffic-subtitle">Most Active Clients</h3>
+                                        <div class="table-wrap">
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Client IP</th>
+                                                        <th>DNS</th>
+                                                        <th>Conns</th>
+                                                        <th>Last Seen</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="activeClientsBody">
+                                                    <tr><td colspan="4" class="empty-row">No data yet</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- About page -->
                 <section class="view" id="view-about">
                     <div class="grid-2">
@@ -696,6 +825,7 @@
     <script src="/js/doctor.js"></script>
     <script src="/js/logs.js"></script>
     <script src="/js/traffic.js"></script>
+    <script src="/js/traffic-monitor.js"></script>
     <script src="/js/app.js"></script>
 </body>
 </html>
