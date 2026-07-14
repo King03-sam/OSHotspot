@@ -47,23 +47,28 @@ def find_free_port(preferred):
     sys.exit(1)
 
 
-def spawn_watchdog(started_at):
+def spawn_watchdog():
     """Launch a standalone subprocess that kills the whole process tree
     once the dashboard has been idle for INACTIVITY_TIMEOUT seconds.
 
     This runs out-of-process (rather than as a thread) so it keeps
     ticking even if the main server loop gets stuck handling a request.
+    The watchdog reads the shared activity file updated by auth.touch_activity()
+    so it always reflects real user traffic, not just server uptime.
     """
     return subprocess.Popen(
         ["python3", "-c", f"""
-import time, os
+import os, time
 timeout = {settings.INACTIVITY_TIMEOUT}
-started = {started_at}
+activity_file = {repr(auth.ACTIVITY_FILE)}
 while True:
     time.sleep(60)
-    if time.time() - started > timeout:
-        print(f'Inactivity timeout ({{timeout}}s). Shutting down.')
-        os._exit(0)
+    try:
+        if time.time() - os.path.getmtime(activity_file) > timeout:
+            print(f'Inactivity timeout ({{timeout}}s). Shutting down.')
+            os._exit(0)
+    except Exception:
+        pass
 """],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -101,8 +106,9 @@ def main():
 
     port = find_free_port(settings.PORT)
     auth.touch_activity()
+    open(auth.ACTIVITY_FILE, "a").close()
 
-    watchdog = spawn_watchdog(time.time())
+    watchdog = spawn_watchdog()
 
     # Use ThreadingHTTPServer so that long-running scripts (start.sh,
     # repair.sh, etc.) don't block every other request.  This keeps

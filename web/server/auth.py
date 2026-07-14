@@ -10,10 +10,12 @@ the request handler and the inactivity watchdog. Kept as a tiny module
 of its own instead of function-local globals so both sides can import
 it without circular references."""
 
+import os
 import time
 
 TOKEN = None
 last_activity = time.time()
+ACTIVITY_FILE = "/tmp/oshotspot_activity"
 
 
 def touch_activity():
@@ -21,6 +23,10 @@ def touch_activity():
     so the inactivity watchdog doesn't shut the server down mid-use."""
     global last_activity
     last_activity = time.time()
+    try:
+        os.utime(ACTIVITY_FILE, None)
+    except Exception:
+        pass
 
 
 def seconds_since_activity():

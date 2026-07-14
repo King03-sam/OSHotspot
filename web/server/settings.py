@@ -11,7 +11,7 @@ import os
 
 PORT = 8073
 HOST = "127.0.0.1"
-INACTIVITY_TIMEOUT = 1800  # 30 minutes, in seconds
+INACTIVITY_TIMEOUT = 7200  # 2 hours, in seconds
 
 SCRIPTS_DIR = "/usr/lib/oshotspot/scripts"
 CONFIG_FILE = "/etc/oshotspot/config.conf"

@@ -342,7 +342,7 @@ A lightweight Python server starts on `127.0.0.1` and your browser opens automat
 - Binds to `127.0.0.1` only (no external network exposure)
 - Random session token generated per launch (never persisted)
 - Token required on every API request
-- Auto-shutdown after 30 minutes of inactivity
+- Auto-shutdown after 2 hours of inactivity
 - All config changes validated server-side before writing
 
 # Diagnostic
