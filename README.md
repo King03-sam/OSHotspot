@@ -615,11 +615,35 @@ OSHotspot/
 │   ├── web.sh                   # Web dashboard launcher
 │   └── doctor.sh                # Diagnostic tool
 ├── web/
-│   ├── server.py                # Python HTTP server
+│   ├── serve.py                 # Python entry point
+│   ├── server/                  # Server package
+│   │   ├── __init__.py
+│   │   ├── auth.py              # Session token auth
+│   │   ├── config_store.py      # Config file management
+│   │   ├── handler.py           # HTTP request handler
+│   │   ├── main.py              # Server startup
+│   │   ├── network_info.py      # Network status helpers
+│   │   ├── parsers.py           # hostapd/dnsmasq log parsers
+│   │   ├── scripts.py           # CLI script wrappers
+│   │   └── settings.py          # Server settings
 │   └── static/
 │       ├── index.html           # Dashboard page
 │       ├── style.css            # Dashboard styles
-│       └── app.js               # Dashboard JavaScript
+│       └── js/                  # Dashboard JavaScript modules
+│           ├── app.js           # Main entry point
+│           ├── api.js           # API client
+│           ├── core.js          # Core utilities
+│           ├── status.js        # Status panel
+│           ├── actions.js       # Start/stop/restart controls
+│           ├── clients.js       # Connected clients table
+│           ├── config.js        # Configuration editor
+│           ├── doctor.js        # Diagnostics panel
+│           ├── logs.js          # Log viewer
+│           ├── nav.js           # Navigation
+│           ├── qr.js            # QR code display
+│           ├── theme.js         # Dark/light theme toggle
+│           ├── toast.js         # Toast notifications
+│           └── traffic.js       # Traffic stats
 ├── configs/
 │   ├── hostapd.conf.template    # hostapd config template
 │   ├── dnsmasq.conf.template    # dnsmasq config template
