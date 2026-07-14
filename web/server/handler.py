@@ -11,6 +11,7 @@ token-based auth check, and every /api/* route."""
 import http.server
 import json
 import os
+import re
 import secrets
 import subprocess
 import time
@@ -34,6 +35,8 @@ CONTENT_TYPES = {
     ".css": "text/css",
     ".js": "application/javascript",
 }
+
+MAC_RE = re.compile(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$')
 
 
 class OShotspotHandler(http.server.BaseHTTPRequestHandler):
@@ -413,14 +416,14 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             if result.returncode == 0:
                 for line in result.stdout.splitlines():
                     line = line.strip()
-                    if line and line.lower() != "mac address" and line.lower() != "num":
-                        macs.append(line)
+                    if MAC_RE.match(line):
+                        macs.append(line.upper())
             if not macs and os.path.isfile(self.DENY_LIST_FILE):
                 with open(self.DENY_LIST_FILE, "r") as f:
                     for line in f:
                         line = line.strip()
-                        if line:
-                            macs.append(line)
+                        if MAC_RE.match(line):
+                            macs.append(line.upper())
             self.send_json(macs)
         except FileNotFoundError:
             macs = []
@@ -428,8 +431,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 with open(self.DENY_LIST_FILE, "r") as f:
                     for line in f:
                         line = line.strip()
-                        if line:
-                            macs.append(line)
+                        if MAC_RE.match(line):
+                            macs.append(line.upper())
             self.send_json(macs)
         except subprocess.TimeoutExpired:
             self.send_json([])
