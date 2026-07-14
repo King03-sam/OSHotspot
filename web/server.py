@@ -12,9 +12,9 @@ implementation lives in the server/ package next to this file."""
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-from server.main import main
+from web.server.main import main
 
 if __name__ == "__main__":
     main()
