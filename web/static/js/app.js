@@ -31,7 +31,7 @@
         if (OS.$('view-logs').classList.contains('active')) window.loadLogs();
         if (OS.$('view-qr').classList.contains('active')) window.refreshQR();
         if (OS.$('view-diagnostics').classList.contains('active')) window.runDoctor();
-        if (OS.$('view-traffic').classList.contains('active')) OS.refreshTrafficMonitor();
+
         OS.toast('Refreshed', 'Dashboard data updated', 'info');
     };
 
@@ -64,12 +64,7 @@
             }
         }, 5000);
 
-        s.trafficMonitorInterval = setInterval(function () {
-            if (!document.hidden && OS.$('view-traffic').classList.contains('active')) {
-                var tb = OS.$('trafficAutoRefresh');
-                if (!tb || tb.checked) OS.refreshTrafficMonitor();
-            }
-        }, 5000);
+
     }
 
     function stopPolling() {
@@ -78,7 +73,7 @@
         if (s.clientsInterval) clearInterval(s.clientsInterval);
         if (s.trafficInterval) clearInterval(s.trafficInterval);
         if (s.logsInterval) clearInterval(s.logsInterval);
-        if (s.trafficMonitorInterval) clearInterval(s.trafficMonitorInterval);
+
     }
 
     function init() {
@@ -121,7 +116,9 @@
            doesn't trigger dozens of canvas repaints. */
         window.addEventListener('resize', function () {
             clearTimeout(window._oshotspotResize);
-            window._oshotspotResize = setTimeout(OS.drawTrafficSpark, 200);
+            window._oshotspotResize = setTimeout(function () {
+                if (OS.drawTrafficChart) OS.drawTrafficChart();
+            }, 200);
         });
     }
 

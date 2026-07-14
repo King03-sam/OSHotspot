@@ -75,3 +75,6 @@ temp/
 # Python
 __pycache__/
 *.pyc
+
+# Kilo internal state
+.kilo/

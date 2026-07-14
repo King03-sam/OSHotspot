@@ -43,6 +43,7 @@ The browser opens automatically with a secure, token-authenticated session. The 
 | Page | What it does |
 |------|-------------|
 | **Overview** | Live status, service health, network info, traffic sparkline |
+| **Traffic** | Real-time bandwidth chart with download/upload speeds and totals |
 | **Controls** | Start / stop / restart / repair with real-time output |
 | **Clients** | Connected devices table with kick/block and unblock actions |
 | **Configuration** | SSID, password, channel, hardware mode, country code with 5GHz compatibility warning |
@@ -78,7 +79,7 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - Responsive dashboard design — works on mobile and desktop
 - Diagnostic tool to verify system readiness (`oshotspot doctor`)
 - Auto-detection of WiFi interfaces (supports wlan0, wlp2s0, wlx...)
-- Real-time monitoring of connected clients and traffic
+- Real-time bandwidth chart with download/upload speed, total transferred, and live canvas chart
 - QR code display to share hotspot with phones instantly
 - Bash tab completion for the CLI
 - Supports Ubuntu, Debian, Mint, Fedora, Arch, and more
@@ -314,6 +315,7 @@ A lightweight Python server starts on `127.0.0.1` and your browser opens automat
 ### Pages
 
 - **Overview** — Live status of hostapd, dnsmasq, IP forwarding, NAT. Connected client count (active only). Network info and traffic sparkline.
+- **Traffic** — Real-time bandwidth chart showing download/upload speed, total data transferred, and a live canvas chart with auto-scaling axes and filled area under the curve. 5 stat cards: Download Speed, Upload Speed, Total Down, Total Up, Active Clients.
 - **Controls** — One-click start / stop / restart / repair with real-time console output streamed to the browser.
 - **Clients** — Auto-refreshing table (MAC, IP, hostname, status). **Kick** a client to disconnect them and add their MAC to the deny list. **Unblock** to restore access.
 - **Configuration** — Edit SSID, password, channel, hardware mode (2.4/5 GHz), country code. Server-side validation with live feedback. 5GHz warning if your adapter doesn't support it.
@@ -672,7 +674,7 @@ OSHotspot/
 │           ├── qr.js            # QR code display
 │           ├── theme.js         # Dark/light theme toggle
 │           ├── toast.js         # Toast notifications
-│           └── traffic.js       # Traffic stats
+│           └── traffic.js       # Bandwidth chart (download/upload speeds + totals)
 ├── configs/
 │   ├── hostapd.conf.template    # hostapd config template
 │   ├── dnsmasq.conf.template    # dnsmasq config template
@@ -695,7 +697,6 @@ Future improvements:
 - Automatic driver compatibility check
 - Multi-language support
 - Bandwidth limiting per client
-- Client connection history / analytics
 
 ---
 

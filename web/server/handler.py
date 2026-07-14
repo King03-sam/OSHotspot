@@ -29,7 +29,6 @@ from .network_info import (
     generate_qr_png,
     check_5ghz_support,
 )
-from .traffic_monitor import monitor
 
 CONTENT_TYPES = {
     ".html": "text/html",
@@ -136,12 +135,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self._get_version()
         elif path == "/api/blocked":
             self._get_blocked()
-        elif path == "/api/dns-queries":
-            self._get_dns_queries(parsed)
-        elif path == "/api/connections":
-            self._get_connections(parsed)
-        elif path == "/api/traffic-summary":
-            self._get_traffic_summary()
+
         else:
             self.send_response(404)
             self.end_headers()
@@ -271,43 +265,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             "homepage": "https://github.com/King03-sam/OSHotspot",
         })
 
-    def _get_dns_queries(self, parsed):
-        if not self.check_token():
-            return
-        params = urllib.parse.parse_qs(parsed.query)
-        client_ip = params.get("client_ip", [None])[0]
-        domain = params.get("domain", [None])[0]
-        limit_q = params.get("limit", ["200"])[0]
-        try:
-            limit = max(10, min(int(limit_q), 1000))
-        except ValueError:
-            limit = 200
-        self.send_json({
-            "queries": monitor.get_dns_queries(
-                client_ip=client_ip, domain=domain, limit=limit
-            )
-        })
 
-    def _get_connections(self, parsed):
-        if not self.check_token():
-            return
-        params = urllib.parse.parse_qs(parsed.query)
-        client_ip = params.get("client_ip", [None])[0]
-        limit_q = params.get("limit", ["200"])[0]
-        try:
-            limit = max(10, min(int(limit_q), 1000))
-        except ValueError:
-            limit = 200
-        self.send_json({
-            "connections": monitor.get_connections(
-                client_ip=client_ip, limit=limit
-            )
-        })
-
-    def _get_traffic_summary(self):
-        if not self.check_token():
-            return
-        self.send_json(monitor.get_summary())
 
     # ------------------------------------------------------------------
     # POST routes
@@ -335,8 +293,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self._kick_client()
         elif path == "/api/unblock":
             self._unblock_client()
-        elif path == "/api/traffic-clear":
-            self._clear_traffic()
+
         else:
             self.send_json({"error": "Not found"}, 404)
 
@@ -512,7 +469,4 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             "error": stderr if code != 0 else ""
         })
 
-    def _clear_traffic(self):
-        monitor.clear_data()
-        log_action("web:traffic-clear")
-        self.send_json({"ok": True})
+

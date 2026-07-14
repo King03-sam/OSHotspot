@@ -1410,26 +1410,9 @@ a:hover { opacity: 0.7; }
 /* Traffic Monitor page                                               */
 /* ------------------------------------------------------------------ */
 
-.traffic-info-banner {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border-radius: 8px;
-    background: var(--accent-bg, rgba(96, 165, 250, 0.08));
-    border: 1px solid var(--accent-border, rgba(96, 165, 250, 0.2));
-    color: var(--accent-text, #60a5fa);
-    font-size: 13px;
-    margin-bottom: 16px;
-}
-
-.traffic-info-banner svg {
-    flex-shrink: 0;
-}
-
 .traffic-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -1443,65 +1426,38 @@ a:hover { opacity: 0.7; }
 }
 
 .traffic-stat-value {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--text-primary);
     font-family: var(--font-mono);
 }
 
 .traffic-stat-label {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
     margin-top: 4px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-.traffic-tab {
-    display: none;
+.traffic-chart-wrap {
+    width: 100%;
+    height: 320px;
 }
 
-.traffic-tab.active {
+.traffic-chart-wrap canvas {
+    width: 100%;
+    height: 100%;
     display: block;
 }
 
-.traffic-subtitle {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 16px 0 8px;
-}
-
-.traffic-filter-wrap {
-    display: flex;
-    align-items: center;
-}
-
-.traffic-filter {
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 13px;
-    color: var(--text-primary);
-    width: 180px;
-    font-family: var(--font-mono);
-}
-
-.traffic-filter:focus {
-    outline: none;
-    border-color: var(--accent, #3b82f6);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
-}
-
 @media (max-width: 900px) {
-    .traffic-stats { grid-template-columns: repeat(2, 1fr); }
-    .traffic-filter { width: 140px; }
+    .traffic-stats { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 600px) {
     .traffic-stats { grid-template-columns: 1fr 1fr; }
-    .traffic-filter { width: 100%; }
+    .traffic-stat-card:last-child { grid-column: 1 / -1; }
 }
 
 /* ------------------------------------------------------------------ */
