@@ -1,166 +1,678 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSHotspot Dashboard</title>
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="OSHotspot — Premium WiFi Hotspot Manager Dashboard for Linux">
+    <title>OSHotspot · Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <header class="topbar">
-        <div class="topbar-left">
-            <span class="topbar-logo">OS</span>
-            <span class="topbar-title">Hotspot</span>
-            <span class="topbar-subtitle">Dashboard</span>
-        </div>
-        <div class="topbar-right">
-            <span id="statusBadge" class="badge badge-off">OFFLINE</span>
-            <span class="topbar-uptime" id="uptime"></span>
-        </div>
-    </header>
 
-    <main class="layout">
-        <!-- Status Row -->
-        <section class="status-row">
-            <div class="stat-card" id="statHostapd">
-                <div class="stat-label">hostapd</div>
-                <div class="stat-value" id="valHostapd">--</div>
-            </div>
-            <div class="stat-card" id="statDnsmasq">
-                <div class="stat-label">dnsmasq</div>
-                <div class="stat-value" id="valDnsmasq">--</div>
-            </div>
-            <div class="stat-card" id="statClients">
-                <div class="stat-label">Clients</div>
-                <div class="stat-value" id="valClients">0</div>
-            </div>
-            <div class="stat-card" id="statForwarding">
-                <div class="stat-label">IP Fwd</div>
-                <div class="stat-value" id="valForwarding">--</div>
-            </div>
-            <div class="stat-card" id="statNat">
-                <div class="stat-label">NAT</div>
-                <div class="stat-value" id="valNat">--</div>
-            </div>
-        </section>
+    <!-- Top-level layout: sidebar nav + main content area -->
+    <div class="app">
 
-        <!-- Controls Row -->
-        <section class="controls-row">
-            <button class="btn btn-start" id="btnStart" onclick="doAction('start')">Start</button>
-            <button class="btn btn-stop" id="btnStop" onclick="doAction('stop')">Stop</button>
-            <button class="btn btn-restart" id="btnRestart" onclick="doAction('restart')">Restart</button>
-            <button class="btn btn-qr" onclick="showQR()">QR Code</button>
-            <button class="btn btn-doctor" onclick="runDoctor()">Diagnostics</button>
-        </section>
-
-        <!-- Info + Config Row -->
-        <div class="two-col">
-            <!-- Config Panel -->
-            <section class="panel">
-                <div class="panel-header" onclick="togglePanel('configBody')">
-                    <span class="panel-title">Configuration</span>
-                    <span class="panel-toggle" id="configToggle">&#9660;</span>
+        <!-- Sidebar navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                        <line x1="12" y1="20" x2="12.01" y2="20"/>
+                    </svg>
                 </div>
-                <div class="panel-body collapsed" id="configBody">
-                    <form id="configForm" onsubmit="return submitConfig(event)">
-                        <div class="form-row">
-                            <label for="cfgSsid">SSID</label>
-                            <input type="text" id="cfgSsid" maxlength="32" placeholder="Network name">
-                        </div>
-                        <div class="form-row">
-                            <label for="cfgPassword">Password</label>
-                            <input type="password" id="cfgPassword" minlength="8" placeholder="Min 8 chars">
-                        </div>
-                        <div class="form-row form-half">
-                            <div>
-                                <label for="cfgChannel">Channel</label>
-                                <select id="cfgChannel">
-                                    <script>for(var i=1;i<=13;i++)document.write('<option value="'+i+'">'+i+'</option>')</script>
-                                </select>
+                <div class="brand-text">
+                    <span class="brand-name">OSHotspot</span>
+                    <span class="brand-tag">Control Center</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Main navigation">
+                <div class="nav-section">
+                    <span class="nav-section-title">Hotspot</span>
+                    <a href="#" class="nav-item active" data-section="overview" onclick="navigate('overview'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                        </span>
+                        <span class="nav-label">Overview</span>
+                        <span class="nav-pill" id="navPillStatus">offline</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="controls" onclick="navigate('controls'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </span>
+                        <span class="nav-label">Controls</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="clients" onclick="navigate('clients'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </span>
+                        <span class="nav-label">Clients</span>
+                        <span class="nav-pill" id="navPillClients">0</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="config" onclick="navigate('config'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        </span>
+                        <span class="nav-label">Configuration</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-section-title">Tools</span>
+                    <a href="#" class="nav-item" data-section="qr" onclick="navigate('qr'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M14 14h7v7h-7z"/><line x1="14" y1="10" x2="14" y2="14"/></svg>
+                        </span>
+                        <span class="nav-label">QR Code</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="diagnostics" onclick="navigate('diagnostics'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        </span>
+                        <span class="nav-label">Diagnostics</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="logs" onclick="navigate('logs'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        </span>
+                        <span class="nav-label">Logs</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-section-title">System</span>
+                    <a href="#" class="nav-item" data-section="about" onclick="navigate('about'); return false;">
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </span>
+                        <span class="nav-label">About</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="health-mini">
+                    <div class="health-mini-row">
+                        <span class="health-mini-label">Hotspot</span>
+                        <span class="health-mini-value" id="sidebarHotspotState">—</span>
+                    </div>
+                    <div class="health-mini-row">
+                        <span class="health-mini-label">Uptime</span>
+                        <span class="health-mini-value mono" id="sidebarUptime">—</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main content area -->
+        <div class="main">
+
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="icon-btn only-mobile" id="menuToggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div class="page-title">
+                        <h1 id="pageTitle">Overview</h1>
+                        <span id="pageSubtitle" class="page-subtitle">Real-time hotspot status at a glance</span>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-status" id="topbarStatus">
+                        <span class="status-dot" id="topbarStatusDot"></span>
+                        <span id="topbarStatusText">Checking…</span>
+                    </div>
+                    <button class="icon-btn" onclick="refreshAll()" aria-label="Refresh" title="Refresh now">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                    <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Switch theme" title="Switch theme">
+                        <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content scroll area -->
+            <main class="content" id="content">
+
+                <!-- Overview page -->
+                <section class="view active" id="view-overview">
+                    <!-- Hero card with primary status -->
+                    <div class="hero-card" id="heroCard">
+                        <div class="hero-left">
+                            <div class="hero-eyebrow">
+                                <span class="hero-pulse" id="heroPulse"></span>
+                                <span id="heroEyebrow">Hotspot Status</span>
                             </div>
-                            <div>
-                                <label for="cfgHwMode">Mode</label>
-                                <select id="cfgHwMode">
-                                    <option value="g">g (2.4 GHz)</option>
-                                    <option value="a">a (5 GHz)</option>
-                                </select>
+                            <div class="hero-title" id="heroTitle">Initializing…</div>
+                            <div class="hero-sub" id="heroSub">Reading system state</div>
+                            <div class="hero-meta">
+                                <div class="hero-meta-item">
+                                    <span class="hero-meta-label">SSID</span>
+                                    <span class="hero-meta-value mono" id="heroSsid">—</span>
+                                </div>
+                                <div class="hero-meta-item">
+                                    <span class="hero-meta-label">AP Interface</span>
+                                    <span class="hero-meta-value mono" id="heroAp">—</span>
+                                </div>
+                                <div class="hero-meta-item">
+                                    <span class="hero-meta-label">Gateway IP</span>
+                                    <span class="hero-meta-value mono" id="heroIp">—</span>
+                                </div>
+                                <div class="hero-meta-item">
+                                    <span class="hero-meta-label">PID</span>
+                                    <span class="hero-meta-value mono" id="heroPid">—</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <label for="cfgCountry">Country Code</label>
-                            <input type="text" id="cfgCountry" maxlength="2" placeholder="US" style="width:80px;text-transform:uppercase">
+                        <div class="hero-right">
+                            <div class="hero-actions">
+                                <button class="btn btn-primary" id="btnStart" onclick="doAction('start')">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    Start
+                                </button>
+                                <button class="btn btn-danger" id="btnStop" onclick="doAction('stop')">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                                    Stop
+                                </button>
+                                <button class="btn btn-ghost" id="btnRestart" onclick="doAction('restart')">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                    Restart
+                                </button>
+                            </div>
                         </div>
-                        <div class="form-row">
-                            <button type="submit" class="btn btn-save">Save Configuration</button>
-                            <span id="configStatus" class="form-status"></span>
+                    </div>
+
+                    <!-- Service stat grid -->
+                    <div class="stat-grid" id="statGrid">
+                        <article class="stat-card" data-stat="hostapd">
+                            <div class="stat-card-head">
+                                <div class="stat-icon hostapd">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                                </div>
+                                <span class="stat-name">hostapd</span>
+                                <span class="stat-pill" id="pillHostapd">—</span>
+                            </div>
+                            <div class="stat-value" id="valHostapd">—</div>
+                            <div class="stat-meta" id="metaHostapd">Access Point daemon</div>
+                        </article>
+
+                        <article class="stat-card" data-stat="dnsmasq">
+                            <div class="stat-card-head">
+                                <div class="stat-icon dnsmasq">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                </div>
+                                <span class="stat-name">dnsmasq</span>
+                                <span class="stat-pill" id="pillDnsmasq">—</span>
+                            </div>
+                            <div class="stat-value" id="valDnsmasq">—</div>
+                            <div class="stat-meta" id="metaDnsmasq">DHCP &amp; DNS server</div>
+                        </article>
+
+                        <article class="stat-card" data-stat="clients">
+                            <div class="stat-card-head">
+                                <div class="stat-icon clients">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                </div>
+                                <span class="stat-name">Clients</span>
+                                <span class="stat-pill" id="pillClients">0</span>
+                            </div>
+                            <div class="stat-value" id="valClients">0</div>
+                            <div class="stat-meta">Devices connected</div>
+                        </article>
+
+                        <article class="stat-card" data-stat="forwarding">
+                            <div class="stat-card-head">
+                                <div class="stat-icon forwarding">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                                </div>
+                                <span class="stat-name">IP Forwarding</span>
+                                <span class="stat-pill" id="pillForwarding">—</span>
+                            </div>
+                            <div class="stat-value" id="valForwarding">—</div>
+                            <div class="stat-meta">IPv4 packet routing</div>
+                        </article>
+
+                        <article class="stat-card" data-stat="nat">
+                            <div class="stat-card-head">
+                                <div class="stat-icon nat">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                                </div>
+                                <span class="stat-name">NAT / Masquerade</span>
+                                <span class="stat-pill" id="pillNat">—</span>
+                            </div>
+                            <div class="stat-value" id="valNat">—</div>
+                            <div class="stat-meta">iptables MASQUERADE rules</div>
+                        </article>
+
+                        <article class="stat-card" data-stat="traffic">
+                            <div class="stat-card-head">
+                                <div class="stat-icon traffic">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                </div>
+                                <span class="stat-name">AP Traffic</span>
+                                <span class="stat-pill" id="pillTraffic">live</span>
+                            </div>
+                            <div class="stat-value mono" id="valTraffic">↓0 B ↑0 B</div>
+                            <div class="stat-meta" id="metaTraffic">Cumulative RX/TX on ap0</div>
+                            <div class="sparkline-wrap">
+                                <canvas id="trafficSpark" width="220" height="36"></canvas>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Two column: Network info + Quick actions -->
+                    <div class="grid-2">
+                        <section class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Network Information</h2>
+                                <span class="card-badge" id="netInfoBadge">—</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="kv-list">
+                                    <div class="kv-row"><span class="kv-key">WiFi Interface</span><span class="kv-val mono" id="infoWifiIface">—</span></div>
+                                    <div class="kv-row"><span class="kv-key">AP Interface</span><span class="kv-val mono" id="infoApIface">—</span></div>
+                                    <div class="kv-row"><span class="kv-key">AP IP</span><span class="kv-val mono" id="infoApIp">—</span></div>
+                                    <div class="kv-row"><span class="kv-key">SSID</span><span class="kv-val mono" id="infoSsid">—</span></div>
+                                    <div class="kv-row"><span class="kv-key">Channel</span><span class="kv-val mono" id="infoChannel">—</span></div>
+                                    <div class="kv-row"><span class="kv-key">Hardware Mode</span><span class="kv-val mono" id="infoHwMode">—</span></div>
+                                    <div class="kv-row"><span class="kv-key">Country Code</span><span class="kv-val mono" id="infoCountry">—</span></div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Quick Actions</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="quick-actions">
+                                    <button class="quick-action" onclick="navigate('qr')">
+                                        <span class="qa-icon">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M14 14h7v7h-7z"/></svg>
+                                        </span>
+                                        <span class="qa-text">
+                                            <span class="qa-title">Show QR Code</span>
+                                            <span class="qa-sub">Scan to connect instantly</span>
+                                        </span>
+                                    </button>
+                                    <button class="quick-action" onclick="navigate('diagnostics'); runDoctor()">
+                                        <span class="qa-icon">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                        </span>
+                                        <span class="qa-text">
+                                            <span class="qa-title">Run Diagnostics</span>
+                                            <span class="qa-sub">Verify system readiness</span>
+                                        </span>
+                                    </button>
+                                    <button class="quick-action" onclick="doAction('repair')">
+                                        <span class="qa-icon">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                        </span>
+                                        <span class="qa-text">
+                                            <span class="qa-title">Repair Hotspot</span>
+                                            <span class="qa-sub">Recover after suspend/driver issue</span>
+                                        </span>
+                                    </button>
+                                    <button class="quick-action" onclick="navigate('logs')">
+                                        <span class="qa-icon">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        </span>
+                                        <span class="qa-text">
+                                            <span class="qa-title">View Logs</span>
+                                            <span class="qa-sub">Inspect hostapd &amp; dnsmasq</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Controls page -->
+                <section class="view" id="view-controls">
+                    <div class="card">
+                        <div class="card-header"><h2 class="card-title">Hotspot Lifecycle</h2></div>
+                        <div class="card-body">
+                            <p class="text-muted">Control the hotspot daemon lifecycle. Each action runs the corresponding system script with root privileges through the local OSHotspot web server.</p>
+                            <div class="action-grid">
+                                <button class="action-tile action-start" onclick="doAction('start')">
+                                    <div class="action-tile-icon">
+                                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    </div>
+                                    <div class="action-tile-text">
+                                        <div class="action-tile-title">Start Hotspot</div>
+                                        <div class="action-tile-sub">Bring up ap0, hostapd, dnsmasq and NAT</div>
+                                    </div>
+                                </button>
+                                <button class="action-tile action-stop" onclick="doAction('stop')">
+                                    <div class="action-tile-icon">
+                                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                                    </div>
+                                    <div class="action-tile-text">
+                                        <div class="action-tile-title">Stop Hotspot</div>
+                                        <div class="action-tile-sub">Tear down all hotspot services cleanly</div>
+                                    </div>
+                                </button>
+                                <button class="action-tile action-restart" onclick="doAction('restart')">
+                                    <div class="action-tile-icon">
+                                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                    </div>
+                                    <div class="action-tile-text">
+                                        <div class="action-tile-title">Restart Hotspot</div>
+                                        <div class="action-tile-sub">Stop then start, applying new config</div>
+                                    </div>
+                                </button>
+                                <button class="action-tile action-repair" onclick="doAction('repair')">
+                                    <div class="action-tile-icon">
+                                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                    </div>
+                                    <div class="action-tile-text">
+                                        <div class="action-tile-title">Repair Hotspot</div>
+                                        <div class="action-tile-sub">Recover after suspend or driver failure</div>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
-                    </form>
-                </div>
-            </section>
+                    </div>
 
-            <!-- Network Info Panel -->
-            <section class="panel">
-                <div class="panel-header">
-                    <span class="panel-title">Network Info</span>
-                </div>
-                <div class="panel-body">
-                    <table class="info-table">
-                        <tr><td class="info-key">WiFi Interface</td><td id="infoWifiIface">--</td></tr>
-                        <tr><td class="info-key">AP Interface</td><td id="infoApIface">--</td></tr>
-                        <tr><td class="info-key">AP IP</td><td id="infoApIp">--</td></tr>
-                        <tr><td class="info-key">SSID</td><td id="infoSsid">--</td></tr>
-                    </table>
-                </div>
-            </section>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Last Action Output</h2>
+                            <button class="btn btn-ghost btn-sm" onclick="clearActionOutput()">Clear</button>
+                        </div>
+                        <div class="card-body">
+                            <pre class="console" id="actionOutput"><span class="console-empty">No action executed yet. Pick an operation above to see its output here.</span></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Clients page -->
+                <section class="view" id="view-clients">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Connected Clients</h2>
+                            <div class="card-header-actions">
+                                <span class="card-badge" id="clientsCountBadge">0</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="clientsAutoRefresh" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Auto-refresh</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body no-pad">
+                            <div class="table-wrap">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>MAC Address</th>
+                                            <th>IP Address</th>
+                                            <th>Hostname</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clientsBody">
+                                        <tr><td colspan="5" class="empty-row">No clients connected</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Configuration page -->
+                <section class="view" id="view-config">
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header"><h2 class="card-title">Hotspot Configuration</h2></div>
+                            <div class="card-body">
+                                <form id="configForm" onsubmit="return submitConfig(event)">
+                                    <div class="form-row">
+                                        <label for="cfgSsid">Network Name (SSID)</label>
+                                        <input type="text" id="cfgSsid" maxlength="32" placeholder="e.g. OSHotspot" autocomplete="off">
+                                        <span class="form-hint">1–32 characters</span>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="cfgPassword">Password</label>
+                                        <div class="input-with-action">
+                                            <input type="password" id="cfgPassword" minlength="8" placeholder="Min 8 characters">
+                                            <button type="button" class="input-btn" onclick="togglePasswordVisibility('cfgPassword', this)" aria-label="Show password">
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            </button>
+                                        </div>
+                                        <span class="form-hint">Leave empty to keep current password</span>
+                                    </div>
+                                    <div class="form-row form-half">
+                                        <div>
+                                            <label for="cfgChannel">Channel</label>
+                                            <select id="cfgChannel">
+                                                <script>for(var i=1;i<=13;i++)document.write('<option value="'+i+'">'+i+'</option>');</script>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="cfgHwMode">Hardware Mode</label>
+                                            <select id="cfgHwMode">
+                                                <option value="g">g (2.4 GHz)</option>
+                                                <option value="a">a (5 GHz)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="cfgCountry">Country Code</label>
+                                        <input type="text" id="cfgCountry" maxlength="2" placeholder="US" style="text-transform:uppercase">
+                                        <span class="form-hint">ISO 3166-1 alpha-2 (e.g. US, FR, GB)</span>
+                                    </div>
+                                    <div class="form-row form-actions">
+                                        <button type="submit" class="btn btn-primary">
+                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                            Save Configuration
+                                        </button>
+                                        <button type="button" class="btn btn-ghost" onclick="loadConfig()">Reset</button>
+                                        <span id="configStatus" class="form-status"></span>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header"><h2 class="card-title">WiFi Interfaces</h2></div>
+                            <div class="card-body no-pad">
+                                <div class="table-wrap">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr><th>Interface</th><th>State</th><th>Action</th></tr>
+                                        </thead>
+                                        <tbody id="interfacesBody">
+                                            <tr><td colspan="3" class="empty-row">Loading interfaces…</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- QR code page -->
+                <section class="view" id="view-qr">
+                    <div class="card qr-card">
+                        <div class="card-header">
+                            <h2 class="card-title">WiFi QR Code</h2>
+                            <button class="btn btn-ghost btn-sm" onclick="refreshQR()">Refresh</button>
+                        </div>
+                        <div class="card-body qr-body">
+                            <div class="qr-frame">
+                                <img id="qrImage" src="" alt="WiFi QR Code">
+                                <div class="qr-placeholder" id="qrPlaceholder">
+                                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M14 14h7v7h-7z"/></svg>
+                                    <span>Click "Refresh" to generate</span>
+                                </div>
+                            </div>
+                            <div class="qr-info">
+                                <p>Scan this QR code with your phone's camera to instantly connect to the hotspot. The WiFi credentials are embedded directly in the code, so no manual password entry is needed.</p>
+                                <div class="kv-list">
+                                    <div class="kv-row"><span class="kv-key">Encryption</span><span class="kv-val mono">WPA2-PSK</span></div>
+                                    <div class="kv-row"><span class="kv-key">Network</span><span class="kv-val mono" id="qrSsid">—</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Diagnostics page -->
+                <section class="view" id="view-diagnostics">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">System Diagnostics</h2>
+                            <div class="card-header-actions">
+                                <span class="summary-pill" id="doctorSummary"></span>
+                                <button class="btn btn-primary btn-sm" onclick="runDoctor()">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                    Run Again
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body no-pad">
+                            <div id="doctorResults" class="doctor-list">
+                                <div class="doctor-empty">Click "Run Again" to execute a fresh diagnostic check.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Logs page -->
+                <section class="view" id="view-logs">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">System Logs</h2>
+                            <div class="card-header-actions">
+                                <div class="segmented" id="logTabs">
+                                    <button class="seg active" data-log="hostapd" onclick="switchLog('hostapd')">hostapd</button>
+                                    <button class="seg" data-log="dnsmasq" onclick="switchLog('dnsmasq')">dnsmasq</button>
+                                    <button class="seg" data-log="web" onclick="switchLog('web')">web</button>
+                                </div>
+                                <label class="toggle">
+                                    <input type="checkbox" id="logsAutoRefresh" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Live</span>
+                                </label>
+                                <button class="btn btn-ghost btn-sm" onclick="loadLogs()">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="card-body no-pad">
+                            <pre class="log-view" id="logView"><span class="console-empty">Select a log source to view its content.</span></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- About page -->
+                <section class="view" id="view-about">
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header"><h2 class="card-title">About OSHotspot</h2></div>
+                            <div class="card-body">
+                                <div class="about-block">
+                                    <div class="about-logo">
+                                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="about-title">OSHotspot</h3>
+                                        <p class="about-tagline">Automatic WiFi Hotspot Manager for Linux</p>
+                                        <p class="text-muted">Share your computer's WiFi Internet connection with any device, even when NetworkManager hotspot fails.</p>
+                                    </div>
+                                </div>
+                                <div class="kv-list">
+                                    <div class="kv-row"><span class="kv-key">Author</span><span class="kv-val" id="aboutAuthor">OLOJEDE Samuel</span></div>
+                                    <div class="kv-row"><span class="kv-key">License</span><span class="kv-val">Apache License 2.0</span></div>
+                                    <div class="kv-row"><span class="kv-key">Version</span><span class="kv-val mono" id="aboutVersion">1.0</span></div>
+                                    <div class="kv-row"><span class="kv-key">Homepage</span><span class="kv-val"><a href="https://github.com/King03-sam/OSHotspot" target="_blank" rel="noopener">GitHub Repository</a></span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header"><h2 class="card-title">Technology Stack</h2></div>
+                            <div class="card-body">
+                                <div class="tech-list">
+                                    <div class="tech-item"><span class="tech-name">hostapd</span><span class="tech-desc">WiFi Access Point management</span></div>
+                                    <div class="tech-item"><span class="tech-name">dnsmasq</span><span class="tech-desc">DHCP and DNS service</span></div>
+                                    <div class="tech-item"><span class="tech-name">iptables</span><span class="tech-desc">NAT and internet sharing</span></div>
+                                    <div class="tech-item"><span class="tech-name">iw</span><span class="tech-desc">Virtual WiFi interface management</span></div>
+                                    <div class="tech-item"><span class="tech-name">qrencode</span><span class="tech-desc">QR code generation</span></div>
+                                    <div class="tech-item"><span class="tech-name">Python 3</span><span class="tech-desc">Local web dashboard server</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h2 class="card-title">Security</h2></div>
+                        <div class="card-body">
+                            <div class="security-grid">
+                                <div class="security-item">
+                                    <span class="security-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                                    <div>
+                                        <div class="security-title">Localhost Only</div>
+                                        <div class="security-sub">Binds to 127.0.0.1 — never exposed externally</div>
+                                    </div>
+                                </div>
+                                <div class="security-item">
+                                    <span class="security-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                                    <div>
+                                        <div class="security-title">Session Token</div>
+                                        <div class="security-sub">Random 64-char token per launch, never persisted</div>
+                                    </div>
+                                </div>
+                                <div class="security-item">
+                                    <span class="security-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                                    <div>
+                                        <div class="security-title">Auto-Shutdown</div>
+                                        <div class="security-sub">Server stops after 30 minutes of inactivity</div>
+                                    </div>
+                                </div>
+                                <div class="security-item">
+                                    <span class="security-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.68.94 6.36 2.64"/></svg></span>
+                                    <div>
+                                        <div class="security-title">Server-Side Validation</div>
+                                        <div class="security-sub">All config changes validated before being applied</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
         </div>
+    </div>
 
-        <!-- Clients Table -->
-        <section class="panel">
-            <div class="panel-header">
-                <span class="panel-title">Connected Clients</span>
-                <span class="panel-badge" id="clientCount">0</span>
-            </div>
-            <div class="panel-body">
-                <table class="data-table" id="clientsTable">
-                    <thead>
-                        <tr>
-                            <th>MAC Address</th>
-                            <th>IP Address</th>
-                            <th>Hostname</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="clientsBody">
-                        <tr><td colspan="4" class="empty-row">No clients connected</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <!-- Toast notifications get appended here at runtime -->
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
-        <!-- QR + Doctor Row -->
-        <div class="two-col">
-            <section class="panel" id="qrPanel" style="display:none">
-                <div class="panel-header">
-                    <span class="panel-title">WiFi QR Code</span>
-                    <button class="btn-close" onclick="hideQR()">&times;</button>
-                </div>
-                <div class="panel-body qr-body">
-                    <img id="qrImage" src="" alt="WiFi QR Code">
-                </div>
-            </section>
-
-            <section class="panel" id="doctorPanel" style="display:none">
-                <div class="panel-header">
-                    <span class="panel-title">Diagnostics</span>
-                    <button class="btn-close" onclick="hideDoctor()">&times;</button>
-                </div>
-                <div class="panel-body">
-                    <div id="doctorResults"></div>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <script src="/app.js"></script>
+    <!-- Load order matters: core/api/theme/toast first (shared foundation),
+         then one file per dashboard section, then app.js which wires
+         everything together and boots the app on DOMContentLoaded. -->
+    <script src="/js/core.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/toast.js"></script>
+    <script src="/js/nav.js"></script>
+    <script src="/js/status.js"></script>
+    <script src="/js/clients.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/actions.js"></script>
+    <script src="/js/qr.js"></script>
+    <script src="/js/doctor.js"></script>
+    <script src="/js/logs.js"></script>
+    <script src="/js/traffic.js"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>
