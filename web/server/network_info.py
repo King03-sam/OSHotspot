@@ -76,6 +76,36 @@ def list_wifi_interfaces():
     return ifaces
 
 
+def check_5ghz_support():
+    """Check if the primary WiFi adapter supports 5 GHz AP mode."""
+    try:
+        iface = None
+        if os.path.isdir("/sys/class/net"):
+            for name in os.listdir("/sys/class/net"):
+                if name.startswith("wl") and name != "ap0":
+                    iface = name
+                    break
+        if not iface:
+            return False
+        phy_path = os.path.realpath(f"/sys/class/net/{iface}/phy80211")
+        phy = os.path.basename(phy_path)
+        result = subprocess.run(
+            ["iw", "phy", phy, "info"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if line.startswith("* ") and line.endswith(" MHz"):
+                    parts = line.split()
+                    freq = int(parts[1])
+                    if 5180 <= freq <= 5825:
+                        return True
+    except Exception:
+        pass
+    return False
+
+
 def generate_qr_png():
     """Build a WiFi-connect QR code (PNG bytes) from the current SSID
     and password using qrencode. Returns None if either is unset or

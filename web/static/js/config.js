@@ -25,6 +25,9 @@
             if (cfg.channel) OS.$('infoChannel').textContent = cfg.channel;
             if (cfg.hw_mode) OS.$('infoHwMode').textContent = cfg.hw_mode + (cfg.hw_mode === 'g' ? ' (2.4 GHz)' : ' (5 GHz)');
             if (cfg.country_code) OS.$('infoCountry').textContent = cfg.country_code;
+
+            OS._supports5ghz = cfg.supports_5ghz;
+            checkHwModeWarning();
         }).catch(function () {});
 
         OS.api('/api/interfaces').then(function (data) {
@@ -97,5 +100,16 @@
         var input = OS.$(inputId);
         if (!input) return;
         input.type = input.type === 'password' ? 'text' : 'password';
+    };
+
+    window.checkHwModeWarning = function () {
+        var mode = OS.$('cfgHwMode').value;
+        var warn = OS.$('hwModeWarning');
+        if (!warn) return;
+        if (mode === 'a' && OS._supports5ghz === false) {
+            warn.classList.add('visible');
+        } else {
+            warn.classList.remove('visible');
+        }
     };
 })(window.OS);

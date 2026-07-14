@@ -28,7 +28,7 @@
             if (clientsCountBadge) clientsCountBadge.textContent = count;
 
             if (!count) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No clients connected</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No clients connected</td></tr>';
                 return;
             }
 
@@ -38,15 +38,30 @@
                 var statusHtml = c.status === 'active'
                     ? '<span class="client-active">active</span>'
                     : '<span class="client-inactive">' + OS.esc(c.status || '—') + '</span>';
+                var kickBtn = c.status === 'active'
+                    ? '<button class="btn btn-ghost btn-sm" onclick="kickClient(\'' + OS.esc(c.mac) + '\')">Kick</button>'
+                    : '';
                 html += '<tr>'
                     + '<td>' + (i + 1) + '</td>'
                     + '<td>' + OS.esc(c.mac) + '</td>'
                     + '<td>' + OS.esc(c.ip) + '</td>'
                     + '<td>' + OS.esc(c.hostname || '—') + '</td>'
                     + '<td>' + statusHtml + '</td>'
+                    + '<td class="kick-cell">' + kickBtn + '</td>'
                     + '</tr>';
             }
             tbody.innerHTML = html;
         }).catch(function () {});
+    };
+
+    window.kickClient = function (mac) {
+        OS.api('/api/kick', 'POST', { mac: mac }).then(function (res) {
+            OS.toast(res.ok ? 'Client disconnected' : 'Kick failed',
+                     res.ok ? mac : (res.error || 'Unknown error'),
+                     res.ok ? 'success' : 'error');
+            OS.refreshClients();
+        }).catch(function (err) {
+            OS.toast('Kick failed', err.message || 'Could not reach server', 'error');
+        });
     };
 })(window.OS);

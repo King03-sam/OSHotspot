@@ -12,6 +12,7 @@ import http.server
 import json
 import os
 import secrets
+import subprocess
 import time
 import urllib.parse
 
@@ -25,6 +26,7 @@ from .network_info import (
     read_traffic_stats,
     list_wifi_interfaces,
     generate_qr_png,
+    check_5ghz_support,
 )
 
 CONTENT_TYPES = {
@@ -155,7 +157,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         # DHCP lease file directly so we trust it for the final number.
         clients_code, clients_stdout, _ = run_script("clients.sh")
         if clients_code == 0:
-            data["clients"] = len(parse_clients(clients_stdout))
+            all_clients = parse_clients(clients_stdout)
+            data["clients"] = sum(1 for c in all_clients if c.get("status") == "active")
         self.send_json(data)
 
     def _get_clients(self):
@@ -176,6 +179,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 response["password_set"] = bool(v)
             else:
                 response[k.lower()] = v
+        response["supports_5ghz"] = check_5ghz_support()
         self.send_json(response)
 
     def _get_qr(self):
@@ -277,6 +281,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self._repair()
         elif path == "/api/config":
             self._update_config()
+        elif path == "/api/kick":
+            self._kick_client()
         else:
             self.send_json({"error": "Not found"}, 404)
 
@@ -339,3 +345,36 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             run_script("start.sh")
 
         self.send_json({"ok": True, "updated": list(validated.keys())})
+
+    def _kick_client(self):
+        content_length = int(self.headers.get("Content-Length", 0))
+        if content_length > 1024:
+            self.send_json({"error": "Request too large"}, 413)
+            return
+        body = self.rfile.read(content_length)
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            self.send_json({"error": "Invalid JSON"}, 400)
+            return
+        mac = data.get("mac", "").strip()
+        if not mac:
+            self.send_json({"error": "MAC address required"}, 400)
+            return
+        config = parse_config()
+        ap_iface = config.get("AP_IFACE", "ap0")
+        try:
+            result = subprocess.run(
+                ["hostapd_cli", "-i", ap_iface, "deauthenticate", mac],
+                capture_output=True, text=True, timeout=10
+            )
+            log_action(f"web:kick:{mac}")
+            self.send_json({
+                "ok": result.returncode == 0,
+                "output": result.stdout,
+                "error": result.stderr
+            })
+        except FileNotFoundError:
+            self.send_json({"ok": False, "error": "hostapd_cli not found"})
+        except subprocess.TimeoutExpired:
+            self.send_json({"ok": False, "error": "hostapd_cli timed out"})

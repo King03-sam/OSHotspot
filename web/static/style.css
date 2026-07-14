@@ -999,6 +999,11 @@ a:hover { opacity: 0.7; }
 }
 .client-inactive { color: var(--text-muted); }
 
+.kick-cell {
+    white-space: nowrap;
+    text-align: right;
+}
+
 /* ─── Forms ─── */
 .form-row { margin-bottom: 16px; }
 
@@ -1061,6 +1066,18 @@ a:hover { opacity: 0.7; }
 }
 .form-status.ok { color: var(--green); }
 .form-status.error { color: var(--red); }
+
+.config-warning {
+    display: none;
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: var(--amber-light);
+    color: var(--amber);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+}
+.config-warning.visible { display: block; }
 
 .input-with-action { position: relative; }
 .input-with-action input { padding-right: 40px; }

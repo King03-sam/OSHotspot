@@ -418,10 +418,11 @@
                                             <th>IP Address</th>
                                             <th>Hostname</th>
                                             <th>Status</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="clientsBody">
-                                        <tr><td colspan="5" class="empty-row">No clients connected</td></tr>
+                                        <tr><td colspan="6" class="empty-row">No clients connected</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -460,10 +461,11 @@
                                         </div>
                                         <div>
                                             <label for="cfgHwMode">Hardware Mode</label>
-                                            <select id="cfgHwMode">
+                                            <select id="cfgHwMode" onchange="checkHwModeWarning()">
                                                 <option value="g">g (2.4 GHz)</option>
                                                 <option value="a">a (5 GHz)</option>
                                             </select>
+                                            <div id="hwModeWarning" class="config-warning">Your WiFi adapter does not appear to support 5 GHz. Selecting mode "a" may cause hostapd to fail.</div>
                                         </div>
                                     </div>
                                     <div class="form-row">
