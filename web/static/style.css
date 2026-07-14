@@ -760,7 +760,7 @@ a:hover { opacity: 0.7; }
     top: 50%;
     left: 50%;
     margin: -7px 0 0 -7px;
-    border: 2px solid currentColor;
+    border: 2px solid var(--text-primary);
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
@@ -854,6 +854,50 @@ a:hover { opacity: 0.7; }
 .action-restart:hover { border-color: var(--amber); }
 .action-repair .action-tile-icon { background: var(--bg-hover); color: var(--text-secondary); }
 .action-repair:hover { border-color: var(--text-muted); }
+
+/* Action tile loading state */
+.action-tile.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+.action-tile.loading .action-tile-icon {
+    position: relative;
+}
+.action-tile.loading .action-tile-icon::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+.action-tile.loading .action-tile-icon svg {
+    visibility: hidden;
+}
+
+/* Quick-action loading state */
+.quick-action.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+.quick-action.loading .qa-icon {
+    position: relative;
+}
+.quick-action.loading .qa-icon::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--text-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+.quick-action.loading .qa-icon svg {
+    visibility: hidden;
+}
 
 .action-tile-title {
     font-size: 14px;
