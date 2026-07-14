@@ -6,7 +6,21 @@
     var refreshInterval = null;
     var polling = false;
 
+    function applyTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+        localStorage.setItem('oshotspot-theme', theme);
+        var toggle = $('themeToggle');
+        if (toggle) {
+            toggle.textContent = theme === 'dark' ? '☀' : '☾';
+            toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+        }
+    }
+
     function init() {
+        var savedTheme = localStorage.getItem('oshotspot-theme');
+        var preferredTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        applyTheme(savedTheme || preferredTheme);
+
         var params = new URLSearchParams(window.location.search);
         TOKEN = params.get('token') || '';
         if (!TOKEN) {
@@ -118,6 +132,11 @@
             if (cfg.country_code) $('cfgCountry').value = cfg.country_code;
         }).catch(function () {});
     }
+
+    window.toggleTheme = function () {
+        var currentTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(currentTheme);
+    };
 
     window.submitConfig = function (e) {
         e.preventDefault();
