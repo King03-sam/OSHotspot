@@ -11,17 +11,6 @@
 (function (OS) {
     'use strict';
 
-    function hexToRgba(hex, alpha) {
-        hex = hex.replace('#', '');
-        if (hex.length === 3) {
-            hex = hex.split('').map(function (c) { return c + c; }).join('');
-        }
-        var r = parseInt(hex.substring(0, 2), 16) || 0;
-        var g = parseInt(hex.substring(2, 4), 16) || 0;
-        var b = parseInt(hex.substring(4, 6), 16) || 0;
-        return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
-    }
-
     OS.refreshTraffic = function () {
         OS.api('/api/traffic').then(function (data) {
             if (!data || !data.ap) return;
@@ -31,8 +20,7 @@
             var last = OS.state.lastTraffic;
             var history = OS.state.trafficHistory;
 
-            // Convert cumulative byte counters into a per-second rate
-            // by diffing against the previous sample.
+            /* Convert cumulative byte counters into a per-second rate. */
             var drx = rx - last.ap_rx;
             var dtx = tx - last.ap_tx;
             var dt = last.ts ? (now - last.ts) : 0;
@@ -46,7 +34,7 @@
 
             var valTraffic = OS.$('valTraffic');
             if (valTraffic) {
-                valTraffic.textContent = '↓' + OS.formatBytes(rx) + ' ↑' + OS.formatBytes(tx);
+                valTraffic.textContent = '\u2193' + OS.formatBytes(rx) + ' \u2191' + OS.formatBytes(tx);
             }
             OS.drawTrafficSpark();
         }).catch(function () {});
@@ -64,19 +52,22 @@
         var rx = OS.state.trafficHistory.rx;
         var tx = OS.state.trafficHistory.tx;
         if (rx.length < 2) {
-            ctx.fillStyle = 'rgba(100, 116, 139, 0.6)';
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
             ctx.font = (10 * dpr) + 'px monospace';
-            ctx.fillText('Collecting traffic data…', 8, 20 * dpr);
+            ctx.fillText('Collecting traffic data\u2026', 8, 20 * dpr);
             return;
         }
 
         var max = 1;
         for (var i = 0; i < rx.length; i++) max = Math.max(max, rx[i], tx[i]);
         var step = w / (OS.state.trafficHistory.maxPoints - 1);
-        var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6366f1';
-        var cyan = getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#06b6d4';
 
-        // RX (download) is drawn as a filled area plus its outline.
+        /* Monochrome: white for RX, grey for TX. */
+        var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        var rxColor = isDark ? '#ffffff' : '#000000';
+        var txColor = isDark ? '#666666' : '#999999';
+
+        /* RX — filled area + outline. */
         ctx.beginPath();
         ctx.moveTo(0, h);
         for (var j = 0; j < rx.length; j++) {
@@ -84,10 +75,10 @@
         }
         ctx.lineTo((rx.length - 1) * step, h);
         ctx.closePath();
-        ctx.fillStyle = hexToRgba(accent, 0.18);
+        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)';
         ctx.fill();
 
-        ctx.strokeStyle = accent;
+        ctx.strokeStyle = rxColor;
         ctx.lineWidth = 1.5 * dpr;
         ctx.beginPath();
         for (var k = 0; k < rx.length; k++) {
@@ -97,9 +88,8 @@
         }
         ctx.stroke();
 
-        // TX (upload) is a plain line, no fill, so it stays readable
-        // when it overlaps the RX area.
-        ctx.strokeStyle = cyan;
+        /* TX — plain line, no fill. */
+        ctx.strokeStyle = txColor;
         ctx.lineWidth = 1.5 * dpr;
         ctx.beginPath();
         for (var m = 0; m < tx.length; m++) {

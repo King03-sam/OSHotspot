@@ -92,7 +92,12 @@ def main():
     auth.touch_activity()
 
     watchdog = spawn_watchdog(time.time())
-    server = http.server.HTTPServer((settings.HOST, port), OShotspotHandler)
+
+    # Use ThreadingHTTPServer so that long-running scripts (start.sh,
+    # repair.sh, etc.) don't block every other request.  This keeps
+    # the status polling and UI responsive while an action executes.
+    from http.server import ThreadingHTTPServer
+    server = ThreadingHTTPServer((settings.HOST, port), OShotspotHandler)
     server.timeout = 1
 
     url = f"http://{settings.HOST}:{port}/?token={auth.TOKEN}"

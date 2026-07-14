@@ -38,30 +38,30 @@
         stopPolling();
         var s = OS.state;
 
-        // Each interval checks document.hidden so a backgrounded tab
-        // stops hammering the server, and re-checks the active section
-        // before doing anything expensive.
+        /* Each interval checks document.hidden so a backgrounded tab
+           stops hammering the server, and re-checks the active section
+           before doing anything expensive. */
         s.statusInterval = setInterval(function () {
             if (!document.hidden) OS.refreshStatus();
-        }, 4000);
+        }, 5000);
 
         s.clientsInterval = setInterval(function () {
             if (!document.hidden && OS.$('view-clients').classList.contains('active')) {
                 var cb = OS.$('clientsAutoRefresh');
                 if (!cb || cb.checked) OS.refreshClients();
             }
-        }, 5000);
+        }, 6000);
 
         s.trafficInterval = setInterval(function () {
             if (!document.hidden) OS.refreshTraffic();
-        }, 2000);
+        }, 3000);
 
         s.logsInterval = setInterval(function () {
             if (!document.hidden && OS.$('view-logs').classList.contains('active')) {
                 var lb = OS.$('logsAutoRefresh');
                 if (!lb || lb.checked) window.loadLogs();
             }
-        }, 4000);
+        }, 5000);
     }
 
     function stopPolling() {
@@ -79,18 +79,25 @@
         OS.state.token = params.get('token') || '';
         if (!OS.state.token) {
             document.body.innerHTML =
-                '<div style="padding:40px;color:#ef4444;font-family:monospace;text-align:center">'
-                + 'Access denied: no session token.</div>';
+                '<div style="padding:60px 40px;color:#ef4444;font-family:monospace;text-align:center;'
+                + 'background:#0a0a1a;min-height:100vh;display:flex;align-items:center;justify-content:center;">'
+                + '<div style="max-width:480px;">'
+                + '<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#ef4444" stroke-width="2" style="margin-bottom:20px;">'
+                + '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+                + '<h2 style="color:#fff;margin-bottom:8px;">Access Denied</h2>'
+                + '<p style="color:#94a3b8;font-size:14px;">No session token provided. Open the dashboard via <code style="color:#60a5fa;">sudo oshotspot web</code></p>'
+                + '</div></div>';
             return;
         }
 
+        /* Initial data load — don't let failures block the UI. */
         OS.refreshStatus();
         OS.refreshClients();
         OS.refreshTraffic();
         window.loadConfig();
         startPolling();
 
-        // Tapping outside an open mobile sidebar closes it.
+        /* Tapping outside an open mobile sidebar closes it. */
         document.addEventListener('click', function (e) {
             var sb = OS.$('sidebar');
             var toggle = OS.$('menuToggle');
@@ -101,8 +108,8 @@
             }
         });
 
-        // Redraw the sparkline on resize, debounced so a window drag
-        // doesn't trigger dozens of canvas repaints.
+        /* Redraw the sparkline on resize, debounced so a window drag
+           doesn't trigger dozens of canvas repaints. */
         window.addEventListener('resize', function () {
             clearTimeout(window._oshotspotResize);
             window._oshotspotResize = setTimeout(OS.drawTrafficSpark, 200);

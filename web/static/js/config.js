@@ -21,7 +21,7 @@
             if (cfg.hw_mode) OS.$('cfgHwMode').value = cfg.hw_mode;
             if (cfg.country_code) OS.$('cfgCountry').value = cfg.country_code;
 
-            // Mirror a few fields into the Overview page's network info card.
+            /* Mirror fields into the Overview page's network info card. */
             if (cfg.channel) OS.$('infoChannel').textContent = cfg.channel;
             if (cfg.hw_mode) OS.$('infoHwMode').textContent = cfg.hw_mode + (cfg.hw_mode === 'g' ? ' (2.4 GHz)' : ' (5 GHz)');
             if (cfg.country_code) OS.$('infoCountry').textContent = cfg.country_code;
@@ -41,8 +41,8 @@
                 var isCurrent = iface.name === data.current_wifi_iface;
                 html += '<tr>'
                     + '<td>' + OS.esc(iface.name) + '</td>'
-                    + '<td>' + OS.esc(iface.state || '—') + '</td>'
-                    + '<td>' + (isCurrent ? '<span class="client-active">in use</span>' : '—') + '</td>'
+                    + '<td>' + OS.esc(iface.state || '\u2014') + '</td>'
+                    + '<td>' + (isCurrent ? '<span class="client-active">in use</span>' : '\u2014') + '</td>'
                     + '</tr>';
             }
             tbody.innerHTML = html;
