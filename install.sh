@@ -167,8 +167,8 @@ install_files() {
     # Web dashboard
     local web_dir="/usr/lib/oshotspot/web"
     mkdir -p "${web_dir}/static"
-    if [[ -f "${SRC}/web/server.py" ]]; then
-        cp "${SRC}/web/server.py" "${web_dir}/server.py"
+    if [[ -f "${SRC}/web/serve.py" ]]; then
+        cp "${SRC}/web/serve.py" "${web_dir}/serve.py"
         cp "${SRC}/web/static/"* "${web_dir}/static/" 2>/dev/null || true
         log_info "Web dashboard installed to ${web_dir}/"
     fi

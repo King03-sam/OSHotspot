@@ -5,9 +5,11 @@
 #
 # Licensed under the Apache License, Version 2.0
 
-"""Thin launcher kept at the project root so existing install scripts
-and shortcuts that call `python3 server.py` keep working. The actual
-implementation lives in the server/ package next to this file."""
+"""Thin launcher for the OSHotspot web dashboard.
+
+The actual implementation lives in the web/server/ package.  Keeping
+the entry point as serve.py avoids a name clash with the server/
+package directory."""
 
 import os
 import sys
