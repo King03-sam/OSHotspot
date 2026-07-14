@@ -47,9 +47,9 @@ def parse_status(output):
                 status["ap_state"] = "down"
             else:
                 status["ap_state"] = "up"
-                # AP line looks like "AP Interface: ap0 (192.168.50.1)"
-                m = re.search(r'\(([^)]+)\)', line)
-                if m and m.group(1) != "ap0":
+                # AP line looks like "AP Interface (ap0): UP (192.168.50.1)"
+                m = re.search(r'\((\d+\.\d+\.\d+\.\d+)\)', line)
+                if m:
                     ip_val = m.group(1)
                     if re.match(r'\d+\.\d+\.\d+\.\d+', ip_val):
                         status["ap_ip"] = ip_val

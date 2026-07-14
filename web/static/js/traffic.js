@@ -97,6 +97,11 @@
             var elTotalUl = OS.$('trafficTotalUp');
             var elClients = OS.$('trafficClients');
 
+            var elValTraffic = OS.$('valTraffic');
+            if (elValTraffic) {
+                elValTraffic.textContent = '\u2193' + OS.formatBytes(rx) + ' \u2191' + OS.formatBytes(tx);
+            }
+
             if (elDl && history.rx.length > 0) {
                 elDl.textContent = formatRate(history.rx[history.rx.length - 1]);
             }
