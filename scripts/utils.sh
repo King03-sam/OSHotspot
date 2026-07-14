@@ -306,6 +306,8 @@ generate_hostapd_conf() {
 
     chmod 600 "${OSHOTSPOT_HOSTAPD_CONF}"
     log_info "hostapd config written to ${OSHOTSPOT_HOSTAPD_CONF}."
+
+    touch "${OSHOTSPOT_DIR}/deny_maclist.conf"
 }
 
 # Generate /etc/oshotspot/dnsmasq.conf from the template.

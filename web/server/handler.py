@@ -130,6 +130,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self._get_interfaces()
         elif path == "/api/version":
             self._get_version()
+        elif path == "/api/blocked":
+            self._get_blocked()
         else:
             self.send_response(404)
             self.end_headers()
@@ -283,6 +285,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self._update_config()
         elif path == "/api/kick":
             self._kick_client()
+        elif path == "/api/unblock":
+            self._unblock_client()
         else:
             self.send_json({"error": "Not found"}, 404)
 
@@ -346,6 +350,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
 
         self.send_json({"ok": True, "updated": list(validated.keys())})
 
+    DENY_LIST_FILE = "/etc/oshotspot/deny_maclist.conf"
+
     def _kick_client(self):
         content_length = int(self.headers.get("Content-Length", 0))
         if content_length > 1024:
@@ -364,6 +370,20 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         config = parse_config()
         ap_iface = config.get("AP_IFACE", "ap0")
         try:
+            # Add to hostapd's in-memory deny list so the client can't reconnect
+            subprocess.run(
+                ["hostapd_cli", "-i", ap_iface, "deny_acl", "add_mac", mac],
+                capture_output=True, text=True, timeout=10
+            )
+            # Persist to file so blocked MACs survive hostapd restarts
+            existing = ""
+            if os.path.isfile(self.DENY_LIST_FILE):
+                with open(self.DENY_LIST_FILE, "r") as f:
+                    existing = f.read()
+            if mac.lower() not in existing.lower():
+                with open(self.DENY_LIST_FILE, "a") as f:
+                    f.write(mac + "\n")
+            # Deauthenticate the client
             result = subprocess.run(
                 ["hostapd_cli", "-i", ap_iface, "deauthenticate", mac],
                 capture_output=True, text=True, timeout=10
@@ -374,6 +394,80 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 "output": result.stdout,
                 "error": result.stderr
             })
+        except FileNotFoundError:
+            self.send_json({"ok": False, "error": "hostapd_cli not found"})
+        except subprocess.TimeoutExpired:
+            self.send_json({"ok": False, "error": "hostapd_cli timed out"})
+
+    def _get_blocked(self):
+        if not self.check_token():
+            return
+        config = parse_config()
+        ap_iface = config.get("AP_IFACE", "ap0")
+        try:
+            result = subprocess.run(
+                ["hostapd_cli", "-i", ap_iface, "deny_acl", "show"],
+                capture_output=True, text=True, timeout=10
+            )
+            macs = []
+            if result.returncode == 0:
+                for line in result.stdout.splitlines():
+                    line = line.strip()
+                    if line and line.lower() != "mac address" and line.lower() != "num":
+                        macs.append(line)
+            if not macs and os.path.isfile(self.DENY_LIST_FILE):
+                with open(self.DENY_LIST_FILE, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            macs.append(line)
+            self.send_json(macs)
+        except FileNotFoundError:
+            macs = []
+            if os.path.isfile(self.DENY_LIST_FILE):
+                with open(self.DENY_LIST_FILE, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            macs.append(line)
+            self.send_json(macs)
+        except subprocess.TimeoutExpired:
+            self.send_json([])
+
+    def _unblock_client(self):
+        content_length = int(self.headers.get("Content-Length", 0))
+        if content_length > 1024:
+            self.send_json({"error": "Request too large"}, 413)
+            return
+        body = self.rfile.read(content_length)
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            self.send_json({"error": "Invalid JSON"}, 400)
+            return
+        mac = data.get("mac", "").strip()
+        if not mac:
+            self.send_json({"error": "MAC address required"}, 400)
+            return
+        config = parse_config()
+        ap_iface = config.get("AP_IFACE", "ap0")
+        try:
+            # Remove from hostapd's in-memory deny list
+            subprocess.run(
+                ["hostapd_cli", "-i", ap_iface, "deny_acl", "del_mac", mac],
+                capture_output=True, text=True, timeout=10
+            )
+            # Remove from persistent file
+            if os.path.isfile(self.DENY_LIST_FILE):
+                with open(self.DENY_LIST_FILE, "r") as f:
+                    lines = f.readlines()
+                mac_lower = mac.lower()
+                with open(self.DENY_LIST_FILE, "w") as f:
+                    for line in lines:
+                        if line.strip().lower() != mac_lower:
+                            f.write(line)
+            log_action(f"web:unblock:{mac}")
+            self.send_json({"ok": True})
         except FileNotFoundError:
             self.send_json({"ok": False, "error": "hostapd_cli not found"})
         except subprocess.TimeoutExpired:
