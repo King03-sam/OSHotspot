@@ -18,10 +18,17 @@ status_line() {
 
 get_client_count() {
     local count=0
-    if command -v hostapd_cli &>/dev/null && is_running "${OSHOTSPOT_PID_HOSTAPD}"; then
-        count=$(hostapd_cli -i "${AP_IFACE}" all_sta 2>/dev/null \
-            | grep -c "^" 2>/dev/null || echo "0")
+    local lease_file="/var/lib/misc/dnsmasq.leases"
+    if [[ ! -f "${lease_file}" ]] || ! is_running "${OSHOTSPOT_PID_HOSTAPD}"; then
+        echo "0"
+        return
     fi
+    while IFS=' ' read -r _ mac ip _; do
+        [[ -z "${mac}" ]] && continue
+        if ip neigh show "${ip}" 2>/dev/null | grep -q "REACHABLE\|STALE\|DELAY"; then
+            count=$((count + 1))
+        fi
+    done < "${lease_file}"
     echo "${count}"
 }
 

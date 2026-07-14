@@ -111,6 +111,7 @@ show_clients() {
     echo "--------------------------------------------------------------------------------"
 
     # Print each client
+    local active_count=0
     for client in "${clients[@]}"; do
         IFS='|' read -r mac ip hostname <<< "${client}"
 
@@ -128,6 +129,7 @@ show_clients() {
         fi
 
         printf "%-20s %-18s %-16s ${GREEN}%s${NC}\n" "${mac}" "${ip}" "${hostname}" "${status}"
+        [[ "${status}" == "active" ]] && active_count=$((active_count + 1))
     done
 
     echo ""
@@ -141,7 +143,7 @@ show_clients() {
     echo -e "${BOLD}AP Interface (${AP_IFACE}) Traffic:${NC}"
     echo "  RX: $(format_bytes "${ap_rx}") | TX: $(format_bytes "${ap_tx}")"
     echo ""
-    echo -e "  Total clients: ${BOLD}${#clients[@]}${NC}"
+    echo -e "  Active clients: ${BOLD}${active_count}${NC} / ${#clients[@]} total"
     echo ""
 }
 

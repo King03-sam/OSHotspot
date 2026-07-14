@@ -14,7 +14,11 @@
         OS.api('/api/clients').then(function (clients) {
             if (!Array.isArray(clients)) clients = [];
             var tbody = OS.$('clientsBody');
-            var count = clients.length;
+            var activeCount = 0;
+            for (var k = 0; k < clients.length; k++) {
+                if (clients[k].status === 'active') activeCount++;
+            }
+            var count = activeCount;
 
             var navPillClients = OS.$('navPillClients');
             if (navPillClients) navPillClients.textContent = count;
