@@ -28,6 +28,30 @@ OSHotspot provides a reliable alternative by creating a virtual Access Point int
 
 ---
 
+## Web Dashboard
+
+![OSHotspot Dashboard](public/dashboard.png)
+
+A **modern web dashboard** launched with a single command:
+
+```bash
+sudo oshotspot web
+```
+
+The browser opens automatically with a secure, token-authenticated session. The dashboard provides full hotspot management without touching the terminal.
+
+| Page | What it does |
+|------|-------------|
+| **Overview** | Live status, service health, network info, traffic sparkline |
+| **Controls** | Start / stop / restart / repair with real-time output |
+| **Clients** | Connected devices table with kick/block and unblock actions |
+| **Configuration** | SSID, password, channel, hardware mode, country code with 5GHz compatibility warning |
+| **QR Code** | Scannable WiFi QR for instant phone connections |
+| **Diagnostics** | System readiness checks |
+| **Logs** | Live hostapd / dnsmasq / web log viewer |
+
+---
+
 ## Creator
 
 OSHotspot was created and is maintained by **OLOJEDE Samuel**.
@@ -48,6 +72,10 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - Suspend/resume auto-repair
 - Simple CLI: `oshotspot start / stop / status / repair / clients / monitor / qr / doctor / web`
 - Web dashboard for browser-based management (`oshotspot web`)
+- Kick & block clients — disconnect a device and prevent reconnection via MAC deny list
+- 5GHz compatibility warning — warns if adapter doesn't support 5GHz when that mode is selected
+- Dark / light theme toggle in the dashboard
+- Responsive dashboard design — works on mobile and desktop
 - Diagnostic tool to verify system readiness (`oshotspot doctor`)
 - Auto-detection of WiFi interfaces (supports wlan0, wlp2s0, wlx...)
 - Real-time monitoring of connected clients and traffic
@@ -275,20 +303,23 @@ Displays a QR code in the terminal that your phone can scan to connect to the ho
 
 # Web Dashboard
 
-Launch a local web dashboard to manage the hotspot from your browser:
+Launch the full-featured web dashboard:
 
 ```bash
 sudo oshotspot web
 ```
 
-This starts a lightweight Python server on `127.0.0.1` and opens the dashboard automatically. The dashboard provides:
+A lightweight Python server starts on `127.0.0.1` and your browser opens automatically. No pip packages needed — just Python 3.
 
-- **Status overview** - hostapd, dnsmasq, IP forwarding, NAT status at a glance
-- **Start/Stop/Restart** - one-click hotspot controls
-- **Configuration** - edit SSID, password, channel, mode, country code with server-side validation
-- **Connected clients** - auto-refreshing table with MAC, IP, hostname, status
-- **QR code** - display a scannable QR code for instant phone connections
-- **Diagnostics** - run system checks from the browser
+### Pages
+
+- **Overview** — Live status of hostapd, dnsmasq, IP forwarding, NAT. Connected client count (active only). Network info and traffic sparkline.
+- **Controls** — One-click start / stop / restart / repair with real-time console output streamed to the browser.
+- **Clients** — Auto-refreshing table (MAC, IP, hostname, status). **Kick** a client to disconnect them and add their MAC to the deny list. **Unblock** to restore access.
+- **Configuration** — Edit SSID, password, channel, hardware mode (2.4/5 GHz), country code. Server-side validation with live feedback. 5GHz warning if your adapter doesn't support it.
+- **QR Code** — Scannable WiFi QR code for instant phone connections.
+- **Diagnostics** — Run `oshotspot doctor` from the browser.
+- **Logs** — Live hostapd, dnsmasq, and web server log viewer with auto-scroll.
 
 ### Security
 
@@ -297,10 +328,6 @@ This starts a lightweight Python server on `127.0.0.1` and opens the dashboard a
 - Token required on every API request
 - Auto-shutdown after 30 minutes of inactivity
 - All config changes validated server-side before writing
-
-### Requirements
-
-The web dashboard requires Python 3 (preinstalled on all target distros). No pip packages needed.
 
 # Diagnostic
 
@@ -601,6 +628,8 @@ OSHotspot/
 ├── uninstall.sh
 ├── oshotspot                    # Main CLI
 ├── config.conf.example          # Configuration template
+├── public/
+│   └── dashboard.png            # Dashboard screenshot
 ├── scripts/
 │   ├── utils.sh                 # Shared functions
 │   ├── firewall.sh              # iptables NAT management
@@ -620,9 +649,9 @@ OSHotspot/
 │   │   ├── __init__.py
 │   │   ├── auth.py              # Session token auth
 │   │   ├── config_store.py      # Config file management
-│   │   ├── handler.py           # HTTP request handler
+│   │   ├── handler.py           # HTTP request handler (API routes)
 │   │   ├── main.py              # Server startup
-│   │   ├── network_info.py      # Network status helpers
+│   │   ├── network_info.py      # Network status & 5GHz detection
 │   │   ├── parsers.py           # hostapd/dnsmasq log parsers
 │   │   ├── scripts.py           # CLI script wrappers
 │   │   └── settings.py          # Server settings
@@ -635,8 +664,8 @@ OSHotspot/
 │           ├── core.js          # Core utilities
 │           ├── status.js        # Status panel
 │           ├── actions.js       # Start/stop/restart controls
-│           ├── clients.js       # Connected clients table
-│           ├── config.js        # Configuration editor
+│           ├── clients.js       # Connected clients + kick/block
+│           ├── config.js        # Configuration editor + 5GHz warning
 │           ├── doctor.js        # Diagnostics panel
 │           ├── logs.js          # Log viewer
 │           ├── nav.js           # Navigation
@@ -665,8 +694,8 @@ Future improvements:
 
 - Automatic driver compatibility check
 - Multi-language support
-- 5GHz channel support with auto-detection
-- Client bandwidth limiting
+- Bandwidth limiting per client
+- Client connection history / analytics
 
 ---
 
