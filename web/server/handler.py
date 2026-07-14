@@ -370,37 +370,27 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         if not mac:
             self.send_json({"error": "MAC address required"}, 400)
             return
-        config = parse_config()
-        ap_iface = config.get("AP_IFACE", "ap0")
-        try:
-            # Add to hostapd's in-memory deny list so the client can't reconnect
-            subprocess.run(
-                ["hostapd_cli", "-i", ap_iface, "deny_acl", "add_mac", mac],
-                capture_output=True, text=True, timeout=10
-            )
-            # Persist to file so blocked MACs survive hostapd restarts
-            existing = ""
-            if os.path.isfile(self.DENY_LIST_FILE):
-                with open(self.DENY_LIST_FILE, "r") as f:
-                    existing = f.read()
-            if mac.lower() not in existing.lower():
-                with open(self.DENY_LIST_FILE, "a") as f:
-                    f.write(mac + "\n")
-            # Deauthenticate the client
-            result = subprocess.run(
-                ["hostapd_cli", "-i", ap_iface, "deauthenticate", mac],
-                capture_output=True, text=True, timeout=10
-            )
-            log_action(f"web:kick:{mac}")
-            self.send_json({
-                "ok": result.returncode == 0,
-                "output": result.stdout,
-                "error": result.stderr
-            })
-        except FileNotFoundError:
-            self.send_json({"ok": False, "error": "hostapd_cli not found"})
-        except subprocess.TimeoutExpired:
-            self.send_json({"ok": False, "error": "hostapd_cli timed out"})
+
+        # 1) Persist MAC to deny list file
+        existing = ""
+        if os.path.isfile(self.DENY_LIST_FILE):
+            with open(self.DENY_LIST_FILE, "r") as f:
+                existing = f.read()
+        if mac.lower() not in existing.lower():
+            with open(self.DENY_LIST_FILE, "a") as f:
+                f.write(mac + "\n")
+
+        # 2) Restart hostapd so it re-reads the deny list from file
+        run_script("stop.sh")
+        time.sleep(1)
+        code, stdout, stderr = run_script("start.sh")
+
+        log_action(f"web:kick:{mac}")
+        self.send_json({
+            "ok": code == 0,
+            "output": stdout,
+            "error": stderr if code != 0 else ""
+        })
 
     def _get_blocked(self):
         if not self.check_token():
@@ -452,26 +442,25 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         if not mac:
             self.send_json({"error": "MAC address required"}, 400)
             return
-        config = parse_config()
-        ap_iface = config.get("AP_IFACE", "ap0")
-        try:
-            # Remove from hostapd's in-memory deny list
-            subprocess.run(
-                ["hostapd_cli", "-i", ap_iface, "deny_acl", "del_mac", mac],
-                capture_output=True, text=True, timeout=10
-            )
-            # Remove from persistent file
-            if os.path.isfile(self.DENY_LIST_FILE):
-                with open(self.DENY_LIST_FILE, "r") as f:
-                    lines = f.readlines()
-                mac_lower = mac.lower()
-                with open(self.DENY_LIST_FILE, "w") as f:
-                    for line in lines:
-                        if line.strip().lower() != mac_lower:
-                            f.write(line)
-            log_action(f"web:unblock:{mac}")
-            self.send_json({"ok": True})
-        except FileNotFoundError:
-            self.send_json({"ok": False, "error": "hostapd_cli not found"})
-        except subprocess.TimeoutExpired:
-            self.send_json({"ok": False, "error": "hostapd_cli timed out"})
+
+        # 1) Remove from persistent deny list file
+        if os.path.isfile(self.DENY_LIST_FILE):
+            with open(self.DENY_LIST_FILE, "r") as f:
+                lines = f.readlines()
+            mac_lower = mac.lower()
+            with open(self.DENY_LIST_FILE, "w") as f:
+                for line in lines:
+                    if line.strip().lower() != mac_lower:
+                        f.write(line)
+
+        # 2) Restart hostapd so it re-reads the updated deny list
+        run_script("stop.sh")
+        time.sleep(1)
+        code, stdout, stderr = run_script("start.sh")
+
+        log_action(f"web:unblock:{mac}")
+        self.send_json({
+            "ok": code == 0,
+            "output": stdout,
+            "error": stderr if code != 0 else ""
+        })
