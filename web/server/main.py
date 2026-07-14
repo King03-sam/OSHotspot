@@ -73,24 +73,20 @@ def open_browser(url):
     """Try to launch the system's default browser at `url`. Returns
     True if a launcher command was found, False otherwise (headless
     environments, containers, etc.)."""
-    env = os.environ.copy()
-    sudo_user = env.get("SUDO_USER")
-    if sudo_user:
-        # sudo strips DISPLAY/XAUTHORITY/DBUS — recover from the
-        # original user's session so xdg-open can reach the display.
-        import pwd
-        home = pwd.getpwnam(sudo_user).pw_dir
-        if not env.get("DISPLAY"):
-            env["DISPLAY"] = ":0"
-        if not env.get("XAUTHORITY"):
-            xauth = os.path.join(home, ".Xauthority")
-            if os.path.isfile(xauth):
-                env["XAUTHORITY"] = xauth
-        if not env.get("DBUS_SESSION_BUS_ADDRESS"):
-            env["DBUS_SESSION_BUS_ADDRESS"] = ""
+    sudo_user = os.environ.get("SUDO_USER")
     for cmd in (["xdg-open", url], ["open", url]):
         try:
-            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
+            if sudo_user:
+                # Run xdg-open as the original user so it inherits the
+                # correct DISPLAY, XAUTHORITY, and DBUS env vars.
+                subprocess.Popen(
+                    ["sudo", "-u", sudo_user] + cmd,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            else:
+                subprocess.Popen(
+                    cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
             return True
         except FileNotFoundError:
             continue
