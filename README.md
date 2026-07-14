@@ -11,6 +11,8 @@
   Share your computer's WiFi Internet connection with any device, even when NetworkManager hotspot fails.
 </p>
 
+OSHotspot fixes broken WiFi hotspot sharing on Linux when NetworkManager's built-in hotspot fails — one command, no NetworkManager conflicts.
+
 ---
 
 ## About OSHotspot
@@ -25,6 +27,16 @@ OSHotspot is a lightweight Linux automation tool designed to create a working Wi
 This project was created after facing a real Linux networking limitation where the default Ubuntu hotspot feature could not share an active WiFi connection correctly.
 
 OSHotspot provides a reliable alternative by creating a virtual Access Point interface (`ap0`) and routing Internet traffic through the existing WiFi connection, without disabling NetworkManager.
+
+If you have searched for terms like *"networkmanager hotspot not working"* or *"linux wifi hotspot broken"*, this project was built to address those exact failure modes. It is also useful when you need to **share wifi internet linux** without router hardware, or when you are looking for a **hostapd dnsmasq tutorial script** packaged as a single, reusable CLI.
+
+---
+
+## Use Cases
+
+- Your NetworkManager hotspot creates a network but connected devices get no internet.
+- You need to share your laptop's WiFi internet with a phone or another laptop with no router available.
+- You want a persistent, auto-repairing hotspot that survives suspend/resume.
 
 ---
 
@@ -439,6 +451,22 @@ sudo rm -rf /var/log/oshotspot
 
 ---
 
+## FAQ
+
+### Why does my NetworkManager hotspot show no internet access?
+
+Because NetworkManager's built-in hotspot often fails to set up proper internet sharing when the same WiFi adapter is used for both client and AP roles. OSHotspot solves this by using `hostapd`, `dnsmasq`, and `iptables` directly.
+
+### Can I run a WiFi hotspot without disabling my main WiFi connection?
+
+Yes. OSHotspot creates a virtual AP interface (`ap0`) and keeps your existing WiFi connection active. NetworkManager is never disabled.
+
+### Does OSHotspot work after my laptop wakes from sleep?
+
+Yes. A suspend/resume hook is installed automatically, and the `oshotspot repair` command can restore the hotspot if needed after waking.
+
+---
+
 # Troubleshooting
 
 ## Phone connects but no Internet
@@ -605,6 +633,8 @@ Ubuntu NetworkManager hotspot works for many users, but some WiFi adapters or dr
 - Virtual AP interfaces are required
 
 OSHotspot uses a lower-level approach with `hostapd`, `dnsmasq`, and `iptables` to bypass these limitations, while keeping NetworkManager running for the original connection.
+
+This makes OSHotspot a practical **create access point linux** alternative for users who have tried the built-in NetworkManager option and found it insufficient. It also serves as a reliable fallback when searching for **ubuntu hotspot alternative** solutions that do not require disabling your primary WiFi connection.
 
 ---
 
