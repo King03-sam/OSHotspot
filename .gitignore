@@ -1,4 +1,4 @@
-# OSHotspot .gitignore
+# OSHotspot .gitignore--OLOJEDE-Samuel
 
 # OS-generated files
 .DS_Store
@@ -75,6 +75,10 @@ temp/
 # Python
 __pycache__/
 *.pyc
+
+
+#osai-agent internal state
+.osai-agent/
 
 # Kilo internal state
 .kilo/

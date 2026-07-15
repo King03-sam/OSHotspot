@@ -3,6 +3,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Linux-lightgrey.svg)](https://linux.org)
 [![Bash](https://img.shields.io/badge/Language-Bash-4EAA25.svg)](https://www.gnu.org/software/bash/)
+[![Python](https://img.shields.io/badge/Language-Python%203-3776AB.svg)](https://www.python.org/)
+[![hostapd](https://img.shields.io/badge/tool-hostapd-orange.svg)](https://w1.fi/hostapd/)
+[![Frontend](https://img.shields.io/badge/Frontend-HTML%2FCSS%2FJS-F7DF1E.svg)]()
 [![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9C%93-brightgreen.svg)](https://github.com/King03-sam/OSHotspot)
 [![Contributions](https://img.shields.io/badge/Contributions-Welcome-orange.svg)](https://github.com/King03-sam/OSHotspot/pulls)
 
@@ -62,6 +65,7 @@ The browser opens automatically with a secure, token-authenticated session. The 
 | **QR Code** | Scannable WiFi QR for instant phone connections |
 | **Diagnostics** | System readiness checks |
 | **Logs** | Live hostapd / dnsmasq / web log viewer |
+| **About** | OSHotspot info, technology stack, and credits |
 
 ---
 
@@ -85,7 +89,7 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - Automatic iptables NAT and forwarding rules
 - 802.11n support for better device compatibility
 - Suspend/resume auto-repair
-- Simple CLI: `oshotspot start / stop / status / repair / clients / monitor / qr / doctor / web`
+- Simple CLI: `start`, `stop`, `restart`, `status`, `repair`, `clients`, `monitor`, `config`, `logs`, `qr`, `doctor`, `interfaces`, `enable`, `disable`, `web`
 - Web dashboard for browser-based management (`oshotspot web`)
 - Kick & block clients — disconnect a device and prevent reconnection via MAC deny list
 - 5GHz compatibility warning — warns if adapter doesn't support 5GHz when that mode is selected
@@ -95,7 +99,7 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - Auto-detection of WiFi interfaces (supports wlan0, wlp2s0, wlx...)
 - Real-time bandwidth chart with download/upload speed, total transferred, and live canvas chart
 - QR code display to share hotspot with phones instantly
-- Bash tab completion for the CLI
+- Bash, Zsh, and Fish tab completion for the CLI
 - Supports Ubuntu, Debian, Mint, Fedora, Arch, and more
 
 ---
@@ -203,7 +207,11 @@ The installer will:
 1. Install `hostapd`, `dnsmasq`, `iw`, `iptables`, `iproute2`, `qrencode`
 2. Create configuration directory at `/etc/oshotspot/`
 3. Install the `oshotspot` CLI to `/usr/local/bin/`
-4. Set up systemd services and suspend/resume hooks
+4. Install scripts to `/usr/lib/oshotspot/scripts/`
+5. Install the web dashboard to `/usr/lib/oshotspot/web/`
+6. Install Bash, Zsh, and Fish tab completions
+7. Configure NetworkManager to ignore the `ap0` interface
+8. Set up systemd services and suspend/resume hooks
 
 ---
 
@@ -233,10 +241,15 @@ When the hotspot is running, changes are applied automatically (hotspot restarts
 | `CHANNEL` | `6` | WiFi channel (1-13) |
 | `HW_MODE` | `g` | Hardware mode (`g` for 2.4GHz, `a` for 5GHz) |
 | `COUNTRY_CODE` | `FR` | Country code (FR, US, GB...) - required by some drivers |
+| `HOSTNAME` | `oshotspot` | Hostname shown on the network |
 | `WIFI_IFACE` | *(auto-detected)* | Your internet WiFi interface |
+| `AP_IFACE` | `ap0` | AP interface name (created automatically) |
 | `AP_IP` | `192.168.50.1` | Hotspot gateway IP |
+| `SUBNET` | `192.168.50.0` | Hotspot subnet |
+| `AP_CIDR` | `24` | Subnet CIDR prefix length |
 | `DHCP_RANGE_START` | `192.168.50.10` | DHCP range start |
 | `DHCP_RANGE_END` | `192.168.50.100` | DHCP range end |
+| `DHCP_LEASE` | `12h` | DHCP lease duration |
 | `DNS_PRIMARY` | `8.8.8.8` | Primary DNS server |
 | `DNS_SECONDARY` | `1.1.1.1` | Secondary DNS server |
 
@@ -316,6 +329,14 @@ sudo oshotspot qr
 
 Displays a QR code in the terminal that your phone can scan to connect to the hotspot instantly. No need to type the password manually.
 
+# Other Commands
+
+```bash
+sudo oshotspot logs [hostapd|dnsmasq|all] [--follow] [--lines=N]
+sudo oshotspot enable        # Start hotspot at boot
+sudo oshotspot disable       # Stop hotspot at boot
+```
+
 # Web Dashboard
 
 Launch the full-featured web dashboard:
@@ -364,7 +385,8 @@ OSHotspot Diagnostic v1.0
   [OK]    IP forwarding enabled
   [OK]    NAT configured
   [OK]    Configuration file exists
-  [OK]    NetworkManager configured
+  [OK]    NetworkManager configured to ignore ap0
+  [OK]    Systemd service installed
   [WARN]  Hotspot is not running
 
   Passed: 9  Warnings: 1  Failed: 0
@@ -416,7 +438,7 @@ Tab completion is installed automatically. After installation, press `<TAB>` to 
 
 ```bash
 sudo oshotspot <TAB>
-# start  stop  restart  repair  status  clients  monitor  config  qr  doctor  interfaces  set  help
+# start  stop  restart  repair  status  clients  monitor  config  logs  qr  doctor  interfaces  web  enable  disable  set  help
 
 sudo oshotspot set <TAB>
 # ssid  password  wifi_iface
@@ -436,15 +458,27 @@ source /etc/bash_completion.d/oshotspot
 sudo ./uninstall.sh
 ```
 
+Or use `--purge` to remove everything without prompts:
+
+```bash
+sudo ./uninstall.sh --purge
+```
+
 Or manually:
 
 ```bash
 sudo oshotspot stop
+sudo bash /usr/lib/oshotspot/scripts/firewall.sh cleanup
 sudo rm /usr/local/bin/oshotspot
 sudo rm -rf /usr/lib/oshotspot
+sudo rm -f /etc/bash_completion.d/oshotspot
+sudo rm -f /usr/share/zsh/site-functions/_oshotspot
+sudo rm -f /usr/share/fish/vendor_completions.d/oshotspot.fish
+sudo rm -f /etc/NetworkManager/conf.d/oshotspot.conf
 sudo rm -f /etc/sysctl.d/oshotspot.conf
 sudo rm -f /etc/systemd/system/oshotspot*.service
 sudo systemctl daemon-reload
+sudo rm -f /run/oshotspot-hostapd.pid /run/oshotspot-dnsmasq.pid
 sudo rm -rf /etc/oshotspot
 sudo rm -rf /var/log/oshotspot
 ```
@@ -656,11 +690,13 @@ Any distribution with `hostapd`, `dnsmasq`, `iw`, and `iptables` should work.
 
 ```
 OSHotspot/
+├── .gitignore
 ├── README.md
 ├── LICENSE
 ├── install.sh
 ├── uninstall.sh
 ├── oshotspot                    # Main CLI
+├── agents.json                  # Project metadata for AI agents
 ├── config.conf.example          # Configuration template
 ├── public/
 │   └── dashboard.png            # Dashboard screenshot
@@ -726,7 +762,7 @@ OSHotspot/
 
 Future improvements:
 
-- Automatic driver compatibility check
+- Advanced driver compatibility check with suggested fixes
 - Multi-language support
 - Bandwidth limiting per client
 
