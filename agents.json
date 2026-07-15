@@ -46,10 +46,17 @@
       "CHANNEL": { "type": "int", "default": 6, "range": "1-13" },
       "HW_MODE": { "type": "string", "default": "g", "options": ["g", "a"] },
       "COUNTRY_CODE": { "type": "string", "default": "FR" },
+      "HOSTNAME": { "type": "string", "default": "oshotspot" },
       "WIFI_IFACE": { "type": "string", "default": "", "description": "Auto-detected if empty" },
       "AP_IFACE": { "type": "string", "default": "ap0" },
+      "AP_IP": { "type": "string", "default": "192.168.50.1" },
       "SUBNET": { "type": "string", "default": "192.168.50.0" },
-      "AP_IP": { "type": "string", "default": "192.168.50.1" }
+      "AP_CIDR": { "type": "int", "default": 24 },
+      "DHCP_RANGE_START": { "type": "string", "default": "192.168.50.10" },
+      "DHCP_RANGE_END": { "type": "string", "default": "192.168.50.100" },
+      "DHCP_LEASE": { "type": "string", "default": "12h" },
+      "DNS_PRIMARY": { "type": "string", "default": "8.8.8.8" },
+      "DNS_SECONDARY": { "type": "string", "default": "1.1.1.1" }
     }
   },
 
@@ -64,6 +71,9 @@
     "qr": { "cmd": "sudo oshotspot qr", "description": "Show QR code to connect phone" },
     "doctor": { "cmd": "sudo oshotspot doctor", "description": "Run diagnostic checks" },
     "interfaces": { "cmd": "sudo oshotspot interfaces", "description": "List WiFi adapters" },
+    "logs": { "cmd": "sudo oshotspot logs [hostapd|dnsmasq|all] [--follow] [--lines=N]", "description": "View and follow hotspot logs" },
+    "enable": { "cmd": "sudo oshotspot enable", "description": "Enable hotspot at boot" },
+    "disable": { "cmd": "sudo oshotspot disable", "description": "Disable hotspot at boot" },
     "config": { "cmd": "sudo oshotspot config", "description": "Show current config" },
     "set": { "cmd": "sudo oshotspot set <key> <value>", "description": "Change config (ssid, password, wifi_iface)" }
   },
@@ -81,10 +91,10 @@
 
   "file_structure": {
     "cli": "oshotspot",
-    "scripts": "scripts/{utils,firewall,start,stop,repair,status,clients,monitor,qr,doctor}.sh",
+    "scripts": "scripts/{utils,firewall,start,stop,repair,status,clients,monitor,qr,doctor,logs,web}.sh",
     "configs": "configs/{hostapd.conf.template,dnsmasq.conf.template,nm-oshotspot.conf}",
     "systemd": "systemd/{oshotspot.service,oshotspot-dnsmasq.service}",
-    "completions": "completions/oshotspot"
+    "completions": "completions/{oshotspot,oshotspot.zsh,oshotspot.fish}"
   },
 
   "troubleshooting": {
