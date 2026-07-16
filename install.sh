@@ -133,6 +133,9 @@ install_files() {
     for script in "${SRC}/scripts/"*.sh; do
         install -m 755 "${script}" "${scripts_dir}/"
     done
+    if [[ -f "${SRC}/uninstall.sh" ]]; then
+        install -m 755 "${SRC}/uninstall.sh" "${scripts_dir}/uninstall.sh"
+    fi
     log_info "Scripts installed to ${scripts_dir}/"
 
     local configs_dir="/usr/lib/oshotspot/configs"

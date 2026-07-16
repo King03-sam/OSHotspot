@@ -49,6 +49,10 @@ show_help() {
     echo "  enable      Enable hotspot at boot"
     echo "  disable     Disable hotspot at boot"
     echo ""
+    echo "Maintenance:"
+    echo "  uninstall   Remove OSHotspot from the system"
+    echo "  uninstall --purge  Remove everything including config and logs"
+    echo ""
     echo "Change settings:"
     echo "  set ssid <name>           Change hotspot name"
     echo "  set password <pass>       Change hotspot password"
@@ -222,6 +226,13 @@ main() {
             fi
             systemctl disable oshotspot.service 2>/dev/null
             echo -e "${GREEN}Hotspot will NOT start at boot.${NC}"
+            ;;
+        uninstall)
+            if [[ "${EUID}" -ne 0 ]]; then
+                echo -e "${RED}This command must be run as root (use sudo).${NC}"
+                exit 1
+            fi
+            exec bash "${SCRIPTS_DIR}/uninstall.sh" "$@"
             ;;
         set)
             local key="${1:-}"
