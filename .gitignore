@@ -80,5 +80,4 @@ __pycache__/
 #osai-agent internal state
 .osai-agent/
 
-# Kilo internal state
-.kilo/
+
