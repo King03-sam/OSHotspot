@@ -68,7 +68,7 @@
         OS.$('heroEyebrow').textContent = 'Hotspot Status';
         OS.$('heroTitle').textContent = running ? 'Hotspot Active' : 'Hotspot Inactive';
         OS.$('heroSub').textContent = running
-            ? 'Broadcasting \u2014 devices can connect now'
+            ? 'Broadcasting. Devices can connect'
             : 'Click Start to bring up the access point';
         OS.$('heroSsid').textContent = data.ssid || '\u2014';
         OS.$('heroAp').textContent = (data.ap_iface || 'ap0') + ' (' + (data.ap_state || '\u2014') + ')';
