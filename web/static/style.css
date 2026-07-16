@@ -721,6 +721,8 @@ a:hover { opacity: 0.7; }
     color: var(--bg-app);
 }
 .btn-primary:hover {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
     opacity: 0.85;
     box-shadow: none;
     color: var(--bg-app);
