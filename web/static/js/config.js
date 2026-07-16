@@ -78,12 +78,17 @@
             return;
         }
 
+        var btn = OS.$('btnSaveConfig');
+        if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+
         OS.api('/api/config', 'POST', data).then(function (res) {
             status.textContent = 'Saved: ' + (res.updated || []).join(', ');
             status.className = 'form-status ok';
             OS.$('cfgPassword').value = '';
             OS.toast('Configuration saved', 'Updated: ' + (res.updated || []).join(', '), 'success');
             loadConfig();
+            var btn = OS.$('btnSaveConfig');
+            if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
             setTimeout(function () {
                 status.textContent = '';
                 status.className = 'form-status';
@@ -93,6 +98,8 @@
             status.textContent = msg;
             status.className = 'form-status error';
             OS.toast('Save failed', msg, 'error');
+            var btn = OS.$('btnSaveConfig');
+            if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
         });
     };
 
