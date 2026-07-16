@@ -47,7 +47,7 @@
         }, 5000);
 
         s.clientsInterval = setInterval(function () {
-            if (!document.hidden && OS.$('view-clients').classList.contains('active')) {
+            if (!document.hidden) {
                 var cb = OS.$('clientsAutoRefresh');
                 if (!cb || cb.checked) OS.refreshClients();
             }
