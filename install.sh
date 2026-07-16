@@ -85,7 +85,7 @@ install_dependencies() {
 
     case "$(detect_pkg_manager)" in
         apt)
-            apt-get update -qq
+            apt-get update -qq || log_warn "Some repositories failed to update. Continuing..."
             apt-get install -y hostapd dnsmasq iptables iw iproute2 qrencode
             ;;
         dnf)
