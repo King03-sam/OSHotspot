@@ -58,8 +58,7 @@
         if (sidebarUptime) {
             sidebarUptime.textContent = data.hostapd_pid ? ('PID ' + data.hostapd_pid) : '\u2014';
         }
-        var navPillClients = OS.$('navPillClients');
-        if (navPillClients) navPillClients.textContent = data.clients || 0;
+
 
         /* --- Hero card --- */
         var heroCard = OS.$('heroCard');

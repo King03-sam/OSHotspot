@@ -23,8 +23,6 @@
 
             var navPillClients = OS.$('navPillClients');
             if (navPillClients) navPillClients.textContent = count;
-            var pillClients = OS.$('pillClients');
-            if (pillClients) pillClients.textContent = count;
             var valClients = OS.$('valClients');
             if (valClients) valClients.textContent = count;
             var clientsCountBadge = OS.$('clientsCountBadge');
