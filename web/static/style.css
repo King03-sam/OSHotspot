@@ -723,6 +723,7 @@ a:hover { opacity: 0.7; }
 .btn-primary:hover {
     opacity: 0.85;
     box-shadow: none;
+    color: var(--bg-app);
 }
 
 .btn-danger {
