@@ -83,6 +83,10 @@ stop_hotspot() {
     echo ""
 
     stop_hostapd
+
+    # Stop watchdog if running
+    pkill -f "oshotspot-watchdog" 2>/dev/null || true
+
     stop_dnsmasq
     "${SCRIPT_DIR}/firewall.sh" cleanup
     remove_ap_interface "${AP_IFACE}"
