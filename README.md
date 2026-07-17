@@ -113,7 +113,6 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 
 OSHotspot creates a virtual WiFi access point on the same adapter that provides your Internet connection. Your computer acts as a router between the two networks.
 
-```
 ```mermaid
 graph TD
     Internet["Internet"]
@@ -129,13 +128,11 @@ graph TD
     Laptop --> AP
     AP --> Phone
 ```
-```
 
 OSHotspot does NOT disable NetworkManager. Your laptop keeps its original WiFi connection and simultaneously broadcasts a second network through `ap0`.
 
 ---
 
-```
 ```mermaid
 graph LR
     Phone["Phone<br/>192.168.50.x"]
@@ -151,9 +148,6 @@ graph LR
     Wifi --> Router
     Router --> Internet
 ```
-```
-
-OSHotspot does NOT disable NetworkManager. Your laptop keeps its original WiFi connection and simultaneously broadcasts a second network through `ap0`.
 
 ---
 
