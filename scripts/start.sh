@@ -27,13 +27,6 @@ start_hostapd() {
     # Force kill any stale hostapd process that might hold the interface
     pkill -9 -f "hostapd.*${OSHOTSPOT_HOSTAPD_CONF}" 2>/dev/null || true
 
-    # Clean interface if it exists to avoid nl80211 conflicts
-    if ip link show ap0 &>/dev/null; then
-        ip link set ap0 down 2>/dev/null || true
-        iw dev ap0 del 2>/dev/null || true
-        sleep 2
-    fi
-
     ensure_log_dir
 
     local rc=0
@@ -148,6 +141,13 @@ start_hotspot() {
         echo -e "[keyfile]\nunmanaged-devices=interface-name:ap0" > "${nm_conf}"
         systemctl reload NetworkManager 2>/dev/null || true
         log_info "NetworkManager configured to ignore ${AP_IFACE}."
+    fi
+
+    # Clean stale interface before creating new one to avoid nl80211 conflicts
+    if ip link show ap0 &>/dev/null; then
+        ip link set ap0 down 2>/dev/null || true
+        iw dev ap0 del 2>/dev/null || true
+        sleep 2
     fi
 
     create_ap_interface "${AP_IFACE}"
