@@ -26,8 +26,7 @@
 #include <netlink/genl/ctrl.h>
 #include <netlink/handlers.h>
 #include <linux/nl80211.h>
-
-
+#include <ctype.h>
 
 #include "oshotspot.h"
 
@@ -148,6 +147,83 @@ static int parse_vht_cap(struct nlattr *tb,
     if (tb)
         ctx->caps->supports_vht = true;
     return 0;
+}
+
+/* Fallback: parse `iw phy <phy> info` output when nl80211 doesn't provide
+ * complete data.  Some drivers (Realtek, MediaTek, Broadcom) don't fill
+ * all netlink attributes but iw can still extract the info from the
+ * driver's textual output. */
+static int parse_iw_phy_output(const char *phy_name, struct wifi_caps *caps)
+{
+    char cmd[256];
+    char *line = NULL;
+    size_t len = 0;
+    FILE *fp;
+    int found_any = 0;
+
+    snprintf(cmd, sizeof(cmd), "iw phy %s info 2>/dev/null", phy_name);
+    fp = popen(cmd, "r");
+    if (!fp)
+        return -1;
+
+    while (getline(&line, &len, fp) > 0) {
+        char *p = line;
+        size_t linelen;
+
+        /* Strip trailing newline so comparisons below are clean */
+        linelen = strlen(p);
+        while (linelen > 0 && (p[linelen - 1] == '\n' || p[linelen - 1] == '\r'))
+            p[--linelen] = '\0';
+
+        while (*p && isspace((unsigned char)*p))
+            p++;
+
+        /* Detect AP mode: line exactly "* AP" (with optional leading
+         * whitespace).  Does not match "* #{ managed, AP } <= 2" from
+         * the valid interface combinations section. */
+        if (!caps->supports_ap && strncmp(p, "* AP", 4) == 0 &&
+            (p[4] == '\0' || isspace((unsigned char)p[4]))) {
+            caps->supports_ap = true;
+            found_any = 1;
+        }
+
+        /* Detect frequency entries: "* <freq> MHz [<channel>]" */
+        if (strstr(p, "MHz") && strstr(p, "[")) {
+            char *freq_str = p;
+            long freq;
+            int channel;
+            char *end;
+
+            while (*freq_str && !isdigit((unsigned char)*freq_str))
+                freq_str++;
+            if (!*freq_str)
+                continue;
+
+            freq = strtol(freq_str, &end, 10);
+            if (freq_str == end)
+                continue;
+
+            if (freq >= 2412 && freq <= 2484) {
+                channel = (int)((freq - 2407) / 5);
+                if (channel >= 1 && channel <= 13 &&
+                    caps->channel_2g_count < 14) {
+                    caps->channel_2g[caps->channel_2g_count++] = channel;
+                    found_any = 1;
+                }
+            } else if (freq >= 5170 && freq <= 5825) {
+                channel = (int)((freq - 5000) / 5);
+                if (channel >= 1 && channel <= 165 &&
+                    caps->channel_5g_count < 64) {
+                    caps->channel_5g[caps->channel_5g_count++] = channel;
+                    found_any = 1;
+                }
+            }
+        }
+    }
+
+    pclose(fp);
+    free(line);
+    return found_any ? 0 : -1;
 }
 
 
@@ -374,6 +450,14 @@ int wifi_scan(const char *phy_or_iface, struct wifi_caps *caps)
         fprintf(stderr, "Error: no wiphy info received\n");
         ret = -1;
         goto cleanup;
+    }
+
+    /* If nl80211 didn't provide complete data, try iw phy as fallback.
+     * Some drivers (Realtek, MediaTek, Broadcom) don't fill all netlink
+     * attributes, but iw can still extract AP mode and channels from
+     * the driver's textual output. */
+    if (!caps->supports_ap || caps->channel_2g_count == 0) {
+        parse_iw_phy_output(phy_name, caps);
     }
 
     ret = 0;
