@@ -90,7 +90,7 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - Automatic iptables NAT and forwarding rules
 - 802.11n support for better device compatibility
 - Suspend/resume auto-repair
-- Simple CLI: `start`, `stop`, `restart`, `status`, `repair`, `clients`, `monitor`, `config`, `logs`, `qr`, `doctor`, `interfaces`, `enable`, `disable`, `web`
+- Simple CLI: `start`, `stop`, `restart`, `status`, `repair`, `clients`, `monitor`, `config`, `logs`, `qr`, `doctor`, `interfaces`, `enable`, `disable`, `web`, `update`
 - Web dashboard for browser-based management (`oshotspot web`)
 - Kick & block clients — disconnect a device and prevent reconnection via MAC deny list
 - 5GHz compatibility warning — warns if adapter doesn't support 5GHz when that mode is selected
@@ -235,6 +235,16 @@ The C tools provide:
 - Process watchdog with automatic restart
 
 If C tools are not available, OSHotspot falls back to bash-based detection.
+
+# Update
+
+To update OSHotspot to the latest version:
+
+```bash
+sudo oshotspot update
+```
+
+This downloads the latest `install.sh` from GitHub and runs it automatically — same as the initial one-liner install, but preserves your existing configuration.
 
 ---
 
@@ -461,7 +471,7 @@ Tab completion is installed automatically. After installation, press `<TAB>` to 
 
 ```bash
 sudo oshotspot <TAB>
-# start  stop  restart  repair  status  clients  monitor  config  logs  qr  doctor  interfaces  web  enable  disable  set  help
+# start  stop  restart  repair  status  clients  monitor  config  logs  qr  doctor  interfaces  web  enable  disable  update  set  help
 
 sudo oshotspot set <TAB>
 # ssid  password  wifi_iface
