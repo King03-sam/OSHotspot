@@ -5,7 +5,7 @@
   "creator": "OLOJEDE Samuel",
   "license": "Apache-2.0",
   "repository": "https://github.com/King03-sam/OSHotspot",
-  "description": "Automatic Linux WiFi hotspot manager. Creates a virtual AP interface and configures routing, DHCP and NAT automatically using hostapd, dnsmasq, iw, and iptables/nftables.",
+  "description": "Automatic Linux WiFi hotspot manager with iw phy fallback for broad driver compatibility. Creates a virtual AP interface and configures routing, DHCP and NAT automatically using hostapd, dnsmasq, iw, and iptables/nftables.",
 
   "purpose": {
     "problem": "Create a reliable WiFi hotspot when Linux NetworkManager hotspot sharing fails.",
@@ -26,7 +26,10 @@
       "iw",
       "iptables OR nftables",
       "iproute2",
-      "qrencode"
+      "qrencode",
+      "gcc (optional, for C tools)",
+      "make (optional, for C tools)",
+      "libnl-genl-3-dev (optional, for C tools)"
     ],
     "permissions": "root (sudo)",
     "hardware": "WiFi adapter with AP mode support (check: iw list | grep '* AP')"
@@ -92,8 +95,10 @@
   "file_structure": {
     "cli": "oshotspot",
     "scripts": "scripts/{utils,firewall,start,stop,repair,status,clients,monitor,qr,doctor,logs,web}.sh",
+    "c_tools": "src/{oshotspot-scan,oshotspot-gen,oshotspot-watchdog}.c",
+    "web": "web/{serve.py,server/,static/}",
     "configs": "configs/{hostapd.conf.template,dnsmasq.conf.template,nm-oshotspot.conf}",
-    "systemd": "systemd/{oshotspot.service,oshotspot-dnsmasq.service}",
+    "systemd": "systemd/oshotspot.service",
     "completions": "completions/{oshotspot,oshotspot.zsh,oshotspot.fish}"
   },
 
