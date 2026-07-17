@@ -185,7 +185,7 @@ get_phy_device() {
     fi
 }
 
-# Abort if the adapter doesn't support AP mode (dynamic test).
+# Abort if the adapter doesn't support AP mode.
 check_ap_support() {
     local iface="$1"
     local phy
@@ -197,30 +197,17 @@ check_ap_support() {
 
     phy=$(get_phy_device "${iface}")
 
-    # Check if an AP interface already exists on this phy
-    local existing_ap
-    existing_ap=$(iw dev 2>/dev/null | awk -v target_phy="${phy}" '
-        /^[[:space:]]*phy/ { gsub(/[^a-z0-9]/, "", $1); current_phy = $1 }
-        /^[[:space:]]*Interface/ && current_phy == target_phy { current_iface = $2 }
-        current_phy == target_phy && /type AP/ { print current_iface; exit }
-    ' | head -1)
-
-    if [[ -n "${existing_ap}" ]]; then
-        log_info "AP mode supported on ${iface} (${phy}) — ${existing_ap} is active."
-        return 0
-    fi
-
-    # Dynamic test: create a temporary AP interface to verify
-    local test_iface="oshotspot_aptest_$$"
-    if iw phy "${phy}" interface add "${test_iface}" type __ap 2>/dev/null; then
-        iw dev "${test_iface}" del 2>/dev/null || true
+    # Fast check: does iw list report AP mode?
+    if iw phy "${phy}" info 2>/dev/null | grep -q "AP"; then
         log_info "AP mode supported on ${iface} (${phy})."
         return 0
     fi
 
-    # Fallback: try via iw dev set type on the interface itself
-    if iw dev "${iface}" set type __ap 2>/dev/null; then
-        iw dev "${iface}" set type managed 2>/dev/null || true
+    # Fallback: if grep fails (transient state after hostapd Ctrl+C),
+    # test by creating and removing ap0 directly.
+    iw dev ap0 del 2>/dev/null || true
+    if iw phy "${phy}" interface add ap0 type __ap 2>/dev/null; then
+        iw dev ap0 del 2>/dev/null || true
         log_info "AP mode supported on ${iface} (${phy})."
         return 0
     fi
