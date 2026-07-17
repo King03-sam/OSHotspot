@@ -307,6 +307,12 @@ void generate_hostapd_conf(const struct wifi_caps *caps,
 
     fclose(f);
 
+    /* Ensure deny_maclist.conf exists for hostapd */
+    {
+        FILE *df = fopen("/etc/oshotspot/deny_maclist.conf", "a");
+        if (df) fclose(df);
+    }
+
     fprintf(stderr, "Hostapd config written to %s\n", output_path);
     fprintf(stderr, "  HW mode: %s | Channel: %d | HT: %s | SHORT-GI-20: %s\n",
             hw_mode, channel,
