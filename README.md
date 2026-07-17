@@ -467,7 +467,7 @@ sudo systemctl stop oshotspot
 sudo systemctl status oshotspot
 ```
 
-A suspend/resume hook is automatically installed so the hotspot repairs itself after the laptop wakes up.
+A suspend/resume hook is automatically installed so the hotspot repairs itself after the laptop wakes up. This creates `oshotspot-resume.service` dynamically during installation.
 
 ---
 
@@ -804,8 +804,7 @@ OSHotspot/
 │   ├── oshotspot.zsh            # Zsh tab completion
 │   └── oshotspot.fish           # Fish tab completion
 └── systemd/
-    ├── oshotspot.service        # Main systemd unit
-    ├── oshotspot-resume.service # Suspend/resume auto-repair hook
+    └── oshotspot.service        # Main systemd unit
 ```
 
 ---
