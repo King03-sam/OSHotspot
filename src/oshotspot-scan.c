@@ -20,7 +20,12 @@
 #include <net/if.h>
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
+#include <netlink/genl/ctrl.h>
 #include <linux/nl80211.h>
+
+#ifndef NL80211_ATTR_SUPPORTED_INTERFACE_MODES
+#define NL80211_ATTR_SUPPORTED_INTERFACE_MODES 27
+#endif
 
 #include "oshotspot.h"
 
@@ -42,7 +47,7 @@ static int parse_iface_modes(struct nlattr *tb,
         return 0;
 
     nla_for_each_nested(nl_mode, tb, rem) {
-        enum nl80211_iface_type mode = nla_get_u32(nl_mode);
+        uint32_t mode = nla_get_u32(nl_mode);
 
         switch (mode) {
         case NL80211_IFTYPE_AP:
@@ -280,7 +285,7 @@ int wifi_scan(const char *phy_or_iface, struct wifi_caps *caps)
     nla_put_flag(msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
 
     /* Set callback */
-    nl_socket_modify_cb(msg, NL_CB_VALID, NL_CB_CUSTOM,
+    nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM,
                         wiphy_handler, &ctx);
 
     /* Send and receive */

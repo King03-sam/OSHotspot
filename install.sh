@@ -197,8 +197,12 @@ compile_c_tools() {
     local installed=0
 
     # Compile each tool independently — partial success is acceptable
+    local libnl_cflags libnl_libs
+    libnl_cflags=$(pkg-config --cflags libnl-genl-3.0 2>/dev/null || echo "-I/usr/include/libnl3")
+    libnl_libs=$(pkg-config --libs libnl-genl-3.0 2>/dev/null || echo "-lnl-genl-3 -lnl-3")
+
     if gcc -std=gnu99 -O2 -Wall -Iinclude -o oshotspot-scan src/oshotspot-scan.c \
-            $(pkg-config --cflags --libs libnl-genl-3.0 2>/dev/null) -lpthread 2>/dev/null; then
+            ${libnl_cflags} ${libnl_libs} -lpthread 2>/dev/null; then
         install -m 755 oshotspot-scan /usr/local/bin/
         installed=$((installed + 1))
     else
