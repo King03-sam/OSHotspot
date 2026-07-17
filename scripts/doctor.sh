@@ -110,11 +110,12 @@ check_networkmanager() {
 
 check_systemd() {
     if command -v systemctl &>/dev/null; then
-        if systemctl is-active --quiet oshotspot.service 2>/dev/null \
-                || systemctl is-enabled --quiet oshotspot.service 2>/dev/null; then
-            check_ok "Systemd service installed"
+        if systemctl is-active --quiet oshotspot.service 2>/dev/null; then
+            check_ok "Systemd service installed and running"
+        elif [[ -f /etc/systemd/system/oshotspot.service ]]; then
+            check_ok "Systemd service installed (not active)"
         else
-            check_warn "Systemd service not installed (run: sudo oshotspot start)"
+            check_warn "Systemd service not installed (run: sudo oshotspot install)"
         fi
     else
         check_ok "Systemd not available (skipped)"
