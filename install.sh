@@ -179,6 +179,38 @@ install_files() {
     fi
 }
 
+compile_c_tools() {
+    log_step "Compiling C tools (optional, for enhanced auto-detection)..."
+
+    if ! command -v gcc &>/dev/null; then
+        log_warn "gcc not found. C tools not compiled."
+        log_warn "To install: sudo apt install gcc libnl-genl-3-dev"
+        return
+    fi
+
+    if [[ ! -f "${SRC}/Makefile" ]]; then
+        log_warn "Makefile not found. C tools not compiled."
+        return
+    fi
+
+    cd "${SRC}"
+
+    # Try to compile (may fail if libnl not installed)
+    if make all 2>/dev/null; then
+        # Install to /usr/local/bin
+        install -m 755 oshotspot-scan /usr/local/bin/ 2>/dev/null || true
+        install -m 755 oshotspot-gen /usr/local/bin/ 2>/dev/null || true
+        install -m 755 oshotspot-watchdog /usr/local/bin/ 2>/dev/null || true
+        log_info "C tools installed: oshotspot-scan, oshotspot-gen, oshotspot-watchdog"
+    else
+        log_warn "C tools compilation failed. Using bash fallback."
+        log_warn "To install dependencies: sudo apt install gcc libnl-genl-3-dev"
+    fi
+
+    # Cleanup build artifacts
+    make clean 2>/dev/null || true
+}
+
 update_script_paths() {
     log_step "Updating installed script paths..."
 
@@ -295,6 +327,8 @@ main() {
     setup_config
     echo ""
     install_files
+    echo ""
+    compile_c_tools
     echo ""
     update_script_paths
     echo ""

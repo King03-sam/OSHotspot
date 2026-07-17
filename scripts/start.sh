@@ -112,6 +112,22 @@ start_hotspot() {
 
     check_ap_support "${WIFI_IFACE}"
 
+    # Auto-scan WiFi capabilities (C tool, optional)
+    local caps_json=""
+    if command -v oshotspot-scan &>/dev/null; then
+        log_step "Scanning WiFi capabilities..."
+        local phy
+        phy=$(iw phy | head -1 | awk '{print $2}' | sed 's/:$//')
+        if [[ -z "${phy}" ]]; then
+            phy="phy0"
+        fi
+        caps_json=$(oshotspot-scan --phy="${phy}" 2>/dev/null) || true
+        if [[ -n "${caps_json}" ]]; then
+            echo "${caps_json}" > /tmp/oshotspot_caps.json
+            log_info "WiFi capabilities detected."
+        fi
+    fi
+
     # Tell NetworkManager to ignore ap0 so it doesn't interfere with hostapd
     local nm_conf="/etc/NetworkManager/conf.d/oshotspot.conf"
     if [[ -d /etc/NetworkManager/conf.d ]] && [[ ! -f "${nm_conf}" ]]; then
@@ -124,13 +140,30 @@ start_hotspot() {
     create_ap_interface "${AP_IFACE}"
     sleep 3
     configure_ap_ip "${AP_IFACE}" "${AP_IP}" "${AP_CIDR}"
-    generate_hostapd_conf
+
+    # Generate hostapd config (adaptive C tool or fallback to bash)
+    if command -v oshotspot-gen &>/dev/null && [[ -f /tmp/oshotspot_caps.json ]]; then
+        log_step "Generating adaptive hostapd config..."
+        oshotspot-gen --caps=/tmp/oshotspot_caps.json \
+                      --config="${OSHOTSPOT_DIR}/config.conf" \
+                      --output="${OSHOTSPOT_HOSTAPD_CONF}"
+        log_info "Adaptive hostapd config generated."
+    else
+        generate_hostapd_conf
+    fi
+
     generate_dnsmasq_conf
     enable_ip_forward
     "${SCRIPT_DIR}/firewall.sh" setup
     sleep 2
     start_hostapd
     start_dnsmasq
+
+    # Start watchdog (C tool, optional)
+    if command -v oshotspot-watchdog &>/dev/null; then
+        oshotspot-watchdog monitor --interval=10 &
+        log_info "Watchdog started."
+    fi
 
     echo ""
     log_info "========================================"

@@ -35,6 +35,7 @@ Welcome! Contributions to OSHotspot are welcome and appreciated.
 - hostapd, dnsmasq, iw, iptables/nftables, iproute2
 - Python 3 (for web dashboard)
 - Root access (sudo)
+- gcc + libnl-genl-3-dev (for C tools, optional)
 
 ### Local Development
 
@@ -64,6 +65,16 @@ Edit files in `web/static/` — changes are served directly.
 - Source `utils.sh` for shared functions
 - Use `require_root()` and `load_config()` at script entry
 - Quote all variables: `"${var}"`
+
+### C (optional tools)
+
+- C99 standard (`-std=c99`)
+- Use `oshotspot.h` for shared types
+- JSON output via helper macros (no external JSON library)
+- libnl for netlink communication (nl80211)
+- All functions should handle errors gracefully
+- Use `fprintf(stderr, ...)` for errors, `printf(...)` for output
+- Compile with `-Wall -Wextra -O2`
 
 ### Python (web server)
 

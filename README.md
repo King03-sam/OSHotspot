@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Linux-lightgrey.svg)](https://linux.org)
 [![Bash](https://img.shields.io/badge/Language-Bash-4EAA25.svg)](https://www.gnu.org/software/bash/)
+[![C](https://img.shields.io/badge/Language-C-00599C.svg)]()
 [![Python](https://img.shields.io/badge/Language-Python%203-3776AB.svg)](https://www.python.org/)
 [![hostapd](https://img.shields.io/badge/tool-hostapd-orange.svg)](https://w1.fi/hostapd/)
 [![Frontend](https://img.shields.io/badge/Frontend-HTML%2FCSS%2FJS-F7DF1E.svg)]()
@@ -101,6 +102,10 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - QR code display to share hotspot with phones instantly
 - Bash, Zsh, and Fish tab completion for the CLI
 - Supports Ubuntu, Debian, Mint, Fedora, Arch, and more
+- Automatic WiFi adapter capability detection via nl80211 (C tools)
+- Adaptive hostapd configuration based on hardware (auto-fixes SHORT-GI-20 errors)
+- Process watchdog with automatic restart on crash (C tools)
+- Graceful fallback to bash if C tools not available
 
 ---
 
@@ -212,6 +217,24 @@ The installer will:
 6. Install Bash, Zsh, and Fish tab completions
 7. Configure NetworkManager to ignore the `ap0` interface
 8. Set up systemd services and suspend/resume hooks
+9. Compile C tools (if gcc + libnl available) for enhanced auto-detection
+
+### Building C tools from source
+
+If you want to compile the C tools manually:
+
+```bash
+sudo apt install gcc libnl-genl-3-dev
+make all
+sudo make install
+```
+
+The C tools provide:
+- WiFi adapter capability scanning (nl80211)
+- Adaptive hostapd config generation (auto-fixes SHORT-GI-20 errors)
+- Process watchdog with automatic restart
+
+If C tools are not available, OSHotspot falls back to bash-based detection.
 
 ---
 
@@ -642,8 +665,10 @@ Make sure these lines are present:
 ```
 country_code=FR
 ieee80211n=1
-ht_capab=[HT20][SHORT-GI-20]
+ht_capab=[HT20]
 ```
+
+**Note**: `[SHORT-GI-20]` may cause "Failed to set beacon parameters" errors on some adapters. OSHotspot auto-detects this and generates the correct config.
 
 Change `FR` to your country code. Then restart:
 
@@ -693,11 +718,18 @@ OSHotspot/
 ├── .gitignore
 ├── README.md
 ├── LICENSE
+├── Makefile                    # Build C tools
 ├── install.sh
 ├── uninstall.sh
 ├── oshotspot                    # Main CLI
 ├── agents.json                  # Project metadata for AI agents
 ├── config.conf.example          # Configuration template
+├── include/
+│   └── oshotspot.h              # C shared types
+├── src/
+│   ├── oshotspot-scan.c         # nl80211 WiFi scanner
+│   ├── oshotspot-gen.c          # Adaptive config generator
+│   └── oshotspot-watchdog.c     # Process watchdog
 ├── public/
 │   └── dashboard.png            # Dashboard screenshot
 ├── scripts/
@@ -762,9 +794,9 @@ OSHotspot/
 
 Future improvements:
 
-- Advanced driver compatibility check with suggested fixes
 - Multi-language support
 - Bandwidth limiting per client
+- WiFi repeater/extender mode
 
 ---
 

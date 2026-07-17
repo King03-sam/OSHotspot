@@ -14,6 +14,12 @@ graph TB
         SYSD[Systemd Services<br/>boot / suspend]
     end
 
+    subgraph CTools["C Tools (optional, auto-detected)"]
+        SCAN[oshotspot-scan<br/>nl80211 scanner]
+        GEN[oshotspot-gen<br/>config generator]
+        WD[oshotspot-watchdog<br/>process monitor]
+    end
+
     subgraph Core["Core Layer (scripts/*.sh)"]
         START[start.sh]
         STOP[stop.sh]
@@ -52,6 +58,10 @@ graph TB
     UTILS --> CONF
     START --> TPLS --> HOSTAPD & DNSMASQ
     CONF --> UTILS
+
+    START -->|"auto-detect"| SCAN & GEN
+    START -->|"auto-monitor"| WD
+    SCAN --> GEN
 
     HOSTAPD -.->|WiFi AP| PHONES
     DNSMASQ -.->|DHCP / DNS| PHONES
@@ -221,6 +231,7 @@ The startup process follows a strict 13-step sequence.
 sequenceDiagram
     participant U as User / CLI
     participant S as start.sh
+    participant C as C Tools (optional)
     participant UTL as utils.sh
     participant SYS as System Tools
 
@@ -230,17 +241,33 @@ sequenceDiagram
     S->>UTL: check_commands()
     S->>SYS: check_ap_support() [iw phy info]
 
-    S->>SYS: Configure NetworkManager to ignore ap0
-    S->>SYS: iw phy add ap0 type __ap
-    S->>SYS: ip addr add 192.168.50.1/24 dev ap0
-    S->>SYS: Generate hostapd.conf from template
-    S->>SYS: Generate dnsmasq.conf from template
-    S->>SYS: sysctl net.ipv4.ip_forward=1
+    alt C tools available
+        S->>C: oshotspot-scan --phy=phy0
+        C-->>S: JSON capabilities
+        S->>SYS: Configure NetworkManager to ignore ap0
+        S->>SYS: iw phy add ap0 type __ap
+        S->>SYS: ip addr add 192.168.50.1/24 dev ap0
+        S->>C: oshotspot-gen --caps=caps.json
+        C-->>S: Adaptive hostapd.conf
+        S->>SYS: Generate dnsmasq.conf from template
+    else Bash fallback
+        S->>SYS: Configure NetworkManager to ignore ap0
+        S->>SYS: iw phy add ap0 type __ap
+        S->>SYS: ip addr add 192.168.50.1/24 dev ap0
+        S->>SYS: Generate hostapd.conf from template
+        S->>SYS: Generate dnsmasq.conf from template
+    end
 
+    S->>SYS: sysctl net.ipv4.ip_forward=1
     S->>SYS: firewall.sh setup<br/>NAT MASQUERADE + FORWARD + DNS redirect
 
     S->>SYS: hostapd -B (background daemon)
     S->>SYS: dnsmasq --daemon (DHCP + DNS)
+
+    alt C tools available
+        S->>C: oshotspot-watchdog monitor --interval=10
+        Note over C: Auto-restart on crash
+    end
 
     Note over S,SYS: Hotspot is now active<br/>Clients can connect
 ```
@@ -381,10 +408,17 @@ sequenceDiagram
 ```
 OSHotspot/
 ├── oshotspot                    # CLI entry point (bash)
+├── Makefile                     # Build system for C tools
 ├── install.sh                   # Installer (local or remote)
 ├── uninstall.sh                 # Uninstaller (--purge option)
 ├── config.conf.example          # Configuration template
 ├── agents.json                  # AI agent metadata
+├── include/
+│   └── oshotspot.h              # Shared C types
+├── src/
+│   ├── oshotspot-scan.c         # nl80211 WiFi scanner
+│   ├── oshotspot-gen.c          # Adaptive config generator
+│   └── oshotspot-watchdog.c     # Process watchdog
 ├── scripts/
 │   ├── utils.sh                 # Shared functions, config loader
 │   ├── start.sh                 # Hotspot startup (13 steps)
@@ -463,3 +497,7 @@ OSHotspot/
 9. **ThreadingHTTPServer** — Long-running scripts don't block status polling and other API requests.
 
 10. **Auto-restart on config change** — Both CLI and web dashboard automatically restart the hotspot after configuration updates.
+
+11. **Graceful degradation** — C tools are optional. If not compiled (missing gcc or libnl), bash fallback handles everything. The user experience is identical.
+
+12. **Adaptive hardware support** — C tools detect actual WiFi adapter capabilities (HT, VHT, short GI) and generate hostapd.conf accordingly, preventing common "Failed to set beacon parameters" errors.
