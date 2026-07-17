@@ -356,7 +356,14 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         if is_running:
             run_script("stop.sh", timeout=60)
             time.sleep(1)
-            run_script("start.sh", timeout=60)
+            code, stdout, stderr = run_script("start.sh", timeout=60)
+            if code != 0:
+                self.send_json(
+                    {"ok": False, "error": stderr or "Restart failed after config update",
+                     "updated": list(validated.keys())},
+                    500,
+                )
+                return
 
         self.send_json({"ok": True, "updated": list(validated.keys())})
 
