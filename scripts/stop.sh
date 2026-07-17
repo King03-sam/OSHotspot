@@ -26,12 +26,16 @@ stop_hostapd() {
             retries=$((retries + 1))
         done
 
-        if kill -0 "${pid}" 2>/dev/null; then
-            log_warn "Force killing hostapd (PID ${pid})..."
-            kill -9 "${pid}" 2>/dev/null || true
-        fi
+    if kill -0 "${pid}" 2>/dev/null; then
+        log_warn "Force killing hostapd (PID ${pid})..."
+        kill -9 "${pid}" 2>/dev/null || true
+    fi
 
-        remove_pid "${OSHOTSPOT_PID_HOSTAPD}"
+    # Kill any remaining hostapd process and wait for kernel to release interface
+    pkill -9 -f hostapd 2>/dev/null || true
+    sleep 2
+
+    remove_pid "${OSHOTSPOT_PID_HOSTAPD}"
         log_info "hostapd stopped."
     else
         log_info "hostapd is not running."

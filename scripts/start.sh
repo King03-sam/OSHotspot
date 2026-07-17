@@ -24,6 +24,10 @@ start_hostapd() {
         remove_pid "${OSHOTSPOT_PID_HOSTAPD}"
     fi
 
+    # Force kill any stale hostapd process that might hold the interface
+    pkill -9 -f hostapd 2>/dev/null || true
+    sleep 3
+
     ensure_log_dir
 
     local rc=0
