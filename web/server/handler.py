@@ -78,7 +78,10 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_security_headers()
         self.end_headers()
-        self.wfile.write(json.dumps(data).encode())
+        try:
+            self.wfile.write(json.dumps(data).encode())
+        except BrokenPipeError:
+            pass
 
     def send_static_file(self, path):
         if not os.path.isfile(path):

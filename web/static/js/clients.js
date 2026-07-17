@@ -87,7 +87,7 @@
     }
 
     window.kickClient = function (mac) {
-        OS.api('/api/kick', 'POST', { mac: mac }).then(function (res) {
+        OS.api('/api/kick', 'POST', { mac: mac }, OS.TIMEOUT_ACTION).then(function (res) {
             OS.toast(res.ok ? 'Client blocked & disconnected' : 'Kick failed',
                      res.ok ? mac : (res.error || 'Unknown error'),
                      res.ok ? 'success' : 'error');
@@ -98,7 +98,7 @@
     };
 
     window.unblockClient = function (mac) {
-        OS.api('/api/unblock', 'POST', { mac: mac }).then(function (res) {
+        OS.api('/api/unblock', 'POST', { mac: mac }, OS.TIMEOUT_ACTION).then(function (res) {
             OS.toast(res.ok ? 'Client unblocked' : 'Unblock failed',
                      res.ok ? mac : (res.error || 'Unknown error'),
                      res.ok ? 'success' : 'error');
