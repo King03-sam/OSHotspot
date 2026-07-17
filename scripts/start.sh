@@ -26,15 +26,22 @@ start_hostapd() {
 
     ensure_log_dir
 
-    hostapd -B "${OSHOTSPOT_HOSTAPD_CONF}" \
+    local rc=0
+    timeout 15 hostapd -B "${OSHOTSPOT_HOSTAPD_CONF}" \
         -P "${OSHOTSPOT_PID_HOSTAPD}" \
-        >> "${OSHOTSPOT_HOSTAPD_LOG}" 2>&1
+        >> "${OSHOTSPOT_HOSTAPD_LOG}" 2>&1 || rc=$?
 
     sleep 2
     if is_running "${OSHOTSPOT_PID_HOSTAPD}"; then
         log_info "hostapd started (PID $(cat "${OSHOTSPOT_PID_HOSTAPD}"))."
     else
-        log_error "hostapd failed to start. Check ${OSHOTSPOT_HOSTAPD_LOG}"
+        log_error "hostapd failed to start (exit code: ${rc})."
+        if [[ -f "${OSHOTSPOT_HOSTAPD_LOG}" ]]; then
+            log_error "Last lines from ${OSHOTSPOT_HOSTAPD_LOG}:"
+            tail -10 "${OSHOTSPOT_HOSTAPD_LOG}" | while IFS= read -r line; do
+                log_error "  ${line}"
+            done
+        fi
         exit 1
     fi
 }
@@ -101,6 +108,7 @@ start_hotspot() {
     fi
 
     create_ap_interface "${AP_IFACE}"
+    sleep 1
     configure_ap_ip "${AP_IFACE}" "${AP_IP}" "${AP_CIDR}"
     generate_hostapd_conf
     generate_dnsmasq_conf
