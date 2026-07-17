@@ -97,7 +97,7 @@ main() {
 
     # Remove systemd services
     local removed=0
-    for svc in oshotspot.service oshotspot-dnsmasq.service oshotspot-resume.service; do
+    for svc in oshotspot.service oshotspot-resume.service; do
         if [[ -f "/etc/systemd/system/${svc}" ]]; then
             systemctl stop "${svc}" 2>/dev/null || true
             systemctl disable "${svc}" 2>/dev/null || true

@@ -145,6 +145,11 @@ install_files() {
     fi
     log_info "Configs installed to ${configs_dir}/"
 
+    # Install example config for 'config reset'
+    if [[ -f "${SRC}/config.conf.example" ]]; then
+        install -m 644 "${SRC}/config.conf.example" "/usr/lib/oshotspot/config.conf.example"
+    fi
+
     # Bash completion
     local completion_dir="/etc/bash_completion.d"
     mkdir -p "${completion_dir}"

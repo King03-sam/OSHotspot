@@ -46,3 +46,9 @@ DHCP_LEASE="12h"
 # DNS servers
 DNS_PRIMARY="8.8.8.8"
 DNS_SECONDARY="1.1.1.1"
+
+# DNS traffic policy (default: true)
+# When enabled, all DNS traffic from hotspot clients is redirected to the
+# local dnsmasq, and DNS-over-HTTPS resolver IPs are blocked on port 443.
+# Set to "false" to disable DNS redirect and DoH blocking.
+DNS_REDIRECT="true"

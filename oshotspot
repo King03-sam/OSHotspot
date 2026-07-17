@@ -178,7 +178,7 @@ main() {
             case "${subcmd}" in
                 reset)
                     local config="/etc/oshotspot/config.conf"
-                    local example="/usr/lib/oshotspot/configs/../config.conf.example"
+                    local example="/usr/lib/oshotspot/config.conf.example"
                     if [[ ! -f "${example}" ]]; then
                         example="/usr/local/share/oshotspot/config.conf.example"
                     fi

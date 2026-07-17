@@ -45,15 +45,6 @@ detect_firewall() {
     fi
 }
 
-# Check if a firewall rule already exists
-fw_rule_exists() {
-    if [[ "${FIREWALL}" == "nft" ]]; then
-        nft list ruleset 2>/dev/null | grep -q "$1"
-    else
-        iptables "$@" 2>/dev/null
-    fi
-}
-
 # Set up NAT and forwarding so clients on ap0 can reach the internet.
 setup_firewall() {
     require_root
@@ -101,31 +92,30 @@ setup_firewall_iptables() {
 }
 
 setup_firewall_nft() {
-    # Create tables if they don't exist
-    nft add table ip filter 2>/dev/null || true
-    nft add table ip nat 2>/dev/null || true
-    nft add chain ip filter forward '{ type filter hook forward priority 0; }' 2>/dev/null || true
-    nft add chain ip nat postrouting '{ type nat hook postrouting priority 100; }' 2>/dev/null || true
+    # Create dedicated OSHotspot table and chains
+    nft add table ip oshotspot 2>/dev/null || true
+    nft add chain ip oshotspot forward '{ type filter hook forward priority -1; }' 2>/dev/null || true
+    nft add chain ip oshotspot postrouting '{ type nat hook postrouting priority 100; }' 2>/dev/null || true
 
     # Allow traffic from ap0 to the internet
-    if ! nft list chain ip filter forward 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*oifname \"${WIFI_IFACE}\""; then
-        nft add rule ip filter forward iifname "${AP_IFACE}" oifname "${WIFI_IFACE}" accept
+    if ! nft list chain ip oshotspot forward 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*oifname \"${WIFI_IFACE}\""; then
+        nft add rule ip oshotspot forward iifname "${AP_IFACE}" oifname "${WIFI_IFACE}" accept
         log_info "Added FORWARD rule: ${AP_IFACE} -> ${WIFI_IFACE}"
     else
         log_info "FORWARD rule ${AP_IFACE} -> ${WIFI_IFACE} already exists."
     fi
 
     # Allow return traffic back to clients
-    if ! nft list chain ip filter forward 2>/dev/null | grep -q "iifname \"${WIFI_IFACE}\".*oifname \"${AP_IFACE}\""; then
-        nft add rule ip filter forward iifname "${WIFI_IFACE}" oifname "${AP_IFACE}" ct state established,related accept
+    if ! nft list chain ip oshotspot forward 2>/dev/null | grep -q "iifname \"${WIFI_IFACE}\".*oifname \"${AP_IFACE}\""; then
+        nft add rule ip oshotspot forward iifname "${WIFI_IFACE}" oifname "${AP_IFACE}" ct state established,related accept
         log_info "Added FORWARD rule: ${WIFI_IFACE} -> ${AP_IFACE} (established)"
     else
         log_info "FORWARD rule ${WIFI_IFACE} -> ${AP_IFACE} already exists."
     fi
 
     # Masquerade outbound traffic
-    if ! nft list chain ip nat postrouting 2>/dev/null | grep -q "ip saddr ${SUBNET}/${AP_CIDR}.*oifname \"${WIFI_IFACE}\""; then
-        nft add rule ip nat postrouting ip saddr "${SUBNET}/${AP_CIDR}" oifname "${WIFI_IFACE}" masquerade
+    if ! nft list chain ip oshotspot postrouting 2>/dev/null | grep -q "ip saddr ${SUBNET}/${AP_CIDR}.*oifname \"${WIFI_IFACE}\""; then
+        nft add rule ip oshotspot postrouting ip saddr "${SUBNET}/${AP_CIDR}" oifname "${WIFI_IFACE}" masquerade
         log_info "Added NAT MASQUERADE: ${SUBNET}/${AP_CIDR} -> ${WIFI_IFACE}"
     else
         log_info "NAT MASQUERADE rule already exists."
@@ -152,17 +142,17 @@ setup_dns_redirect_iptables() {
 }
 
 setup_dns_redirect_nft() {
-    nft add table ip nat 2>/dev/null || true
-    nft add chain ip nat prerouting '{ type nat hook prerouting priority -100; }' 2>/dev/null || true
+    nft add table ip oshotspot 2>/dev/null || true
+    nft add chain ip oshotspot prerouting '{ type nat hook prerouting priority -100; }' 2>/dev/null || true
 
-    if ! nft list chain ip nat prerouting 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*udp dport 53.*redirect"; then
-        nft add rule ip nat prerouting iifname "${AP_IFACE}" udp dport 53 redirect
+    if ! nft list chain ip oshotspot prerouting 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*udp dport 53.*redirect"; then
+        nft add rule ip oshotspot prerouting iifname "${AP_IFACE}" udp dport 53 redirect
         log_info "Added DNS REDIRECT: UDP port 53 -> dnsmasq"
     else
         log_info "DNS REDIRECT (UDP) already exists."
     fi
-    if ! nft list chain ip nat prerouting 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*tcp dport 53.*redirect"; then
-        nft add rule ip nat prerouting iifname "${AP_IFACE}" tcp dport 53 redirect
+    if ! nft list chain ip oshotspot prerouting 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*tcp dport 53.*redirect"; then
+        nft add rule ip oshotspot prerouting iifname "${AP_IFACE}" tcp dport 53 redirect
         log_info "Added DNS REDIRECT: TCP port 53 -> dnsmasq"
     else
         log_info "DNS REDIRECT (TCP) already exists."
@@ -189,13 +179,13 @@ block_doh_iptables() {
 }
 
 block_doh_nft() {
-    nft add table ip filter 2>/dev/null || true
-    nft add chain ip filter forward '{ type filter hook forward priority 0; }' 2>/dev/null || true
+    nft add table ip oshotspot 2>/dev/null || true
+    nft add chain ip oshotspot forward '{ type filter hook forward priority -1; }' 2>/dev/null || true
 
     local count=0
     for ip in "${DOH_IPS[@]}"; do
-        if ! nft list chain ip filter forward 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*${ip}.*tcp dport 443.*drop"; then
-            nft add rule ip filter forward iifname "${AP_IFACE}" ip daddr "$ip" tcp dport 443 drop
+        if ! nft list chain ip oshotspot forward 2>/dev/null | grep -q "iifname \"${AP_IFACE}\".*${ip}.*tcp dport 443.*drop"; then
+            nft add rule ip oshotspot forward iifname "${AP_IFACE}" ip daddr "$ip" tcp dport 443 drop
             count=$((count + 1))
         fi
     done
@@ -221,16 +211,15 @@ cleanup_dns_redirect_iptables() {
 
 cleanup_dns_redirect_nft() {
     local rules
-    rules=$(nft -a list chain ip nat prerouting 2>/dev/null || true)
+    rules=$(nft -a list chain ip oshotspot prerouting 2>/dev/null || true)
     if [[ -z "${rules}" ]]; then
         return
     fi
-    # Remove rules in reverse order (handle line number shifts)
     local handle
     while IFS= read -r line; do
         handle=$(echo "$line" | grep -oP '# handle \K\d+' || true)
         if [[ -n "${handle}" ]]; then
-            nft delete rule ip nat prerouting handle "${handle}" 2>/dev/null || true
+            nft delete rule ip oshotspot prerouting handle "${handle}" 2>/dev/null || true
         fi
     done < <(echo "$rules" | grep "iifname.*${AP_IFACE}.*dport 53.*redirect" | tac)
 }
@@ -246,7 +235,7 @@ cleanup_doh_block_iptables() {
 
 cleanup_doh_block_nft() {
     local rules
-    rules=$(nft -a list chain ip filter forward 2>/dev/null || true)
+    rules=$(nft -a list chain ip oshotspot forward 2>/dev/null || true)
     if [[ -z "${rules}" ]]; then
         return
     fi
@@ -254,7 +243,7 @@ cleanup_doh_block_nft() {
     while IFS= read -r line; do
         handle=$(echo "$line" | grep -oP '# handle \K\d+' || true)
         if [[ -n "${handle}" ]]; then
-            nft delete rule ip filter forward handle "${handle}" 2>/dev/null || true
+            nft delete rule ip oshotspot forward handle "${handle}" 2>/dev/null || true
         fi
     done < <(echo "$rules" | grep "iifname.*${AP_IFACE}.*tcp dport 443.*drop" | tac)
 }
@@ -324,34 +313,19 @@ cleanup_firewall_iptables() {
 }
 
 cleanup_firewall_nft() {
-    # Flush and remove OSHotspot chains (nft doesn't have easy per-rule deletion)
-    nft flush chain ip filter forward 2>/dev/null || true
-    nft flush chain ip nat postrouting 2>/dev/null || true
-    log_info "Flushed firewall rules (nft mode)."
-}
-
-allow_ap_forwarding() {
-    require_root
-    load_config
-    detect_firewall
-
-    if [[ "${FIREWALL}" == "nft" ]]; then
-        nft add rule ip filter forward ip saddr "${SUBNET}/${AP_CIDR}" accept 2>/dev/null || true
-        nft add rule ip filter forward ip daddr "${SUBNET}/${AP_CIDR}" accept 2>/dev/null || true
-    else
-        if ! iptables -C FORWARD -s "${SUBNET}/${AP_CIDR}" -j ACCEPT 2>/dev/null; then
-            iptables -I FORWARD 1 -s "${SUBNET}/${AP_CIDR}" -j ACCEPT
-        fi
-
-        if ! iptables -C FORWARD -d "${SUBNET}/${AP_CIDR}" -j ACCEPT 2>/dev/null; then
-            iptables -I FORWARD 2 -d "${SUBNET}/${AP_CIDR}" -j ACCEPT
-        fi
-    fi
+    # Flush and delete only OSHotspot dedicated chains (never touches system chains)
+    nft flush chain ip oshotspot forward 2>/dev/null || true
+    nft flush chain ip oshotspot postrouting 2>/dev/null || true
+    nft flush chain ip oshotspot prerouting 2>/dev/null || true
+    nft delete chain ip oshotspot forward 2>/dev/null || true
+    nft delete chain ip oshotspot postrouting 2>/dev/null || true
+    nft delete chain ip oshotspot prerouting 2>/dev/null || true
+    nft delete table ip oshotspot 2>/dev/null || true
+    log_info "Cleaned up OSHotspot firewall chains (nft mode)."
 }
 
 case "${1:-setup}" in
     setup)   setup_firewall ;;
     cleanup) cleanup_firewall ;;
-    allow)   allow_ap_forwarding ;;
-    *)       echo "Usage: $0 {setup|cleanup|allow}"; exit 1 ;;
+    *)       echo "Usage: $0 {setup|cleanup}"; exit 1 ;;
 esac
