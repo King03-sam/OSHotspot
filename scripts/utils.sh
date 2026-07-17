@@ -170,12 +170,22 @@ get_phy_device() {
     if [[ -n "${phy_path}" ]]; then
         basename "${phy_path}"
     else
-        log_error "Cannot determine physical device for ${iface}."
-        exit 1
+        # Fallback: extract phy from iw dev output
+        local phy
+        phy=$(iw dev 2>/dev/null | awk -v iface="${iface}" '
+            /^[[:space:]]*phy/ { current_phy = substr($1, 5) }
+            /^[[:space:]]*Interface/ && $2 == iface { print current_phy; exit }
+        ' | head -1)
+        if [[ -n "${phy}" ]]; then
+            echo "${phy}"
+        else
+            log_error "Cannot determine physical device for ${iface}."
+            exit 1
+        fi
     fi
 }
 
-# Abort if the adapter doesn't support AP mode.
+# Abort if the adapter doesn't support AP mode (dynamic test).
 check_ap_support() {
     local iface="$1"
     local phy
@@ -187,12 +197,24 @@ check_ap_support() {
 
     phy=$(get_phy_device "${iface}")
 
-    if ! iw phy "${phy}" info 2>/dev/null | grep -q "AP"; then
-        log_error "Your WiFi adapter (${iface}, ${phy}) does not support Access Point mode."
-        exit 1
+    # Dynamic test: actually create a temporary AP interface to verify
+    local test_iface="oshotspot_aptest_$$"
+    if iw phy "${phy}" interface add "${test_iface}" type __ap 2>/dev/null; then
+        iw dev "${test_iface}" del 2>/dev/null || true
+        log_info "AP mode supported on ${iface} (${phy})."
+        return 0
     fi
 
-    log_info "AP mode supported on ${iface} (${phy})."
+    # Fallback: try via iw dev set type on the interface itself
+    if iw dev "${iface}" set type __ap 2>/dev/null; then
+        iw dev "${iface}" set type managed 2>/dev/null || true
+        log_info "AP mode supported on ${iface} (${phy})."
+        return 0
+    fi
+
+    log_error "Your WiFi adapter (${iface}, ${phy}) does not support Access Point mode."
+    log_error "Run 'sudo hostapd -dd /etc/oshotspot/hostapd.conf' for details."
+    exit 1
 }
 
 iface_exists() { ip link show "$1" &>/dev/null; }
