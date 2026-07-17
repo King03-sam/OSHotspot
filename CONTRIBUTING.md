@@ -1,6 +1,6 @@
 # Contributing
 
-Welcome! Contributions to OSHotspot are welcome and appreciated.
+Welcome! Contributions to **OSHotspot** are welcome and appreciated.
 
 ## Project Maintainer
 
@@ -68,7 +68,7 @@ Edit files in `web/static/` — changes are served directly.
 
 ### C (optional tools)
 
-- C99 standard (`-std=c99`)
+- C99 standard (`-std=gnu99`, includes GNU extensions)
 - Use `oshotspot.h` for shared types
 - JSON output via helper macros (no external JSON library)
 - libnl for netlink communication (nl80211)
