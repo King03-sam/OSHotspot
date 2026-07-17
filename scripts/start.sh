@@ -126,9 +126,12 @@ start_hotspot() {
             phy="phy0"
         fi
         caps_json=$(timeout 5 oshotspot-scan --phy="${phy}" 2>/dev/null) || true
-        if [[ -n "${caps_json}" ]]; then
+        if [[ -n "${caps_json}" ]] && echo "${caps_json}" | grep -q '"supports_ap": true' && echo "${caps_json}" | grep -q '"channels_2g": \['; then
             echo "${caps_json}" > /tmp/oshotspot_caps.json
             log_info "WiFi capabilities detected."
+        else
+            log_info "C scan skipped (no valid data), using bash fallback."
+            caps_json=""
         fi
     fi
 

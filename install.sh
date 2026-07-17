@@ -342,6 +342,64 @@ main() {
     local script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+    if [[ "${1:-}" == "--check" ]]; then
+        echo -e "${BLUE}Checking OSHotspot installation...${NC}"
+        echo ""
+
+        local issues=0
+
+        if [[ -f "/usr/local/bin/oshotspot-scan" ]]; then
+            echo -e "${GREEN}[OK]${NC} oshotspot-scan installed"
+        else
+            echo -e "${RED}[MISSING]${NC} oshotspot-scan not installed"
+            issues=$((issues + 1))
+        fi
+
+        if [[ -f "/usr/local/bin/oshotspot-gen" ]]; then
+            echo -e "${GREEN}[OK]${NC} oshotspot-gen installed"
+        else
+            echo -e "${RED}[MISSING]${NC} oshotspot-gen not installed"
+            issues=$((issues + 1))
+        fi
+
+        if [[ -d "/usr/lib/oshotspot/scripts" ]]; then
+            echo -e "${GREEN}[OK]${NC} Scripts directory exists"
+        else
+            echo -e "${RED}[MISSING]${NC} Scripts directory missing"
+            issues=$((issues + 1))
+        fi
+
+        if [[ -f "/etc/oshotspot/config.conf" ]]; then
+            echo -e "${GREEN}[OK]${NC} Configuration exists"
+        else
+            echo -e "${RED}[MISSING]${NC} Configuration missing"
+            issues=$((issues + 1))
+        fi
+
+        if command -v hostapd &>/dev/null; then
+            echo -e "${GREEN}[OK]${NC} hostapd installed"
+        else
+            echo -e "${RED}[MISSING]${NC} hostapd not installed"
+            issues=$((issues + 1))
+        fi
+
+        if command -v dnsmasq &>/dev/null; then
+            echo -e "${GREEN}[OK]${NC} dnsmasq installed"
+        else
+            echo -e "${RED}[MISSING]${NC} dnsmasq not installed"
+            issues=$((issues + 1))
+        fi
+
+        echo ""
+        if [[ ${issues} -eq 0 ]]; then
+            echo -e "${GREEN}All checks passed!${NC}"
+        else
+            echo -e "${YELLOW}${issues} issue(s) found. Run 'sudo ./install.sh' to fix.${NC}"
+        fi
+        echo ""
+        exit 0
+    fi
+
     if [[ -f "${script_dir}/oshotspot" && -d "${script_dir}/scripts" ]]; then
         SRC="${script_dir}"
         log_info "Using local source files from ${SRC}"
