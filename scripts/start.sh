@@ -25,13 +25,19 @@ start_hostapd() {
     fi
 
     # Force kill any stale hostapd process that might hold the interface
-    pkill -9 -f hostapd 2>/dev/null || true
-    sleep 3
+    pkill -9 -f "hostapd.*${OSHOTSPOT_HOSTAPD_CONF}" 2>/dev/null || true
+
+    # Clean interface if it exists to avoid nl80211 conflicts
+    if ip link show ap0 &>/dev/null; then
+        ip link set ap0 down 2>/dev/null || true
+        iw dev ap0 del 2>/dev/null || true
+        sleep 2
+    fi
 
     ensure_log_dir
 
     local rc=0
-    timeout 15 hostapd -B "${OSHOTSPOT_HOSTAPD_CONF}" \
+    hostapd -B "${OSHOTSPOT_HOSTAPD_CONF}" \
         -P "${OSHOTSPOT_PID_HOSTAPD}" \
         >> "${OSHOTSPOT_HOSTAPD_LOG}" 2>&1 || rc=$?
 

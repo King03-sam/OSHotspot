@@ -301,7 +301,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"error": "Not found"}, 404)
 
     def _run_action(self, script_name):
-        code, stdout, stderr = run_script(script_name, timeout=60)
+        code, stdout, stderr = run_script(script_name, timeout=90)
         log_action(f"web:{script_name.replace('.sh', '')}")
         self.send_json(
             {"ok": code == 0, "output": stdout, "error": stderr},
@@ -309,8 +309,8 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         )
 
     def _restart(self):
-        stop_code, stop_out, stop_err = run_script("stop.sh", timeout=45)
-        code, stdout, stderr = run_script("start.sh", timeout=60)
+        stop_code, stop_out, stop_err = run_script("stop.sh", timeout=60)
+        code, stdout, stderr = run_script("start.sh", timeout=90)
         log_action("web:restart")
         self.send_json(
             {"ok": code == 0, "output": stdout, "error": stderr},
@@ -318,7 +318,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         )
 
     def _repair(self):
-        code, stdout, stderr = run_script("repair.sh", timeout=45)
+        code, stdout, stderr = run_script("repair.sh", timeout=60)
         log_action("web:repair")
         self.send_json(
             {"ok": code == 0, "output": stdout, "error": stderr},
@@ -356,7 +356,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         if is_running:
             run_script("stop.sh", timeout=60)
             time.sleep(1)
-            code, stdout, stderr = run_script("start.sh", timeout=60)
+            code, stdout, stderr = run_script("start.sh", timeout=90)
             if code != 0:
                 self.send_json(
                     {"ok": False, "error": stderr or "Restart failed after config update",
@@ -397,7 +397,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         # 2) Restart hostapd so it re-reads the deny list from file
         run_script("stop.sh", timeout=60)
         time.sleep(1)
-        code, stdout, stderr = run_script("start.sh", timeout=60)
+        code, stdout, stderr = run_script("start.sh", timeout=90)
 
         log_action(f"web:kick:{mac}")
         self.send_json({
@@ -470,7 +470,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         # 2) Restart hostapd so it re-reads the updated deny list
         run_script("stop.sh", timeout=60)
         time.sleep(1)
-        code, stdout, stderr = run_script("start.sh", timeout=60)
+        code, stdout, stderr = run_script("start.sh", timeout=90)
 
         log_action(f"web:unblock:{mac}")
         self.send_json({

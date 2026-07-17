@@ -32,7 +32,7 @@ stop_hostapd() {
     fi
 
     # Kill any remaining hostapd process and wait for kernel to release interface
-    pkill -9 -f hostapd 2>/dev/null || true
+    pkill -9 -f "hostapd.*${OSHOTSPOT_HOSTAPD_CONF}" 2>/dev/null || true
     sleep 2
 
     remove_pid "${OSHOTSPOT_PID_HOSTAPD}"
