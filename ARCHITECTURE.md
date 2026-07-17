@@ -15,8 +15,8 @@ graph TB
     end
 
     subgraph CTools["C Tools (optional, auto-detected)"]
-        SCAN[oshotspot-scan<br/>nl80211 scanner]
-        GEN[oshotspot-gen<br/>config generator]
+        SCAN[oshotspot-scan<br/>nl80211 scanner + iw phy fallback]
+        GEN[oshotspot-gen<br/>adaptive config generator]
         WD[oshotspot-watchdog<br/>process monitor]
     end
 
@@ -59,7 +59,7 @@ graph TB
     START --> TPLS --> HOSTAPD & DNSMASQ
     CONF --> UTILS
 
-    START -->|"auto-detect"| SCAN & GEN
+    START -->|"auto-detect + iw phy fallback"| SCAN & GEN
     START -->|"auto-monitor"| WD
     SCAN --> GEN
 
@@ -122,7 +122,6 @@ graph TD
 
     S[start.sh]
     SP[stop.sh]
-    RST[restart.sh]
     RP[repair.sh]
     ST[status.sh]
     CL[clients.sh]
@@ -265,8 +264,8 @@ sequenceDiagram
     S->>SYS: dnsmasq --daemon (DHCP + DNS)
 
     alt C tools available
-        S->>C: oshotspot-watchdog monitor --interval=10
-        Note over C: Auto-restart on crash
+        S->>C: oshotspot-watchdog monitor --interval=10 (nohup + disown)
+        Note over C: Logs to watchdog.log, auto-restart on crash
     end
 
     Note over S,SYS: Hotspot is now active<br/>Clients can connect
@@ -437,8 +436,7 @@ OSHotspot/
 │   ├── dnsmasq.conf.template    # dnsmasq config template
 │   └── nm-oshotspot.conf        # NetworkManager ignore ap0
 ├── systemd/
-│   ├── oshotspot.service        # Main systemd unit
-│   └── oshotspot-dnsmasq.service # Dedicated dnsmasq unit
+│   └── oshotspot.service        # Main systemd unit
 ├── completions/
 │   ├── oshotspot                # Bash completion
 │   ├── oshotspot.zsh            # Zsh completion
@@ -465,7 +463,7 @@ OSHotspot/
             ├── theme.js         # Dark/light toggle
             ├── toast.js         # Notifications
             ├── status.js        # Overview panel
-            ├── clients.js       # Client table + kick/block
+            ├── clients.js       # Client table + kick/block/unblock
             ├── actions.js       # Start/stop/restart/repair
             ├── config.js        # Configuration form
             ├── traffic.js       # Bandwidth chart (Canvas)
@@ -492,12 +490,12 @@ OSHotspot/
 
 7. **DNS policy enforcement** — Two-layer approach: PREROUTING redirect for standard DNS, FORWARD DROP for DoH bypass prevention.
 
-8. **Out-of-process watchdog** — Inactivity timeout runs as a separate subprocess, continuing even if the main server is blocked.
+8. **Dual watchdog system** — Two independent watchdogs: (1) out-of-process inactivity watchdog that shuts down the dashboard after 2h idle, and (2) C-based process watchdog (`oshotspot-watchdog`) that auto-restarts crashed hostapd/dnsmasq, logged to `watchdog.log`.
 
-9. **ThreadingHTTPServer** — Long-running scripts don't block status polling and other API requests.
+9. **Daemon thread server** — The HTTP server runs `serve_forever()` on a daemon thread with `daemon_threads=True`. Long-running scripts don't block status polling and other API requests, and shutdown is clean via `server.shutdown()`.
 
 10. **Auto-restart on config change** — Both CLI and web dashboard automatically restart the hotspot after configuration updates.
 
-11. **Graceful degradation** — C tools are optional. If not compiled (missing gcc or libnl), bash fallback handles everything. The user experience is identical.
+11. **Graceful degradation** — C tools are optional. If not compiled (missing gcc or libnl), bash fallback handles everything. When compiled, the C scanner includes an internal `iw phy` fallback for drivers with incomplete nl80211 support (Realtek, MediaTek, Broadcom). The user experience is identical.
 
 12. **Adaptive hardware support** — C tools detect actual WiFi adapter capabilities (HT, VHT, short GI) and generate hostapd.conf accordingly, preventing common "Failed to set beacon parameters" errors.
