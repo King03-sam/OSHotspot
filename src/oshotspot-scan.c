@@ -20,9 +20,11 @@
 #include <errno.h>
 #include <poll.h>
 #include <net/if.h>
+#include <linux/netlink.h>
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+#include <netlink/handlers.h>
 #include <linux/nl80211.h>
 
 #ifndef NL80211_ATTR_SUPPORTED_INTERFACE_MODES
@@ -36,6 +38,8 @@ struct scan_ctx {
     struct wifi_caps *caps;
     int              wiphy_id;
     bool             got_wiphy;
+    bool             done;   /* set once the multi-message dump finishes */
+    int              error;  /* netlink error code, if any */
 };
 
 /* Parse a single nl80211 attribute for interface modes */
@@ -146,6 +150,32 @@ static int parse_vht_cap(struct nlattr *tb,
     if (tb)
         ctx->caps->supports_vht = true;
     return 0;
+}
+
+
+static int finish_handler(struct nl_msg *msg, void *arg)
+{
+    struct scan_ctx *ctx = arg;
+    (void)msg;
+    ctx->done = true;
+    return NL_SKIP;
+}
+
+static int ack_handler(struct nl_msg *msg, void *arg)
+{
+    struct scan_ctx *ctx = arg;
+    (void)msg;
+    ctx->done = true;
+    return NL_STOP;
+}
+
+static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *arg)
+{
+    struct scan_ctx *ctx = arg;
+    (void)nla;
+    ctx->error = nlerr ? nlerr->error : -1;
+    ctx->done = true;
+    return NL_STOP;
 }
 
 /* Callback for NL80211_CMD_GET_WIPHY responses */
@@ -286,9 +316,16 @@ int wifi_scan(const char *phy_or_iface, struct wifi_caps *caps)
     /* Add split flag for complete dump */
     nla_put_flag(msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
 
-    /* Set callback */
+    /* Set callbacks: one per data message (wiphy_handler), plus the
+     * finish/ack/error triplet needed to know when the dump is done. */
     nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM,
                         wiphy_handler, &ctx);
+    nl_socket_modify_cb(sock, NL_CB_FINISH, NL_CB_CUSTOM,
+                        finish_handler, &ctx);
+    nl_socket_modify_cb(sock, NL_CB_ACK, NL_CB_CUSTOM,
+                        ack_handler, &ctx);
+    nl_socket_modify_err_cb(sock, NL_CB_CUSTOM,
+                        error_handler, &ctx);
 
     /* Send and receive with 5s timeout */
     ret = nl_send_auto_complete(sock, msg);
@@ -298,31 +335,41 @@ int wifi_scan(const char *phy_or_iface, struct wifi_caps *caps)
         goto cleanup;
     }
 
-    /* Wait for response with timeout to prevent hanging */
+   
     {
-        struct pollfd pfd;
         int fd = nl_socket_get_fd(sock);
         if (fd < 0) {
             fprintf(stderr, "Error: invalid netlink socket fd\n");
             goto cleanup;
         }
-        pfd.fd = fd;
-        pfd.events = POLLIN;
-        ret = poll(&pfd, 1, 5000); /* 5 second timeout */
-        if (ret == 0) {
-            fprintf(stderr, "Error: nl80211 response timeout (5s)\n");
-            goto cleanup;
-        } else if (ret < 0) {
-            fprintf(stderr, "Error: poll failed: %s\n", strerror(errno));
+
+        while (!ctx.done) {
+            struct pollfd pfd;
+            pfd.fd = fd;
+            pfd.events = POLLIN;
+            ret = poll(&pfd, 1, 5000); /* 5 second timeout per message */
+            if (ret == 0) {
+                fprintf(stderr, "Error: nl80211 response timeout (5s)\n");
+                goto cleanup;
+            } else if (ret < 0) {
+                fprintf(stderr, "Error: poll failed: %s\n", strerror(errno));
+                goto cleanup;
+            }
+
+            ret = nl_recvmsgs_default(sock);
+            if (ret < 0) {
+                fprintf(stderr, "Error: failed to receive nl80211 response: %s\n",
+                        nl_geterror(ret));
+                goto cleanup;
+            }
+        }
+
+        if (ctx.error) {
+            fprintf(stderr, "Error: nl80211 returned error %d (%s)\n",
+                    ctx.error, strerror(-ctx.error));
+            ret = -1;
             goto cleanup;
         }
-    }
-
-    ret = nl_recvmsgs_default(sock);
-    if (ret < 0) {
-        fprintf(stderr, "Error: failed to receive nl80211 response: %s\n",
-                nl_geterror(ret));
-        goto cleanup;
     }
 
     if (!ctx.got_wiphy) {
@@ -362,15 +409,16 @@ static void print_caps_json(const struct wifi_caps *caps)
         if (i > 0) fprintf(stdout, ",");
         fprintf(stdout, "%d", caps->channel_2g[i]);
     }
-    JSON_ARR_END();
 
-    /* 5 GHz channels */
-    JSON_ARR_START("channels_5g");
+    fprintf(stdout, "  ],\n");
+
+    /* 5 GHz channels (last field: no trailing comma before the closing brace) */
+    fprintf(stdout, "  \"channels_5g\": [");
     for (i = 0; i < caps->channel_5g_count; i++) {
         if (i > 0) fprintf(stdout, ",");
         fprintf(stdout, "%d", caps->channel_5g[i]);
     }
-    JSON_ARR_END();
+    fprintf(stdout, "]\n");
 
     JSON_OBJ_END();
 }
