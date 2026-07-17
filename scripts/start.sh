@@ -175,7 +175,10 @@ start_hotspot() {
     # Start watchdog (C tool, optional)
     if command -v oshotspot-watchdog &>/dev/null; then
         pkill -f "oshotspot-watchdog" 2>/dev/null || true
-        oshotspot-watchdog monitor --interval=10 &
+  
+        nohup oshotspot-watchdog monitor --interval=10 \
+            >> "${OSHOTSPOT_LOG_DIR}/watchdog.log" 2>&1 < /dev/null &
+        disown
         log_info "Watchdog started."
     fi
 
