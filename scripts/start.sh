@@ -131,7 +131,16 @@ start_hotspot() {
         else
             log_info "C scan skipped (no valid data), using bash fallback."
             caps_json=""
+            # Remove any stale caps file from a previous run -- otherwise
+            # the generator step below only checks "does the file exist",
+            # not "is it from this run", and would silently reuse outdated
+            # channel/HT data instead of actually falling back to bash.
+            rm -f /tmp/oshotspot_caps.json
         fi
+    else
+        # No scan tool at all: make sure we don't pick up capability data
+        # left over from a machine/session where it was present.
+        rm -f /tmp/oshotspot_caps.json
     fi
 
     # Tell NetworkManager to ignore ap0 so it doesn't interfere with hostapd
@@ -175,7 +184,7 @@ start_hotspot() {
     # Start watchdog (C tool, optional)
     if command -v oshotspot-watchdog &>/dev/null; then
         pkill -f "oshotspot-watchdog" 2>/dev/null || true
-  
+     
         nohup oshotspot-watchdog monitor --interval=10 \
             >> "${OSHOTSPOT_LOG_DIR}/watchdog.log" 2>&1 < /dev/null &
         disown
