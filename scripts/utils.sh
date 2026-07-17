@@ -285,7 +285,9 @@ configure_ap_ip() {
     fi
 
     # Try to bring it up, but don't fail — hostapd will do it
-    ip link set "${iface}" up 2>/dev/null || true
+    if ! ip link set "${iface}" up 2>/dev/null; then
+        log_warn "Failed to bring ${iface} up (hostapd may still succeed)."
+    fi
     sleep 1
 
     log_info "Interface ${iface} configured with IP ${ip}/${cidr}."

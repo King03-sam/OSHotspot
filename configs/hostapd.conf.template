@@ -17,7 +17,9 @@ country_code=__COUNTRY_CODE__
 
 ieee80211n=1
 wmm_enabled=1
-ht_capab=[HT20][SHORT-GI-20]
+ht_capab=[HT20]
+beacon_int=100
+dtim_period=2
 
 auth_algs=1
 wpa=2

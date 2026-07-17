@@ -65,6 +65,14 @@ start_dnsmasq() {
         exit 1
     fi
 
+    # Kill system dnsmasq if it occupies port 53
+    if pgrep -x dnsmasq >/dev/null 2>&1; then
+        log_warn "System dnsmasq detected, stopping it..."
+        systemctl stop dnsmasq 2>/dev/null || true
+        pkill -x dnsmasq 2>/dev/null || true
+        sleep 1
+    fi
+
     # Let dnsmasq daemonize itself so it writes the PID file properly
     dnsmasq \
         --conf-file="${OSHOTSPOT_DNSMASQ_CONF}" \
@@ -80,7 +88,13 @@ start_dnsmasq() {
     if is_running "${OSHOTSPOT_PID_DNSMASQ}"; then
         log_info "Dedicated dnsmasq started (PID $(cat "${OSHOTSPOT_PID_DNSMASQ}"))."
     else
-        log_error "dnsmasq failed to start. Check ${OSHOTSPOT_DNSMASQ_LOG}"
+        log_error "dnsmasq failed to start."
+        if [[ -f "${OSHOTSPOT_DNSMASQ_LOG}" ]]; then
+            log_error "Last lines from dnsmasq log:"
+            tail -10 "${OSHOTSPOT_DNSMASQ_LOG}" | while IFS= read -r line; do
+                log_error "  ${line}"
+            done
+        fi
         exit 1
     fi
 }
@@ -108,12 +122,13 @@ start_hotspot() {
     fi
 
     create_ap_interface "${AP_IFACE}"
-    sleep 1
+    sleep 3
     configure_ap_ip "${AP_IFACE}" "${AP_IP}" "${AP_CIDR}"
     generate_hostapd_conf
     generate_dnsmasq_conf
     enable_ip_forward
     "${SCRIPT_DIR}/firewall.sh" setup
+    sleep 2
     start_hostapd
     start_dnsmasq
 
