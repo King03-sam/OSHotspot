@@ -49,7 +49,7 @@
             var ct = r.headers.get('Content-Type') || '';
             if (ct.indexOf('application/json') >= 0) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw data;
+                    if (!r.ok) throw new Error(data.error || 'Request failed');
                     return data;
                 });
             }
