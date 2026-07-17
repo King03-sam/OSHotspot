@@ -320,6 +320,35 @@ void generate_hostapd_conf(const struct wifi_caps *caps,
             caps->supports_short_gi_20 ? "enabled" : "disabled");
 }
 
+/* Parse JSON integer array: "key": [1,2,3,...] */
+static int parse_json_int_array(const char *json, const char *key,
+                                int *out, int max)
+{
+    char search[128];
+    const char *p;
+    int count = 0;
+
+    snprintf(search, sizeof(search), "\"%s\":", key);
+    p = strstr(json, search);
+    if (!p)
+        return 0;
+
+    p = strchr(p, '[');
+    if (!p)
+        return 0;
+    p++;
+
+    while (*p && *p != ']' && count < max) {
+        while (*p == ' ' || *p == ',') p++;
+        if (*p == ']' || !*p)
+            break;
+        out[count++] = atoi(p);
+        while (*p && *p != ',' && *p != ']')
+            p++;
+    }
+    return count;
+}
+
 /* Parse JSON capabilities (simplified parser) */
 static int parse_json_bool(const char *json, const char *key)
 {
@@ -357,6 +386,11 @@ int parse_caps_json(const char *json, struct wifi_caps *caps)
 
     val = parse_json_bool(json, "supports_short_gi_40");
     if (val >= 0) caps->supports_short_gi_40 = (val == 1);
+
+    caps->channel_2g_count = parse_json_int_array(json, "channels_2g",
+                                                   caps->channel_2g, 14);
+    caps->channel_5g_count = parse_json_int_array(json, "channels_5g",
+                                                   caps->channel_5g, 64);
 
     return 0;
 }
