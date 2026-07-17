@@ -173,7 +173,7 @@ get_phy_device() {
         # Fallback: extract phy from iw dev output
         local phy
         phy=$(iw dev 2>/dev/null | awk -v iface="${iface}" '
-            /^[[:space:]]*phy/ { current_phy = substr($1, 5) }
+            /^[[:space:]]*phy/ { gsub(/[^a-z0-9]/, "", $1); current_phy = $1 }
             /^[[:space:]]*Interface/ && $2 == iface { print current_phy; exit }
         ' | head -1)
         if [[ -n "${phy}" ]]; then
@@ -197,7 +197,20 @@ check_ap_support() {
 
     phy=$(get_phy_device "${iface}")
 
-    # Dynamic test: actually create a temporary AP interface to verify
+    # Check if an AP interface already exists on this phy
+    local existing_ap
+    existing_ap=$(iw dev 2>/dev/null | awk -v target_phy="${phy}" '
+        /^[[:space:]]*phy/ { gsub(/[^a-z0-9]/, "", $1); current_phy = $1 }
+        /^[[:space:]]*Interface/ && current_phy == target_phy { current_iface = $2 }
+        current_phy == target_phy && /type AP/ { print current_iface; exit }
+    ' | head -1)
+
+    if [[ -n "${existing_ap}" ]]; then
+        log_info "AP mode supported on ${iface} (${phy}) — ${existing_ap} is active."
+        return 0
+    fi
+
+    # Dynamic test: create a temporary AP interface to verify
     local test_iface="oshotspot_aptest_$$"
     if iw phy "${phy}" interface add "${test_iface}" type __ap 2>/dev/null; then
         iw dev "${test_iface}" del 2>/dev/null || true
