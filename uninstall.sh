@@ -50,6 +50,14 @@ main() {
         bash /usr/lib/oshotspot/scripts/firewall.sh cleanup 2>/dev/null || true
     fi
 
+    # Remove C tools
+    for tool in oshotspot-scan oshotspot-gen oshotspot-watchdog; do
+        if [[ -f "/usr/local/bin/${tool}" ]]; then
+            rm -f "/usr/local/bin/${tool}"
+            log_info "Removed /usr/local/bin/${tool}"
+        fi
+    done
+
     # Remove CLI
     if [[ -f /usr/local/bin/oshotspot ]]; then
         rm -f /usr/local/bin/oshotspot
@@ -130,11 +138,41 @@ main() {
         fi
     fi
 
+    # Optionally remove build dependencies
+    if ${PURGE}; then
+        log_info "Purge mode: removing build dependencies..."
+        remove_build_deps
+    else
+        echo ""
+        read -rp "Remove build dependencies (gcc, make, libnl-dev)? [y/N] " ans
+        if [[ "${ans}" =~ ^[Yy]$ ]]; then
+            remove_build_deps
+        else
+            log_info "Build dependencies kept. Remove manually with:"
+            log_info "  sudo apt remove gcc make libnl-genl-3-dev"
+        fi
+    fi
+
     echo ""
     log_info "========================================"
     log_info "  OSHotspot has been uninstalled."
     log_info "========================================"
     echo ""
+}
+
+remove_build_deps() {
+    if command -v apt-get &>/dev/null; then
+        apt-get remove -y gcc make libnl-genl-3-dev 2>/dev/null || true
+        apt-get autoremove -y 2>/dev/null || true
+    elif command -v dnf &>/dev/null; then
+        dnf remove -y gcc make libnl3-devel 2>/dev/null || true
+    elif command -v pacman &>/dev/null; then
+        pacman -Rns --noconfirm gcc make libnl 2>/dev/null || true
+    elif command -v zypper &>/dev/null; then
+        zypper remove -y gcc make libnl-genl-3-devel 2>/dev/null || true
+    else
+        log_warn "Cannot detect package manager. Remove build deps manually."
+    fi
 }
 
 main "$@"

@@ -86,19 +86,19 @@ install_dependencies() {
     case "$(detect_pkg_manager)" in
         apt)
             apt-get update -qq || log_warn "Some repositories failed to update. Continuing..."
-            apt-get install -y hostapd dnsmasq iptables iw iproute2 qrencode
+            apt-get install -y hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-dev
             ;;
         dnf)
-            dnf install -y hostapd dnsmasq iptables iw iproute qrencode
+            dnf install -y hostapd dnsmasq iptables iw iproute qrencode gcc make libnl3-devel
             ;;
         pacman)
-            pacman -S --noconfirm hostapd dnsmasq iptables iw iproute2 qrencode
+            pacman -S --noconfirm hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl
             ;;
         zypper)
-            zypper install -y hostapd dnsmasq iptables iw iproute2 qrencode
+            zypper install -y hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-devel
             ;;
         *)
-            log_warn "Unknown package manager. Install manually: hostapd dnsmasq iptables iw iproute2 qrencode"
+            log_warn "Unknown package manager. Install manually: hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-dev"
             log_warn "Press Enter to continue or Ctrl+C to abort."
             read -r
             ;;
@@ -180,7 +180,7 @@ install_files() {
 }
 
 compile_c_tools() {
-    log_step "Compiling C tools (optional, for enhanced auto-detection)..."
+    log_step "Compiling C tools (for enhanced auto-detection)..."
 
     if ! command -v gcc &>/dev/null; then
         log_warn "gcc not found. C tools not compiled."
@@ -194,21 +194,39 @@ compile_c_tools() {
     fi
 
     cd "${SRC}"
+    local installed=0
 
-    # Try to compile (may fail if libnl not installed)
-    if make all 2>/dev/null; then
-        # Install to /usr/local/bin
-        install -m 755 oshotspot-scan /usr/local/bin/ 2>/dev/null || true
-        install -m 755 oshotspot-gen /usr/local/bin/ 2>/dev/null || true
-        install -m 755 oshotspot-watchdog /usr/local/bin/ 2>/dev/null || true
-        log_info "C tools installed: oshotspot-scan, oshotspot-gen, oshotspot-watchdog"
+    # Compile each tool independently — partial success is acceptable
+    if gcc -std=gnu99 -O2 -Wall -Iinclude -o oshotspot-scan src/oshotspot-scan.c \
+            $(pkg-config --cflags --libs libnl-genl-3.0 2>/dev/null) -lpthread 2>/dev/null; then
+        install -m 755 oshotspot-scan /usr/local/bin/
+        installed=$((installed + 1))
     else
-        log_warn "C tools compilation failed. Using bash fallback."
-        log_warn "To install dependencies: sudo apt install gcc libnl-genl-3-dev"
+        log_warn "oshotspot-scan compilation failed (needs libnl-genl-3-dev)"
+    fi
+
+    if gcc -std=gnu99 -O2 -Wall -Iinclude -o oshotspot-gen src/oshotspot-gen.c 2>/dev/null; then
+        install -m 755 oshotspot-gen /usr/local/bin/
+        installed=$((installed + 1))
+    else
+        log_warn "oshotspot-gen compilation failed"
+    fi
+
+    if gcc -std=gnu99 -O2 -Wall -Iinclude -o oshotspot-watchdog src/oshotspot-watchdog.c 2>/dev/null; then
+        install -m 755 oshotspot-watchdog /usr/local/bin/
+        installed=$((installed + 1))
+    else
+        log_warn "oshotspot-watchdog compilation failed"
+    fi
+
+    if [[ ${installed} -gt 0 ]]; then
+        log_info "C tools compiled and installed (${installed}/3)"
+    else
+        log_warn "No C tools could be compiled. Using bash fallback."
     fi
 
     # Cleanup build artifacts
-    make clean 2>/dev/null || true
+    rm -f oshotspot-scan oshotspot-gen oshotspot-watchdog
 }
 
 update_script_paths() {
