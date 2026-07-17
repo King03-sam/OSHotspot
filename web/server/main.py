@@ -84,6 +84,7 @@ def open_browser(url):
             if sudo_user:
                 # Run xdg-open as the original user so it inherits the
                 # correct DISPLAY, XAUTHORITY, and DBUS env vars.
+                
                 subprocess.Popen(
                     ["sudo", "-u", sudo_user] + cmd,
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -110,12 +111,16 @@ def main():
 
     watchdog = spawn_watchdog()
 
-    # Use ThreadingHTTPServer so that long-running scripts (start.sh,
-    # repair.sh, etc.) don't block every other request.  This keeps
-    # the status polling and UI responsive while an action executes.
+  
     from http.server import ThreadingHTTPServer
+    import threading
+
     server = ThreadingHTTPServer((settings.HOST, port), OShotspotHandler)
-    server.timeout = 1
+    server.daemon_threads = True
+
+    server_thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.5})
+    server_thread.daemon = True
+    server_thread.start()
 
     url = f"http://{settings.HOST}:{port}/?token={auth.TOKEN}"
 
@@ -134,15 +139,18 @@ def main():
             watchdog.kill()
         except Exception:
             pass
+        server.shutdown()
         server.server_close()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
+    # The HTTP server now runs its own accept loop on server_thread, so this
+    # loop only needs to watch for inactivity and hand control back on exit.
     try:
         while True:
-            server.handle_request()
+            time.sleep(1)
             if auth.seconds_since_activity() > settings.INACTIVITY_TIMEOUT:
                 break
     except KeyboardInterrupt:
@@ -150,6 +158,10 @@ def main():
     finally:
         try:
             watchdog.kill()
+        except Exception:
+            pass
+        try:
+            server.shutdown()
         except Exception:
             pass
         server.server_close()
