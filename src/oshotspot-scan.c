@@ -27,9 +27,7 @@
 #include <netlink/handlers.h>
 #include <linux/nl80211.h>
 
-#ifndef NL80211_ATTR_SUPPORTED_INTERFACE_MODES
-#define NL80211_ATTR_SUPPORTED_INTERFACE_MODES 27
-#endif
+
 
 #include "oshotspot.h"
 
@@ -196,15 +194,15 @@ static int wiphy_handler(struct nl_msg *msg, void *arg)
     }
 
     /* Parse supported interface types */
-    if (tb[NL80211_ATTR_SUPPORTED_INTERFACE_MODES])
-        parse_iface_modes(tb[NL80211_ATTR_SUPPORTED_INTERFACE_MODES], ctx);
+    if (tb[NL80211_ATTR_SUPPORTED_IFTYPES])
+        parse_iface_modes(tb[NL80211_ATTR_SUPPORTED_IFTYPES], ctx);
 
     /* Parse HT capabilities */
-    if (tb[NL80211_ATTR_BANDS]) {
+    if (tb[NL80211_ATTR_WIPHY_BANDS]) {
         struct nlattr *band;
         int rem;
 
-        nla_for_each_nested(band, tb[NL80211_ATTR_BANDS], rem) {
+        nla_for_each_nested(band, tb[NL80211_ATTR_WIPHY_BANDS], rem) {
             struct nlattr *nl_band[NL80211_BAND_ATTR_MAX + 1];
             nla_parse(nl_band, NL80211_BAND_ATTR_MAX,
                       nla_data(band), nla_len(band), NULL);
@@ -335,7 +333,7 @@ int wifi_scan(const char *phy_or_iface, struct wifi_caps *caps)
         goto cleanup;
     }
 
-   
+  
     {
         int fd = nl_socket_get_fd(sock);
         if (fd < 0) {
