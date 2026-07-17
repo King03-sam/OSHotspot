@@ -237,115 +237,15 @@ main() {
             ;;
         update)
             if [[ "${EUID}" -ne 0 ]]; then
-                echo -e "${RED}This command must be run as root (use sudo).${NC}"
+                echo -e "${RED}Run: sudo oshotspot update${NC}"
                 exit 1
             fi
-            echo -e "${BOLD}OSHotspot - Updating...${NC}"
-            echo ""
-
-            local script_dir
-            script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-            local src=""
-
-            if [[ -f "${script_dir}/install.sh" && -d "${script_dir}/scripts" ]]; then
-                src="${script_dir}"
-                echo -e "${GREEN}Local repo detected: ${src}${NC}"
-                echo -e "${BLUE}Compiling C tools...${NC}"
-                make clean -C "${src}" 2>/dev/null || true
-                make -C "${src}" 2>/dev/null || { echo -e "${RED}Compilation failed.${NC}"; exit 1; }
-                make install -C "${src}" 2>/dev/null || { echo -e "${RED}Installation failed.${NC}"; exit 1; }
-                echo -e "${GREEN}C tools updated.${NC}"
-
-                echo -e "${BLUE}Updating scripts and configs...${NC}"
-                local scripts_dir="/usr/lib/oshotspot/scripts"
-                mkdir -p "${scripts_dir}"
-                for s in "${src}/scripts/"*.sh; do
-                    [[ -f "${s}" ]] || continue
-                    install -m 755 "${s}" "${scripts_dir}/"
-                done
-                echo -e "${GREEN}Scripts updated.${NC}"
-
-                local configs_dir="/usr/lib/oshotspot/configs"
-                mkdir -p "${configs_dir}"
-                if [[ -d "${src}/configs" ]]; then
-                    cp -r "${src}/configs/"* "${configs_dir}/" 2>/dev/null || true
-                    echo -e "${GREEN}Configs updated.${NC}"
-                fi
-
-                if [[ -f "${src}/config.conf.example" ]]; then
-                    install -m 644 "${src}/config.conf.example" "/usr/lib/oshotspot/config.conf.example"
-                fi
-
-                local web_dir="/usr/lib/oshotspot/web"
-                rm -rf "${web_dir}" 2>/dev/null || true
-                mkdir -p "${web_dir}/static/js"
-                if [[ -d "${src}/web/static" ]]; then
-                    cp -r "${src}/web/static/." "${web_dir}/static/"
-                    if [[ -f "${src}/web/server/scripts.py" ]]; then
-                        mkdir -p "${web_dir}/server"
-                        cp -r "${src}/web/server/." "${web_dir}/server/"
-                    fi
-                    echo -e "${GREEN}Web dashboard updated.${NC}"
-                fi
-            else
-                echo -e "${BLUE}Downloading latest version from GitHub...${NC}"
-                local temp_dir
-                temp_dir="$(mktemp -d)"
-                local archive="${temp_dir}/oshotspot.tar.gz"
-                if command -v curl &>/dev/null; then
-                    curl -fsSL "https://github.com/King03-sam/OSHotspot/archive/refs/heads/main.tar.gz" -o "${archive}"
-                else
-                    wget -q "https://github.com/King03-sam/OSHotspot/archive/refs/heads/main.tar.gz" -O "${archive}"
-                fi
-                tar -xzf "${archive}" -C "${temp_dir}"
-                src="${temp_dir}/OSHotspot-main"
-
-                echo -e "${BLUE}Compiling C tools...${NC}"
-                make clean -C "${src}" 2>/dev/null || true
-                make -C "${src}" 2>/dev/null || { echo -e "${RED}Compilation failed.${NC}"; rm -rf "${temp_dir}"; exit 1; }
-                make install -C "${src}" 2>/dev/null || { echo -e "${RED}Installation failed.${NC}"; rm -rf "${temp_dir}"; exit 1; }
-                echo -e "${GREEN}C tools updated.${NC}"
-
-                echo -e "${BLUE}Updating scripts and configs...${NC}"
-                local scripts_dir="/usr/lib/oshotspot/scripts"
-                mkdir -p "${scripts_dir}"
-                for s in "${src}/scripts/"*.sh; do
-                    [[ -f "${s}" ]] || continue
-                    install -m 755 "${s}" "${scripts_dir}/"
-                done
-                echo -e "${GREEN}Scripts updated.${NC}"
-
-                local configs_dir="/usr/lib/oshotspot/configs"
-                mkdir -p "${configs_dir}"
-                if [[ -d "${src}/configs" ]]; then
-                    cp -r "${src}/configs/"* "${configs_dir}/" 2>/dev/null || true
-                    echo -e "${GREEN}Configs updated.${NC}"
-                fi
-
-                if [[ -f "${src}/config.conf.example" ]]; then
-                    install -m 644 "${src}/config.conf.example" "/usr/lib/oshotspot/config.conf.example"
-                fi
-
-                local web_dir="/usr/lib/oshotspot/web"
-                rm -rf "${web_dir}" 2>/dev/null || true
-                mkdir -p "${web_dir}/static/js"
-                if [[ -d "${src}/web/static" ]]; then
-                    cp -r "${src}/web/static/." "${web_dir}/static/"
-                    if [[ -f "${src}/web/server/scripts.py" ]]; then
-                        mkdir -p "${web_dir}/server"
-                        cp -r "${src}/web/server/." "${web_dir}/server/"
-                    fi
-                    echo -e "${GREEN}Web dashboard updated.${NC}"
-                fi
-
-                rm -rf "${temp_dir}"
-            fi
-
-            echo ""
-            echo -e "${BOLD}========================================${NC}"
-            echo -e "${GREEN}OSHotspot updated successfully!${NC}"
-            echo -e "${BOLD}========================================${NC}"
-            echo ""
+            echo -e "${BLUE}Downloading and running install.sh...${NC}"
+            local tmpfile
+            tmpfile=$(mktemp /tmp/oshotspot-install.XXXXXX.sh)
+            curl -fsSL "https://raw.githubusercontent.com/King03-sam/OSHotspot/main/install.sh" -o "${tmpfile}"
+            bash "${tmpfile}"
+            rm -f "${tmpfile}"
             ;;
         set)
             local key="${1:-}"
