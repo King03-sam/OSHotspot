@@ -76,10 +76,13 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
     def send_json(self, data, status=200):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
+        body = json.dumps(data).encode()
+        self.send_header("Content-Length", str(len(body)))
         self.send_security_headers()
         self.end_headers()
         try:
-            self.wfile.write(json.dumps(data).encode())
+            self.wfile.write(body)
+            self.wfile.flush()
         except BrokenPipeError:
             pass
 
