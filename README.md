@@ -114,41 +114,43 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 OSHotspot creates a virtual WiFi access point on the same adapter that provides your Internet connection. Your computer acts as a router between the two networks.
 
 ```
-              Internet
-                 |
-                 |
-          Existing WiFi
-           wlp2s0
-                 |
-           Linux Laptop
-            (router)
-                 |
-          Virtual AP Interface
-               ap0
-           192.168.50.1
-                 |
-            Smartphone
-         192.168.50.x
+```mermaid
+graph TD
+    Internet["Internet"]
+    Router["Internet Router"]
+    WifiClient["WiFi wlp2s0<br/>(existing connection)"]
+    Laptop["Linux Laptop<br/>(router/NAT)"]
+    AP["Virtual AP ap0<br/>192.168.50.1"]
+    Phone["Smartphone<br/>192.168.50.x"]
+
+    Internet --> Router
+    Router --> WifiClient
+    WifiClient --> Laptop
+    Laptop --> AP
+    AP --> Phone
+```
 ```
 
-Traffic flow:
+OSHotspot does NOT disable NetworkManager. Your laptop keeps its original WiFi connection and simultaneously broadcasts a second network through `ap0`.
+
+---
 
 ```
-  Phone (192.168.50.x)
-       |
-       | WiFi
-       |
-     ap0
-       |
-  iptables NAT (MASQUERADE)
-       |
-     wlp2s0
-       |
-       | WiFi
-       |
-  Internet Router
-       |
-     Internet
+```mermaid
+graph LR
+    Phone["Phone<br/>192.168.50.x"]
+    AP["ap0"]
+    NAT["iptables<br/>MASQUERADE"]
+    Wifi["wlp2s0"]
+    Router["Internet Router"]
+    Internet["Internet"]
+
+    Phone -->|WiFi| AP
+    AP --> NAT
+    NAT --> Wifi
+    Wifi --> Router
+    Router --> Internet
+```
 ```
 
 OSHotspot does NOT disable NetworkManager. Your laptop keeps its original WiFi connection and simultaneously broadcasts a second network through `ap0`.
