@@ -102,9 +102,9 @@ The project was developed to provide an automated and reliable WiFi hotspot solu
 - QR code display to share hotspot with phones instantly
 - Bash, Zsh, and Fish tab completion for the CLI
 - Supports Ubuntu, Debian, Mint, Fedora, Arch, and more
-- Automatic WiFi adapter capability detection via nl80211 (C tools)
-- Adaptive hostapd configuration based on hardware (auto-fixes SHORT-GI-20 errors)
-- Process watchdog with automatic restart on crash (C tools)
+- Automatic WiFi adapter capability detection via nl80211 with `iw phy` fallback for broad driver compatibility
+- Process watchdog with automatic restart on crash (C tools) — logged to dedicated file
+- Improved web dashboard stability with daemon thread server
 - Graceful fallback to bash if C tools not available
 
 ---
@@ -188,6 +188,12 @@ Required packages:
 sudo apt install hostapd dnsmasq iw iptables iproute2 qrencode
 ```
 
+Optional (for compiling C tools with enhanced driver compatibility):
+
+```bash
+sudo apt install gcc make libnl-genl-3-dev
+```
+
 ---
 
 # Installation
@@ -217,7 +223,7 @@ The installer will:
 6. Install Bash, Zsh, and Fish tab completions
 7. Configure NetworkManager to ignore the `ap0` interface
 8. Set up systemd services and suspend/resume hooks
-9. Compile C tools (if gcc + libnl available) for enhanced auto-detection
+9. Compile C tools (if gcc + libnl available) for enhanced auto-detection with `iw phy` fallback support
 
 ### Building C tools from source
 
@@ -230,9 +236,9 @@ sudo make install
 ```
 
 The C tools provide:
-- WiFi adapter capability scanning (nl80211)
+- WiFi adapter capability scanning via nl80211 with `iw phy` fallback for Realtek/MediaTek/Broadcom drivers
 - Adaptive hostapd config generation (auto-fixes SHORT-GI-20 errors)
-- Process watchdog with automatic restart
+- Process watchdog with automatic restart and dedicated log file
 
 If C tools are not available, OSHotspot falls back to bash-based detection.
 
@@ -605,6 +611,10 @@ OSHotspot runs its **own dedicated dnsmasq instance** that only serves the `ap0`
 - Docker's built-in DNS
 - NetworkManager's DNS
 
+## C scan skipped (no valid data)
+
+If you see `C scan skipped (no valid data), using bash fallback` during startup, it means your WiFi driver doesn't fully implement nl80211 (common with some Realtek, MediaTek, and Broadcom adapters). OSHotspot automatically falls back to bash-based detection. The hotspot will still work correctly — this is expected behavior for those drivers.
+
 ## Interface ap0 fails to create
 
 Check your driver supports virtual interfaces:
@@ -795,7 +805,7 @@ OSHotspot/
 │   └── oshotspot.fish           # Fish tab completion
 └── systemd/
     ├── oshotspot.service        # Main systemd unit
-    └── oshotspot-dnsmasq.service
+    ├── oshotspot-resume.service # Suspend/resume auto-repair hook
 ```
 
 ---
