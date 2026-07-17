@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
+#include <poll.h>
 #include <net/if.h>
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
@@ -288,12 +290,32 @@ int wifi_scan(const char *phy_or_iface, struct wifi_caps *caps)
     nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM,
                         wiphy_handler, &ctx);
 
-    /* Send and receive */
+    /* Send and receive with 5s timeout */
     ret = nl_send_auto_complete(sock, msg);
     if (ret < 0) {
         fprintf(stderr, "Error: failed to send nl80211 request: %s\n",
                 nl_geterror(ret));
         goto cleanup;
+    }
+
+    /* Wait for response with timeout to prevent hanging */
+    {
+        struct pollfd pfd;
+        int fd = nl_socket_get_fd(sock);
+        if (fd < 0) {
+            fprintf(stderr, "Error: invalid netlink socket fd\n");
+            goto cleanup;
+        }
+        pfd.fd = fd;
+        pfd.events = POLLIN;
+        ret = poll(&pfd, 1, 5000); /* 5 second timeout */
+        if (ret == 0) {
+            fprintf(stderr, "Error: nl80211 response timeout (5s)\n");
+            goto cleanup;
+        } else if (ret < 0) {
+            fprintf(stderr, "Error: poll failed: %s\n", strerror(errno));
+            goto cleanup;
+        }
     }
 
     ret = nl_recvmsgs_default(sock);

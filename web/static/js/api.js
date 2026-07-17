@@ -16,8 +16,8 @@
     'use strict';
 
     var DEFAULT_TIMEOUT = 30000;   // 30 s for normal requests
-    var ACTION_TIMEOUT  = 120000;  // 120 s for start/stop/restart (matches server worst case)
-    var REPAIR_TIMEOUT  = 120000;  // 120 s for repair (worst case)
+    var ACTION_TIMEOUT  = 180000;  // 180 s for start/stop/restart (covers worst case)
+    var REPAIR_TIMEOUT  = 180000;  // 180 s for repair (worst case)
 
     /**
      * Wrap fetch() with a timeout so we never wait forever.

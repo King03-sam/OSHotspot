@@ -121,7 +121,7 @@ start_hotspot() {
         if [[ -z "${phy}" ]]; then
             phy="phy0"
         fi
-        caps_json=$(oshotspot-scan --phy="${phy}" 2>/dev/null) || true
+        caps_json=$(timeout 5 oshotspot-scan --phy="${phy}" 2>/dev/null) || true
         if [[ -n "${caps_json}" ]]; then
             echo "${caps_json}" > /tmp/oshotspot_caps.json
             log_info "WiFi capabilities detected."
@@ -144,7 +144,7 @@ start_hotspot() {
     # Generate hostapd config (adaptive C tool or fallback to bash)
     if command -v oshotspot-gen &>/dev/null && [[ -f /tmp/oshotspot_caps.json ]]; then
         log_step "Generating adaptive hostapd config..."
-        oshotspot-gen --caps=/tmp/oshotspot_caps.json \
+        timeout 5 oshotspot-gen --caps=/tmp/oshotspot_caps.json \
                       --config="${OSHOTSPOT_DIR}/config.conf" \
                       --output="${OSHOTSPOT_HOSTAPD_CONF}"
         log_info "Adaptive hostapd config generated."
