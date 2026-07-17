@@ -74,27 +74,33 @@
 
         OS.api('/api/' + action, 'POST', null, timeout).then(
             function (res) {
-                var ok  = res && res.ok;
-                var out = (res && res.output) || '';
-                var err = (res && res.error) || '';
-                var msg = cap + ' ' + (ok ? 'completed' : 'failed');
-                OS.toast(msg, ok ? 'Hotspot state updated' : (err || 'See output below'), ok ? 'success' : 'error');
-                if (out) appendActionOutput(out.trim());
-                if (err) appendActionOutput('[stderr] ' + err.trim());
-                OS.refreshStatus();
-                OS.refreshClients();
-                reEnableAll(elements);
+                try {
+                    var ok  = res && res.ok;
+                    var out = (res && res.output) || '';
+                    var err = (res && res.error) || '';
+                    var msg = cap + ' ' + (ok ? 'completed' : 'failed');
+                    OS.toast(msg, ok ? 'Hotspot state updated' : (err || 'See output below'), ok ? 'success' : 'error');
+                    if (out) appendActionOutput(out.trim());
+                    if (err) appendActionOutput('[stderr] ' + err.trim());
+                    OS.refreshStatus();
+                    OS.refreshClients();
+                } finally {
+                    reEnableAll(elements);
+                }
             },
             function (err) {
-                var text = (err && err.message) ? err.message : String(err);
-                if (err && err.name === 'AbortError') {
-                    appendActionOutput('[timeout] Server did not respond within ' + (timeout / 1000) + 's. The action may still be running.');
-                    OS.toast('Timeout', 'Server took too long \u2014 the action may still be running in the background.', 'warn');
-                } else {
-                    appendActionOutput('[error] ' + text);
-                    OS.toast('Action failed', text || 'Could not reach server', 'error');
+                try {
+                    var text = (err && err.message) ? err.message : String(err);
+                    if (err && err.name === 'AbortError') {
+                        appendActionOutput('[timeout] Server did not respond within ' + (timeout / 1000) + 's. The action may still be running.');
+                        OS.toast('Timeout', 'Server took too long \u2014 the action may still be running in the background.', 'warn');
+                    } else {
+                        appendActionOutput('[error] ' + text);
+                        OS.toast('Action failed', text || 'Could not reach server', 'error');
+                    }
+                } finally {
+                    reEnableAll(elements);
                 }
-                reEnableAll(elements);
             }
         );
     };

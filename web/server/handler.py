@@ -354,9 +354,9 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         # a restart, so bounce it if it's currently up.
         is_running = os.path.isfile("/run/oshotspot-hostapd.pid")
         if is_running:
-            run_script("stop.sh")
-            time.sleep(1)  # give hostapd/dnsmasq time to release the interface
-            run_script("start.sh")
+            run_script("stop.sh", timeout=90)
+            time.sleep(1)
+            run_script("start.sh", timeout=90)
 
         self.send_json({"ok": True, "updated": list(validated.keys())})
 
@@ -388,9 +388,9 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 f.write(mac + "\n")
 
         # 2) Restart hostapd so it re-reads the deny list from file
-        run_script("stop.sh")
+        run_script("stop.sh", timeout=90)
         time.sleep(1)
-        code, stdout, stderr = run_script("start.sh")
+        code, stdout, stderr = run_script("start.sh", timeout=90)
 
         log_action(f"web:kick:{mac}")
         self.send_json({
@@ -461,9 +461,9 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                         f.write(line)
 
         # 2) Restart hostapd so it re-reads the updated deny list
-        run_script("stop.sh")
+        run_script("stop.sh", timeout=90)
         time.sleep(1)
-        code, stdout, stderr = run_script("start.sh")
+        code, stdout, stderr = run_script("start.sh", timeout=90)
 
         log_action(f"web:unblock:{mac}")
         self.send_json({
