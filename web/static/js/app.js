@@ -54,7 +54,10 @@
         }, 6000);
 
         s.trafficInterval = setInterval(function () {
-            if (!document.hidden) OS.refreshTraffic();
+            if (!document.hidden) {
+                var tb = OS.$('trafficAutoRefresh');
+                if (!tb || tb.checked) OS.refreshTraffic();
+            }
         }, 3000);
 
         s.logsInterval = setInterval(function () {
