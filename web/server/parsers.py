@@ -8,7 +8,41 @@
 """Turns the plain-text output of status.sh, clients.sh and doctor.sh into
 structured data the dashboard can serialize to JSON."""
 
+import os
 import re
+
+
+def get_hostapd_uptime(pid):
+    """Return a human-readable uptime string for the process identified by
+    *pid*, computed from /proc/{pid}/stat and /proc/uptime.  Returns None
+    when the information is unavailable."""
+    try:
+        with open("/proc/uptime", "r") as f:
+            system_uptime = float(f.read().split()[0])
+        with open("/proc/{}/stat".format(pid), "r") as f:
+            fields = f.read().split()
+        # field 22 (0-indexed 21) is starttime in clock ticks since boot
+        start_ticks = int(fields[21])
+        ticks_per_sec = os.sysconf("SC_CLK_TCK")
+        start_seconds = start_ticks / ticks_per_sec
+        elapsed = int(system_uptime - start_seconds)
+        if elapsed < 0:
+            return None
+        days, rem = divmod(elapsed, 86400)
+        hours, rem = divmod(rem, 3600)
+        minutes, secs = divmod(rem, 60)
+        parts = []
+        if days:
+            parts.append("{}d".format(days))
+        if hours:
+            parts.append("{}h".format(hours))
+        if minutes:
+            parts.append("{}m".format(minutes))
+        if not parts:
+            parts.append("{}s".format(secs))
+        return " ".join(parts)
+    except (IOError, OSError, ValueError, IndexError):
+        return None
 
 
 def parse_status(output):
@@ -22,6 +56,7 @@ def parse_status(output):
         "ssid": None,
         "hostapd": False,
         "hostapd_pid": None,
+        "hostapd_uptime": None,
         "dnsmasq": False,
         "dnsmasq_pid": None,
         "ip_forward": False,

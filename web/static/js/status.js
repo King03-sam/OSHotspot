@@ -56,7 +56,7 @@
         }
         var sidebarUptime = OS.$('sidebarUptime');
         if (sidebarUptime) {
-            sidebarUptime.textContent = data.hostapd_pid ? ('PID ' + data.hostapd_pid) : '\u2014';
+            sidebarUptime.textContent = data.hostapd_uptime || '\u2014';
         }
 
 

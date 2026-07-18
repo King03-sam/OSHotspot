@@ -20,7 +20,7 @@ import urllib.parse
 from . import settings
 from . import auth
 from .scripts import run_script, log_action
-from .parsers import parse_status, parse_clients, parse_doctor
+from .parsers import parse_status, parse_clients, parse_doctor, get_hostapd_uptime
 from .config_store import parse_config, write_config, validate_config_update
 from .network_info import (
     read_log_tail,
@@ -165,6 +165,10 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             return
         code, stdout, _ = run_script("status.sh")
         data = parse_status(stdout) if code == 0 else {"error": stdout}
+        # Enrich with hostapd uptime if we have a PID.
+        pid = data.get("hostapd_pid")
+        if pid:
+            data["hostapd_uptime"] = get_hostapd_uptime(pid)
         # status.sh's own client count can lag; clients.sh reads the
         # DHCP lease file directly so we trust it for the final number.
         clients_code, clients_stdout, _ = run_script("clients.sh")
