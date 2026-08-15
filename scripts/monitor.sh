@@ -12,17 +12,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
 source "${SCRIPT_DIR}/utils.sh"
 
-# Read DHCP leases
-read_dhcp_leases() {
-    local lease_file="/var/lib/misc/dnsmasq.leases"
-    [[ -f "${lease_file}" ]] || return
-
-    while IFS=' ' read -r expiry mac ip hostname client_id _rest; do
-        [[ -z "${mac}" ]] && continue
-        echo "${mac}|${ip}|${hostname}"
-    done < "${lease_file}"
-}
-
 # Format bytes to human readable
 format_bytes() {
     local bytes="${1:-0}"
@@ -92,7 +81,7 @@ show_monitor() {
             [[ -z "${mac}" ]] && continue
             clients+=("${mac}|${ip}|${hostname}")
             client_count=$((client_count + 1))
-        done < <(read_dhcp_leases)
+        done < <(read_connected_clients)
 
         # hostapd status
         local hostapd_status="STOPPED"
@@ -122,6 +111,7 @@ show_monitor() {
 
             for client in "${clients[@]}"; do
                 IFS='|' read -r mac ip hostname <<< "${client}"
+                [[ -z "${ip}" ]] && ip="-"
                 [[ -z "${hostname}" || "${hostname}" == "*" ]] && hostname="-"
                 printf "  %-20s %-16s %s\n" "${mac}" "${ip}" "${hostname}"
             done

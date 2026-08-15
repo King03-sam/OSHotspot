@@ -12,20 +12,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
 source "${SCRIPT_DIR}/utils.sh"
 
-# Read DHCP leases from dnsmasq
-read_dhcp_leases() {
-    local lease_file="/var/lib/misc/dnsmasq.leases"
-    if [[ ! -f "${lease_file}" ]]; then
-        return
-    fi
-
-    while IFS=' ' read -r expiry mac ip hostname client_id _rest; do
-        # Skip empty lines
-        [[ -z "${mac}" ]] && continue
-        echo "${mac}|${ip}|${hostname}"
-    done < "${lease_file}"
-}
-
 # Get traffic stats for an IP from /proc/net/dev via arp + conntrack
 get_client_traffic() {
     local ip="$1"
@@ -98,7 +84,7 @@ show_clients() {
     while IFS='|' read -r mac ip hostname; do
         [[ -z "${mac}" ]] && continue
         clients+=("${mac}|${ip}|${hostname}")
-    done < <(read_dhcp_leases)
+    done < <(read_connected_clients)
 
     if [[ ${#clients[@]} -eq 0 ]]; then
         log_info "No clients connected."
@@ -115,21 +101,18 @@ show_clients() {
     for client in "${clients[@]}"; do
         IFS='|' read -r mac ip hostname <<< "${client}"
 
-        # Check if client is reachable via ARP
-        local status="connected"
-        if ip neigh show "${ip}" 2>/dev/null | grep -q "REACHABLE\|STALE\|DELAY"; then
-            status="active"
-        elif ip neigh show "${ip}" 2>/dev/null | grep -q "FAILED\|INCOMPLETE"; then
-            status="inactive"
-        fi
+        # Every MAC here is associated at L2 with hostapd, so it is
+        # connected and active by definition — no stale ARP lookup needed.
+        local status="active"
 
-        # Format hostname
+        # Format missing values
+        [[ -z "${ip}" ]] && ip="-"
         if [[ -z "${hostname}" || "${hostname}" == "*" ]]; then
             hostname="-"
         fi
 
         printf "%-20s %-18s %-16s ${GREEN}%s${NC}\n" "${mac}" "${ip}" "${hostname}" "${status}"
-        [[ "${status}" == "active" ]] && active_count=$((active_count + 1))
+        active_count=$((active_count + 1))
     done
 
     echo ""

@@ -18,6 +18,10 @@ readonly OSHOTSPOT_DNSMASQ_CONF="${OSHOTSPOT_DIR}/dnsmasq.conf"
 readonly OSHOTSPOT_SYSCTL="/etc/sysctl.d/oshotspot.conf"
 readonly OSHOTSPOT_PID_HOSTAPD="/run/oshotspot-hostapd.pid"
 readonly OSHOTSPOT_PID_DNSMASQ="/run/oshotspot-dnsmasq.pid"
+# Dedicated DHCP lease file for the hotspot's dnsmasq instance. Kept in
+# /run (tmpfs) so it is cleared on reboot, and wiped on start so stale
+# MAC/IP/hostname mappings can never be attributed to new clients.
+readonly OSHOTSPOT_DNSMASQ_LEASES="/run/oshotspot-dnsmasq.leases"
 readonly OSHOTSPOT_LOG_DIR="/var/log/oshotspot"
 readonly OSHOTSPOT_HOSTAPD_LOG="${OSHOTSPOT_LOG_DIR}/hostapd.log"
 readonly OSHOTSPOT_DNSMASQ_LOG="${OSHOTSPOT_LOG_DIR}/dnsmasq.log"
@@ -347,10 +351,21 @@ generate_dnsmasq_conf() {
 
     mkdir -p "${OSHOTSPOT_DIR}"
 
+    # dhcp-lease-max = size of the address pool, so the lease table can't
+    # grow past what the network can actually hold.
+    local range_start_last="${DHCP_RANGE_START##*.}"
+    local range_end_last="${DHCP_RANGE_END##*.}"
+    local lease_max=100
+    if [[ "${range_start_last}" =~ ^[0-9]+$ ]] && [[ "${range_end_last}" =~ ^[0-9]+$ ]]; then
+        lease_max=$(( 10#${range_end_last} - 10#${range_start_last} + 1 ))
+        [[ ${lease_max} -lt 1 ]] && lease_max=1
+    fi
+
     sed -e "s|__AP_IFACE__|${AP_IFACE}|g" \
         -e "s|__DHCP_RANGE_START__|${DHCP_RANGE_START}|g" \
         -e "s|__DHCP_RANGE_END__|${DHCP_RANGE_END}|g" \
         -e "s|__DHCP_LEASE__|${DHCP_LEASE}|g" \
+        -e "s|__DHCP_LEASE_MAX__|${lease_max}|g" \
         -e "s|__AP_IP__|${AP_IP}|g" \
         -e "s|__DNS_PRIMARY__|${DNS_PRIMARY}|g" \
         -e "s|__DNS_SECONDARY__|${DNS_SECONDARY}|g" \
@@ -411,3 +426,78 @@ fw() {
 }
 
 ensure_log_dir() { mkdir -p "${OSHOTSPOT_LOG_DIR}"; }
+
+# ---------------------------------------------------------------------------
+# Client detection
+#
+# The authoritative list of "who is connected right now" comes from hostapd
+# (the L2 association table). The DHCP lease file only ever enriches a MAC
+# with its IP and hostname — it must never decide who shows up, otherwise a
+# stale lease (a device that left but whose lease has not expired, or whose
+# IP was reassigned to a new client) keeps being displayed with the old
+# device's MAC and name.
+# ---------------------------------------------------------------------------
+
+# Return the MAC addresses currently associated to the AP interface.
+get_associated_macs() {
+    local iface="${1:-ap0}"
+    local macs=() mac=""
+
+    # Source 1: hostapd station list (authoritative, L2).
+    if command -v hostapd_cli &>/dev/null; then
+        while IFS= read -r mac; do
+            mac=$(echo "${mac}" | tr '[:upper:]' '[:lower:]')
+            if echo "${mac}" | grep -qE '^([0-9a-f]{2}:){5}[0-9a-f]{2}$'; then
+                macs+=("${mac}")
+            fi
+        done < <(hostapd_cli -i "${iface}" all_sta 2>/dev/null)
+    fi
+
+    # Source 2 (fallback): kernel neighbour table on the AP interface.
+    if [[ ${#macs[@]} -eq 0 ]]; then
+        local _ip _dev _iface lladdr state
+        while IFS=' ' read -r _ip _dev _iface lladdr mac state; do
+            if [[ "${lladdr}" == "lladdr" ]] \
+                && echo "${mac}" | grep -qE '^([0-9a-f]{2}:){5}[0-9a-f]{2}$'; then
+                mac=$(echo "${mac}" | tr '[:upper:]' '[:lower:]')
+                case "${state}" in
+                    REACHABLE|STALE|DELAY|PROBE|PERMANENT)
+                        macs+=("${mac}")
+                        ;;
+                esac
+            fi
+        done < <(ip neigh show dev "${iface}" 2>/dev/null)
+    fi
+
+    for mac in "${macs[@]}"; do
+        echo "${mac}"
+    done
+}
+
+# Output currently connected clients as "mac|ip|hostname", one per line.
+# The list is driven by get_associated_macs(); the lease file only adds
+# the IP and hostname for each MAC.
+read_connected_clients() {
+    local iface="${AP_IFACE:-ap0}"
+    local lease_file="${OSHOTSPOT_DNSMASQ_LEASES}"
+    local -A ip_of=() hostname_of=()
+
+    # Index the DHCP lease file by MAC.
+    if [[ -f "${lease_file}" ]]; then
+        local expiry mac ip hostname client_id _rest
+        while IFS=' ' read -r expiry mac ip hostname client_id _rest; do
+            [[ -z "${mac}" ]] && continue
+            mac=$(echo "${mac}" | tr '[:upper:]' '[:lower:]')
+            ip_of["${mac}"]="${ip}"
+            hostname_of["${mac}"]="${hostname}"
+        done < "${lease_file}"
+    fi
+
+    local mac
+    while IFS= read -r mac; do
+        [[ -z "${mac}" ]] && continue
+        local ip="${ip_of[${mac}]:-}"
+        local hostname="${hostname_of[${mac}]:-}"
+        echo "${mac}|${ip}|${hostname}"
+    done < <(get_associated_macs "${iface}")
+}

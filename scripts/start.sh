@@ -63,6 +63,10 @@ start_dnsmasq() {
 
     ensure_log_dir
 
+    # Start from a clean lease table so mappings from a previous run
+    # (old MAC/hostname) can never be attributed to new clients.
+    rm -f "${OSHOTSPOT_DNSMASQ_LEASES}"
+
     if ! command -v dnsmasq &>/dev/null; then
         log_error "dnsmasq is not installed."
         exit 1
