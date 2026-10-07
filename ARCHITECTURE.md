@@ -164,7 +164,7 @@ The web dashboard is a Python HTTP server serving a vanilla JS SPA. All API call
 ```mermaid
 graph TD
     subgraph Browser
-        SPA["SPA Frontend<br/>index.html + 14 JS modules"]
+        SPA["SPA Frontend<br/>index.html + 27 JS modules"]
     end
 
     subgraph Server["Python Server (127.0.0.1:8073)"]
@@ -178,47 +178,88 @@ graph TD
         SETTINGS[settings.py<br/>Constants]
     end
 
+    subgraph Events["Event Pipeline (events/)"]
+        TAILER[tailer.py<br/>dnsmasq log collector]
+        SPAN[span_analyzer.py<br/>SPAN packet capture + IDS]
+        LIVEBUS[live_bus.py<br/>SSE pub/sub ring buffer]
+        DB[db.py<br/>SQLite events store]
+        CLASSIFY[classify.py<br/>Domain categorization]
+        NOTIFY[notify.py<br/>SMTP + SSE notifications]
+    end
+
     subgraph Backend
         SH[Shell Scripts]
         LOGS["Log Files<br/>/var/log/oshotspot/"]
         PROC["/proc/net/dev"]
         CONF["config.conf"]
         DENY["deny_maclist.conf"]
+        AUTHDB["auth.db<br/>(users, sessions, notifications, audit_log)"]
+        EVENTDB["events.db<br/>(events, known_devices, policies)"]
+        LIVEDB["live.db<br/>(SSE ring buffer)"]
     end
 
     SPA -->|"HTTP GET/POST<br/>?token=X"| HANDLER
     HANDLER --> AUTH
     HANDLER -->|"/api/status, /api/doctor"| SCRIPTS --> SH
-    HANDLER -->|"/api/status, /api/doctor"| PARSERS
+    HANDLER -->|"/api/clients, /api/blocked"| SCRIPTS --> SH
     HANDLER -->|"/api/config, POST /api/config"| CFGSTORE --> CONF
     HANDLER -->|"/api/traffic"| NETINFO --> PROC
     HANDLER -->|"/api/qr"| NETINFO
     HANDLER -->|"/api/logs"| LOGS
-    HANDLER -->|"/api/blocked"| DENY
-    HANDLER -->|"/api/kick, /api/unblock"| DENY
-    MAIN --> HANDLER
+    HANDLER -->|"/api/events"| DB --> EVENTDB
+    HANDLER -->|"/api/known-devices"| DB --> EVENTDB
+    HANDLER -->|"/api/domain-policy"| DB --> EVENTDB
+    HANDLER -->|"/api/notifications"| NOTIFY --> AUTHDB
+    HANDLER -->|"/api/span/anomalies"| LIVEBUS --> LIVEDB
+    HANDLER -->|"/api/captive/clients"| SCRIPTS --> SH
+     MAIN --> HANDLER
 ```
+
+The **Overview** page (`status.js`) renders a "Live Events" card that subscribes to the SSE event bus (`/api/live-stream`) for real-time `dns_event`, `alert`, and `client_change` events — capping at 20 rows with a link to the full Events page.
 
 ### API Endpoints
 
 | Method | Path | Backend | Description |
 |--------|------|---------|-------------|
+| GET | `/` | `_serve_index` | Serve dashboard HTML; auto-login superadmin if token in URL |
 | GET | `/api/status` | `status.sh` + `clients.sh` | Full hotspot status |
 | GET | `/api/clients` | `clients.sh` | DHCP lease table |
 | GET | `/api/config` | `config_store.py` | Current configuration |
 | GET | `/api/qr` | `qrencode` | WiFi QR code PNG |
 | GET | `/api/doctor` | `doctor.sh` | System diagnostics |
-| GET | `/api/logs` | Log files | Hostapd/dnsmasq/web logs |
+| GET | `/api/logs` | Log files | Hostapd/dnsmasq/web/event logs |
 | GET | `/api/traffic` | `/proc/net/dev` | Bandwidth counters |
 | GET | `/api/interfaces` | `/sys/class/net` | WiFi interface list |
-| GET | `/api/blocked` | `deny_maclist.conf` | Blocked MACs |
-| POST | `/api/start` | `start.sh` | Start hotspot |
-| POST | `/api/stop` | `stop.sh` | Stop hotspot |
-| POST | `/api/restart` | `stop.sh` + `start.sh` | Restart hotspot |
-| POST | `/api/repair` | `repair.sh` | Post-suspend recovery |
-| POST | `/api/config` | `config_store.py` | Update configuration |
-| POST | `/api/kick` | `deny_maclist.conf` | Block client by MAC |
-| POST | `/api/unblock` | `deny_maclist.conf` | Unblock client |
+| GET | `/api/wifi-info` | `network_info.py` | WiFi adapter details (channel, mode, signal) |
+| GET | `/api/events` | `db.py` | Query events DB: filter by type, MAC, time range (up to 500) |
+| GET | `/api/events-status` | `db.py` + `live_bus.py` | Event pipeline health: tailer, DB, ring buffer state |
+| GET | `/api/known-devices` | `db.py` | Known devices inventory (enriched with live leases) |
+| GET | `/api/blocked` | `deny_maclist.conf` | Blocked MAC addresses |
+| GET | `/api/domain-policy` | `db.py` | Forbidden, watched, and noise domain patterns |
+| GET | `/api/captive` | `config_store.py` | Captive portal config (code, message, colors, logo) |
+| GET | `/api/captive/clients` | `captive.py` | Currently authenticated MAC addresses |
+| GET | `/api/captive/codes` | `captive.py` + `handler.py` | Temporary captive access codes with status & countdown |
+| POST | `/api/captive/codes` | `handler.py` | Create single temporary captive access code |
+| POST | `/api/captive/codes/generate` | `handler.py` | Atomic batch generation (1–50 codes, prefix, length, duration, label) |
+| GET | `/api/captive/codes/export-pdf` | `handler.py` | Generate printable PDF vouchers with custom logo, header color & status URL |
+| POST | `/api/captive/codes/revoke` | `handler.py` | Revoke temporary access code and disconnect bound sessions |
+| POST | `/api/captive/revoke` | `captive.py` | Revoke client captive portal MAC authentication |
+| POST | `/api/captive/logo` | `captive.py` | Upload/remove captive portal logo (base64 PNG) |
+| GET | `/api/portal/status` | `captive.py` | Client session status API (SSID, remaining time, IP, MAC, code) |
+| POST | `/api/portal/login` | `captive.py` | Client authentication API with CORS headers & instant session payload |
+| POST | `/api/portal/logout` | `captive.py` | Client self-logout API |
+| POST | `/api/app/logo` | `config_store.py` | Upload/remove admin dashboard logo (base64 PNG) |
+| GET | `/api/app-block` | `handler.py` | Returns active application-category blocking state |
+| POST | `/api/app-block` | `handler.py` | Apply or remove category blocking (messaging, gaming) via firewall |
+| GET | `/api/vpn/status` | `vpn.py` | Tailscale VPN status (Running/NeedsLogin/Stopped) |
+| POST | `/api/vpn/start` | `vpn.py` | Start Tailscale VPN (returns auth URL if needed) |
+| POST | `/api/vpn/stop` | `vpn.py` | Stop Tailscale VPN |
+| POST | `/api/vpn/restart` | `vpn.py` | Restart Tailscale VPN |
+| POST | `/api/mail/test` | `alert.py` | Send test email to verify SMTP configuration |
+| GET | `/api/audit-log` | `auth_db.py` | Query audit log entries (superadmin or can_view_audit) |
+| POST | `/api/audit-log/delete` | `auth_db.py` | Delete audit entries by IDs (superadmin only) |
+| POST | `/api/users/audit-access` | `auth_db.py` | Toggle can_view_audit flag for a user (superadmin only) |
+| POST | `/api/events/delete` | `db.py` | Delete N oldest events by count (superadmin only) |
 
 ---
 
@@ -344,20 +385,44 @@ graph TD
 |-----|---------|-------------|
 | `SSID` | `OSHotspot` | WiFi network name (1-32 chars) |
 | `PASSWORD` | `ChangeMe123` | WiFi password (min 8 chars, WPA2) |
-| `CHANNEL` | `6` | WiFi channel (1-13) |
+| `WIFI_OPEN` | `false` | Open WiFi network (no password) |
+| `CHANNEL` | `6` | WiFi channel — `0` = Auto (ACS), or fixed `1-13` |
 | `HW_MODE` | `g` | Hardware mode (`g` = 2.4GHz, `a` = 5GHz) |
 | `COUNTRY_CODE` | `FR` | ISO 3166-1 alpha-2 country code |
 | `HOSTNAME` | `oshotspot` | Hostname shown on the network |
 | `AP_IFACE` | `ap0` | Virtual AP interface name |
-| `WIFI_IFACE` | *(auto-detected)* | Internet WiFi interface |
+| `WIFI_IFACE` | *(auto-detected)* | Internet-connected WiFi adapter |
 | `AP_IP` | `192.168.50.1` | Hotspot gateway IP |
 | `SUBNET` | `192.168.50.0` | Hotspot subnet |
 | `AP_CIDR` | `24` | Subnet CIDR prefix |
 | `DHCP_RANGE_START` | `192.168.50.10` | DHCP range start |
 | `DHCP_RANGE_END` | `192.168.50.100` | DHCP range end |
 | `DHCP_LEASE` | `12h` | DHCP lease duration |
-| `DNS_PRIMARY` | `8.8.8.8` | Primary DNS server |
-| `DNS_SECONDARY` | `1.1.1.1` | Secondary DNS server |
+| `DNS_PRIMARY` | `8.8.8.8` | Primary upstream DNS server |
+| `DNS_SECONDARY` | `1.1.1.1` | Secondary upstream DNS server |
+| `DNS_REDIRECT` | `true` | Force all DNS through local dnsmasq; block DoH/DoT/VPN |
+| `CAPTIVE_PORTAL` | `false` | Enable captive portal with access code |
+| `CAPTIVE_CODE` | `""` | Optional shared access code required to connect |
+| `CAPTIVE_MESSAGE` | `"Welcome…"` | Welcome message shown on portal page |
+| `CAPTIVE_BG_COLOR` | `"#050505"` | Portal page background color (hex) |
+| `CAPTIVE_LOGO_URL` | `""` | Custom portal logo image path |
+| `SPAN_ENABLED` | `false` | Enable SPAN port packet capture & IDS |
+| `SPAN_INTERFACE` | `""` | Network interface connected to SPAN port |
+| `INACTIVITY_TIMEOUT` | `7200` | Dashboard auto-shutdown idle seconds (0=never; 7200/18000/36000) |
+| `DASHBOARD_REMOTE_ACCESS` | `false` | Allow remote access to admin dashboard |
+| `DASHBOARD_BIND_ADDRESS` | `0.0.0.0` | Dashboard bind address |
+| `ADMIN_LOGIN_BG_COLOR` | `""` | Admin login page background color (hex) |
+| `ADMIN_LOGO_URL` | `""` | Custom admin/dashboard logo image path |
+| `ALERT_EMAIL_ENABLED` | `false` | Enable SMTP email alerts for forbidden/flood events |
+| `ALERT_EMAIL_TO` | `""` | Alert recipient email address |
+| `ALERT_EMAIL_FROM` | `""` | Alert sender email address |
+| `ALERT_EMAIL_SMTP_HOST` | `""` | SMTP relay host |
+| `ALERT_EMAIL_SMTP_PORT` | `587` | SMTP port |
+| `ALERT_EMAIL_SMTP_MODE` | `direct` | SMTP mode: `direct` (Python smtplib) or `msmtp` (system msmtp) |
+| `ALERT_EMAIL_USERNAME` | `""` | SMTP auth username |
+| `ALERT_EMAIL_PASSWORD` | `""` | SMTP auth password |
+| `VPN_ENABLED` | `false` | Enable Tailscale VPN remote access |
+| `VPN_URL` | `""` | Tailscale dashboard URL for remote access |
 
 ---
 
@@ -394,11 +459,12 @@ sequenceDiagram
 | Token delivery | URL query parameter (`?token=...`) |
 | Request validation | Every API call requires valid token |
 | Security headers | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` |
-| Password protection | WiFi password never returned via API (only `password_set: boolean`) |
+| Password protection | PBKDF2-HMAC-SHA256 (100k iterations, per-user random salt) — never stored in plaintext |
 | File permissions | `config.conf` and `hostapd.conf` are `chmod 600` |
 | Inactivity timeout | Auto-shutdown after 2 hours (out-of-process watchdog) |
 | MAC filtering | `deny_maclist.conf` for kick/block clients |
 | DNS enforcement | PREROUTING redirect + DoH IP blocking |
+| RBAC & audit access | `can_view_audit` flag — grants non-superadmin users read-only access to audit log; enforced by `check_session_audit()` |
 
 ---
 
@@ -409,6 +475,7 @@ OSHotspot/
 ├── oshotspot                    # CLI entry point (bash)
 ├── Makefile                     # Build system for C tools
 ├── install.sh                   # Installer (local or remote)
+├── package.sh                   # Release packaging (tarball + .deb)
 ├── uninstall.sh                 # Uninstaller (--purge option)
 ├── config.conf.example          # Configuration template
 ├── agents.json                  # AI agent metadata
@@ -430,7 +497,10 @@ OSHotspot/
 │   ├── qr.sh                    # Terminal QR code
 │   ├── doctor.sh                # System diagnostics
 │   ├── logs.sh                  # Log viewer
-│   └── web.sh                   # Launches Python server
+│   ├── web.sh                   # Launches Python server
+│   ├── setup-vpn.sh             # Tailscale VPN installer and config
+│   ├── setup-mail.sh            # Email alert configurator (msmtp or direct)
+│   └── reload-dns-blocking.sh   # Regenerate dnsmasq blocked hosts
 ├── configs/
 │   ├── hostapd.conf.template    # hostapd config template
 │   ├── dnsmasq.conf.template    # dnsmasq config template
@@ -441,42 +511,78 @@ OSHotspot/
 │   ├── oshotspot                # Bash completion
 │   ├── oshotspot.zsh            # Zsh completion
 │   └── oshotspot.fish           # Fish completion
-└── web/
-    ├── serve.py                 # Python entry point
-    ├── server/
-    │   ├── main.py              # Server startup + watchdog
-    │   ├── handler.py           # HTTP API routes
-    │   ├── auth.py              # Token management
-    │   ├── scripts.py           # Subprocess wrappers
-    │   ├── parsers.py           # Output parsers
-    │   ├── config_store.py      # Config read/write/validate
-    │   ├── network_info.py      # /proc/net/dev, QR, 5GHz
-    │   └── settings.py          # Constants
-    └── static/
-        ├── index.html           # SPA shell (9 views)
-        ├── style.css            # Styles (dark/light themes)
-        └── js/
-            ├── core.js          # Shared state + DOM helpers
-            ├── api.js           # Fetch wrapper + token injection
-            ├── app.js           # Bootstrap + polling
-            ├── nav.js           # SPA navigation
-            ├── theme.js         # Dark/light toggle
-            ├── toast.js         # Notifications
-            ├── status.js        # Overview panel
-            ├── clients.js       # Client table + kick/block/unblock
-            ├── actions.js       # Start/stop/restart/repair
-            ├── config.js        # Configuration form
-            ├── traffic.js       # Bandwidth chart (Canvas)
-            ├── doctor.js        # Diagnostics panel
-            ├── qr.js            # QR code display
-            └── logs.js          # Log viewer
+├── events/
+│   ├── tailer.py                # dnsmasq log collector + event pipeline
+│   ├── span_analyzer.py         # SPAN port raw packet capture + IDS
+│   ├── live_bus.py              # SSE pub/sub + SQLite ring buffer
+│   ├── db.py                    # SQLite events store (events.db)
+│   ├── classify.py              # Domain categorization engine
+│   ├── notify.py                # SMTP + SSE notification publisher
+│   ├── alert.py                 # Structured log alert writer
+│   ├── parser.py                # dnsmasq log line parser
+│   └── network_info.py          # /proc/net/dev, QR, 5GHz detection
+├── web/
+│   ├── serve.py                 # Python entry point
+│   ├── captive.py               # Captive portal HTTP server (port 80)
+│   └── server/
+│       ├── main.py              # Server startup + inactivity watchdog
+│       ├── handler.py           # HTTP API routes (40+ endpoints)
+│       ├── auth.py              # Token + session cookie management
+│       ├── auth_db.py           # SQLite auth store (auth.db)
+│       ├── scripts.py           # Subprocess wrappers
+│       ├── parsers.py           # Shell script output parsers
+│       ├── config_store.py      # Config read/write/validate
+│       ├── network_info.py      # /proc/net/dev, QR, 5GHz, interface list
+│       ├── vpn.py               # Tailscale VPN manager (start/stop/status)
+│       └── settings.py          # Constants (paths, timeouts, lockout tiers)
+│   └── static/
+│       ├── index.html           # SPA shell (18 views)
+│       ├── style.css            # Styles (dark/light themes)
+│       └── js/
+│           ├── core.js          # Shared state + DOM helpers
+│           ├── api.js           # Fetch wrapper + token injection
+│           ├── app.js           # Bootstrap + polling + SSE
+│           ├── nav.js           # SPA navigation
+│           ├── theme.js         # Dark/light toggle
+│           ├── toast.js         # Toast notifications
+│           ├── status.js        # Overview panel
+│           ├── clients.js       # Client table + kick/block/unblock
+│           ├── actions.js       # Start/stop/restart/repair
+│           ├── config.js        # Configuration form
+│           ├── traffic.js       # Bandwidth chart (Canvas)
+│           ├── doctor.js        # Diagnostics panel
+│           ├── qr.js            # QR code display
+│           ├── logs.js          # Log viewer
+│           ├── activity.js      # Live Activity SSE feed
+│           ├── policy.js        # Domain policy editor
+│           ├── captive.js       # Captive portal settings
+│           ├── span.js          # SPAN analysis + anomaly history
+│           ├── events.js        # Events + historical search + known devices
+│           ├── login.js         # Login page
+│           ├── live.js          # SSE live event streaming
+│           ├── mail.js          # Email alerts configuration
+│           ├── notifications.js # Notification system
+│           ├── users.js         # User management
+│           ├── audit.js         # Audit log viewer + filters + bulk delete
+│           ├── vpn.js           # Tailscale VPN management
+│           └── about.js         # About page
+├── debian/
+│   ├── control                  # Package metadata + dependencies
+│   ├── install                  # File list (source of truth for packaging)
+│   ├── rules                    # dpkg-build rules
+│   ├── changelog                # Debian changelog
+│   └── compat                   # debhelper compatibility level
+├── .github/
+│   └── workflows/
+│       └── release.yml          # CI: build tarball + .deb on tag push
+└── (root-level docs)            # README.md, ARCHITECTURE.md, oshotsop-private-fuc.md, CONTRIBUTING.md, DEV-NOTES.md, LICENSE
 ```
 
 ---
 
 ## Key Architectural Decisions
 
-1. **Zero dependencies** — The Python server uses only stdlib (`http.server`, `json`, `subprocess`). No pip packages required.
+1. **Near-zero dependencies** — The Python web server itself uses only stdlib (`http.server`, `json`, `subprocess`). The event collector additionally uses two small, well-maintained pip packages — `pygtail` (rotation-safe log tailing) and `tenacity` (retry/backoff for SQLite write contention) — installed automatically by `install.sh`. See `DEV-NOTES.md`.
 
 2. **Single source of truth** — `config.conf` is a shell-sourced `KEY="value"` file, readable by both Bash (`source`) and Python (regex parser).
 

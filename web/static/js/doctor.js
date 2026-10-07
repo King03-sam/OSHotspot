@@ -10,6 +10,30 @@
 (function (OS) {
     'use strict';
 
+    OS.renderDoctor = function () {
+        document.getElementById('content').insertAdjacentHTML('beforeend',
+            '<section class="view" id="view-diagnostics">'
+            + '<div class="card">'
+            +     '<div class="card-header">'
+            +         '<h2 class="card-title">System Diagnostics</h2>'
+            +         '<div class="card-header-actions">'
+            +             '<span class="summary-pill" id="doctorSummary"></span>'
+            +             '<button class="btn btn-primary btn-sm doctor-run-btn" onclick="runDoctor()">'
+            +                 '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>'
+            +                 '<span>Run Again</span>'
+            +             '</button>'
+            +         '</div>'
+            +     '</div>'
+            +     '<div class="card-body no-pad">'
+            +         '<div id="doctorResults" class="doctor-list">'
+            +             '<div class="doctor-empty">Click "Run Again" to execute a fresh diagnostic check.</div>'
+            +         '</div>'
+            +     '</div>'
+            + '</div>'
+            + '</section>'
+        );
+    };
+
     window.runDoctor = function () {
         var results = OS.$('doctorResults');
         var summary = OS.$('doctorSummary');
@@ -32,8 +56,8 @@
             for (var i = 0; i < checks.length; i++) {
                 var c = checks[i];
                 counts[c.status] = (counts[c.status] || 0) + 1;
-                html += '<div class="doctor-check">'
-                    + '<div class="doctor-dot ' + OS.esc(c.status) + '"></div>'
+                html += '<div class="doctor-check doctor-check-' + OS.esc(c.status) + '">'
+                    + '<div class="doctor-icon ' + OS.esc(c.status) + '">' + statusIcon(c.status) + '</div>'
                     + '<div class="doctor-msg">' + OS.esc(c.message) + '</div>'
                     + '</div>';
             }
@@ -58,4 +82,14 @@
             }
         });
     };
+
+    function statusIcon(status) {
+        if (status === 'ok') {
+            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+        }
+        if (status === 'fail') {
+            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+        }
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>';
+    }
 })(window.OS);

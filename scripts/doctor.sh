@@ -131,6 +131,30 @@ check_hotspot_running() {
     fi
 }
 
+check_channel_sane() {
+    local channel=""
+    if [[ -f /etc/oshotspot/config.conf ]]; then
+        channel=$(grep -E '^CHANNEL=' /etc/oshotspot/config.conf \
+            | head -1 | sed 's/^CHANNEL=//' | tr -d '"' || true)
+    fi
+    if [[ -z "${channel}" ]]; then
+        return
+    fi
+    if [[ "${channel}" == "0" ]]; then
+        check_warn "CHANNEL=0 is not supported (will be corrected to 1 on start)"
+    else
+        check_ok "Manual channel configured: ${channel}"
+    fi
+}
+
+check_scan_tool() {
+    if command -v iw &>/dev/null; then
+        check_ok "iw available (channel scanning enabled)"
+    else
+        check_warn "iw not installed (channel scan unavailable)"
+    fi
+}
+
 main() {
     echo ""
     echo -e "${BOLD}OSHotspot Diagnostic v${VERSION}${NC}"
@@ -146,6 +170,8 @@ main() {
     check_nat
     echo ""
     check_config
+    check_channel_sane
+    check_scan_tool
     check_networkmanager
     check_systemd
     echo ""

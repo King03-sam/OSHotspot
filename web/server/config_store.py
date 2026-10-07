@@ -124,4 +124,119 @@ def validate_config_update(data):
         else:
             validated["COUNTRY_CODE"] = cc
 
+    if "dashboard_remote_access" in data:
+        validated["DASHBOARD_REMOTE_ACCESS"] = "true" if str(data["dashboard_remote_access"]).lower() in ("true", "1", "yes") else "false"
+
+    if "dashboard_bind_address" in data:
+        addr = str(data["dashboard_bind_address"]).strip()
+        validated["DASHBOARD_BIND_ADDRESS"] = addr if addr else "0.0.0.0"
+
+    if "wifi_open" in data:
+        validated["WIFI_OPEN"] = "true" if str(data["wifi_open"]).lower() in ("true", "1", "yes") else "false"
+
+    if "captive_portal" in data:
+        validated["CAPTIVE_PORTAL"] = "true" if str(data["captive_portal"]).lower() in ("true", "1", "yes") else "false"
+
+    if "captive_code" in data:
+        validated["CAPTIVE_CODE"] = str(data["captive_code"]).strip()
+
+    if "captive_message" in data:
+        validated["CAPTIVE_MESSAGE"] = str(data["captive_message"]).strip()
+
+    if "captive_bg_color" in data:
+        bg = str(data["captive_bg_color"]).strip()
+        if bg and not bg.startswith("#"):
+            bg = "#" + bg
+        validated["CAPTIVE_BG_COLOR"] = bg if bg else "#050505"
+
+    if "captive_domain" in data:
+        raw_dom = str(data["captive_domain"]).strip().lower()
+        # Strip protocols (http://, https://), paths, ports, and trailing slashes
+        dom = re.sub(r'^(https?://)+', '', raw_dom)
+        dom = dom.split('/')[0].split(':')[0].strip()
+        if dom and not re.match(r'^[a-z0-9]([a-z0-9\-\.]*[a-z0-9])?$', dom):
+            errors.append("Custom domain is invalid. Use letters, numbers, hyphens, and dots (e.g. wifi.portal).")
+        else:
+            validated["CAPTIVE_DOMAIN"] = dom
+
+    if "captive_logo_url" in data:
+        validated["CAPTIVE_LOGO_URL"] = str(data["captive_logo_url"]).strip()
+
+    if "admin_login_bg_color" in data:
+        bg = str(data["admin_login_bg_color"]).strip()
+        if bg and not bg.startswith("#"):
+            bg = "#" + bg
+        validated["ADMIN_LOGIN_BG_COLOR"] = bg
+
+    if "admin_logo_url" in data:
+        validated["ADMIN_LOGO_URL"] = str(data["admin_logo_url"]).strip()
+
+    if "span_enabled" in data:
+        validated["SPAN_ENABLED"] = "true" if str(data["span_enabled"]).lower() in ("true", "1", "yes") else "false"
+
+    if "span_interface" in data:
+        validated["SPAN_INTERFACE"] = str(data["span_interface"]).strip()
+
+    if "inactivity_timeout" in data:
+        _valid = {"0", "7200", "18000", "36000"}
+        val = str(data["inactivity_timeout"]).strip()
+        if val not in _valid:
+            errors.append("Inactivity timeout must be 2h, 5h, 10h, or Never.")
+        else:
+            validated["INACTIVITY_TIMEOUT"] = val
+
+    # --- Email alerts ---
+    if "alert_email_enabled" in data:
+        validated["ALERT_EMAIL_ENABLED"] = "true" if str(data["alert_email_enabled"]).lower() in ("true", "1", "yes") else "false"
+
+    if "alert_email_smtp_mode" in data:
+        mode = str(data["alert_email_smtp_mode"]).strip().lower()
+        if mode not in ("msmtp", "direct"):
+            errors.append("SMTP mode must be 'msmtp' or 'direct'.")
+        else:
+            validated["ALERT_EMAIL_SMTP_MODE"] = mode
+
+    if "alert_email_to" in data:
+        to = str(data["alert_email_to"]).strip()
+        if to and "@" not in to:
+            errors.append("Alert email recipient must be a valid email address.")
+        else:
+            validated["ALERT_EMAIL_TO"] = to
+
+    if "alert_email_from" in data:
+        validated["ALERT_EMAIL_FROM"] = str(data["alert_email_from"]).strip()
+
+    if "alert_email_smtp_host" in data:
+        validated["ALERT_EMAIL_SMTP_HOST"] = str(data["alert_email_smtp_host"]).strip()
+
+    if "alert_email_smtp_port" in data:
+        try:
+            port = int(data["alert_email_smtp_port"])
+            if port < 1 or port > 65535:
+                errors.append("SMTP port must be 1-65535.")
+            else:
+                validated["ALERT_EMAIL_SMTP_PORT"] = str(port)
+        except (ValueError, TypeError):
+            errors.append("SMTP port must be a number.")
+
+    if "alert_email_username" in data:
+        validated["ALERT_EMAIL_USERNAME"] = str(data["alert_email_username"]).strip()
+
+    if "alert_email_password" in data:
+        validated["ALERT_EMAIL_PASSWORD"] = str(data["alert_email_password"])
+
+    if "alert_email_template" in data:
+        validated["ALERT_EMAIL_TEMPLATE"] = str(data["alert_email_template"]).strip()
+
+    if "alert_email_categories" in data:
+        validated["ALERT_EMAIL_CATEGORIES"] = str(data["alert_email_categories"]).strip()
+
+    # Cross-field check: must run AFTER alert_email_to is processed above,
+    # otherwise validated["ALERT_EMAIL_TO"] is still empty and enabling
+    # alerts would always fail even with a valid recipient.
+    if validated.get("ALERT_EMAIL_ENABLED") == "true":
+        to = str(validated.get("ALERT_EMAIL_TO", "")).strip()
+        if not to or "@" not in to:
+            errors.append("ALERT_EMAIL_TO must be set to a valid email when email alerts are enabled.")
+
     return validated, errors

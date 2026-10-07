@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WiFi Access · {{SSID}}</title>
+    <link rel="icon" id="favicon" type="{{FAVICON_TYPE}}" href="{{FAVICON_HREF}}">
+    <style>
+        :root {
+            --bg-body: {{BG_COLOR}};
+            --bg-card: #121214;
+            --border-card: #222226;
+            --border-focus: #71717a;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --btn-bg: #ffffff;
+            --btn-text: #000000;
+            --btn-hover: #e4e4e7;
+            --input-bg: #18181b;
+            --input-border: #27272a;
+            --error-bg: rgba(239, 68, 68, 0.1);
+            --error-border: rgba(239, 68, 68, 0.4);
+            --error-text: #fca5a5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 60%),
+                radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            letter-spacing: -0.01em;
+        }
+
+        .portal-wrapper {
+            width: 100%;
+            max-width: 400px;
+            animation: fadeIn 0.4s ease-out;
+            will-change: transform;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .portal-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 36px 28px;
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: height 0.3s ease;
+        }
+
+        .portal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .wifi-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            background: #18181b;
+            border: 1px solid #27272a;
+            color: #ffffff;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .wifi-icon-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+        }
+
+        .portal-header {
+            margin-bottom: 28px;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .ssid-highlight {
+            color: #ffffff;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 1px;
+        }
+
+        p.description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="password"]::placeholder, input[type="text"]::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        input[type="password"]:focus, input[type="text"]:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+        }
+
+        .input-with-action { position: relative; }
+        .input-with-action input { padding-right: 44px; }
+        .input-eye-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s, background 0.15s;
+        }
+        .input-eye-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+        }
+
+        .btn-submit {
+            width: 100%;
+            height: 48px;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15);
+            position: relative;
+        }
+
+        .btn-submit:hover {
+            background: var(--btn-hover);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-submit:active {
+            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-danger-action {
+            width: 100%;
+            height: 44px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .btn-danger-action:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .error-msg {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            font-size: 13px;
+            border-radius: 10px;
+            text-align: left;
+            line-height: 1.4;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            padding: 0 14px;
+            margin-top: 0;
+            transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin-top 0.3s ease;
+        }
+
+        .error-msg.visible {
+            max-height: 120px;
+            opacity: 1;
+            padding: 12px 14px;
+            margin-top: 16px;
+        }
+
+        .success-box {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            color: #4ade80;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 12px;
+            text-align: center;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            padding: 0 14px;
+            margin-top: 0;
+            transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin-top 0.3s ease;
+        }
+
+        .success-box.visible {
+            max-height: 80px;
+            opacity: 1;
+            padding: 14px;
+            margin-top: 16px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            border-top-color: #000000;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .info-grid {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text-muted); }
+        .info-value { font-weight: 600; color: var(--text-primary); font-family: monospace; }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-wrapper">
+        <div class="portal-card">
+            {{LOGO_HTML}}
+
+            <!-- 1. LOGIN CARD (Unauthenticated view) -->
+            <div id="loginCard">
+                <div class="portal-header">
+                    <h1>Connect to <span class="ssid-highlight">{{SSID}}</span></h1>
+                    <p class="description">{{MESSAGE}}</p>
+                </div>
+
+                <form id="portalForm" onsubmit="submitPortal(event)">
+                    <div class="form-group" id="codeGroup">
+                        <label for="accessCode">Access Code</label>
+                        <div class="input-with-action">
+                            <input type="password" id="accessCode" placeholder="Enter access code" autocomplete="off">
+                            <button type="button" class="input-eye-btn" onclick="toggleAccessCode()" aria-label="Show password">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <div class="spinner" id="btnSpinner"></div>
+                        <span id="btnText">Connect to Network</span>
+                    </button>
+
+                    <div id="errorMsg" class="error-msg"></div>
+                    <div id="successBox" class="success-box">✓ Authenticated. Connecting to Internet...</div>
+                </form>
+            </div>
+
+            <!-- 2. STATUS CARD (Authenticated view) -->
+            <div id="statusCard" style="display: none;">
+                <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);padding:6px 14px;border-radius:20px;margin-bottom:16px;">
+                    <span style="width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite;"></span>
+                    <span style="font-size:13px;font-weight:600;color:#4ade80;">Connected to <span id="statusSsid">{{SSID}}</span></span>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <div id="countdownDisplay" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:#ffffff;margin-bottom:4px;">Calculating session...</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">Active Session Status</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="sessionProgressBar"></div>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Access Code</span>
+                        <span class="info-value" id="statusCodeVal">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Expiration</span>
+                        <span class="info-value" id="statusExpiresVal">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">IP Address</span>
+                        <span class="info-value" id="statusIpVal">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Device MAC</span>
+                        <span class="info-value" id="statusMacVal">—</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-submit" onclick="window.location.href='http://www.google.com'">
+                    Browse Web
+                </button>
+            </div>
+
+            <div class="footer-note">Protected by OSHotspot Security</div>
+        </div>
+    </div>
+
+    <script>
+        var codeRequired = {{CODE_REQUIRED}};
+        if (!codeRequired) {
+            var grp = document.getElementById('codeGroup');
+            if (grp) grp.style.display = 'none';
+        }
+
+        var cooldownTimer = null;
+        var statusTimer = null;
+        var syncTimer = null;
+        var targetEndTime = null;
+        var sessionRemaining = 0;
+        var sessionTotal = 0;
+
+        // Auto-check status on load
+        checkPortalStatus();
+
+        var AP_IP = '{{AP_IP}}';
+
+        function statusUrlOnApIp() {
+            if (!AP_IP || AP_IP === '{{AP_IP}}') return '';
+            return 'http://' + AP_IP + '/';
+        }
+
+        function redirectToApStatusIfNeeded() {
+            // After auth, prefer the AP IP so the status page stays reachable
+            // even if Private DNS briefly breaks the custom captive domain.
+            var target = statusUrlOnApIp();
+            if (!target) return false;
+            if (window.location.hostname === AP_IP) return false;
+            window.location.replace(target);
+            return true;
+        }
+
+        function checkPortalStatus(isBackgroundSync) {
+            fetch('/api/portal/status')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.authenticated) {
+                        if (!isBackgroundSync && redirectToApStatusIfNeeded()) return;
+                        renderStatusView(data, isBackgroundSync);
+                    } else {
+                        stopAllTimers();
+                        renderLoginView();
+                    }
+                })
+                .catch(function() {
+                    // Fallback to AP IP if domain name resolution fails after auth
+                    if (AP_IP && AP_IP !== '{{AP_IP}}' && window.location.hostname !== AP_IP) {
+                        fetch('http://' + AP_IP + '/api/portal/status')
+                            .then(function(res) { return res.json(); })
+                            .then(function(data) {
+                                if (data && data.authenticated) {
+                                    if (!isBackgroundSync && redirectToApStatusIfNeeded()) return;
+                                    renderStatusView(data, isBackgroundSync);
+                                    return;
+                                }
+                                if (!isBackgroundSync) { stopAllTimers(); renderLoginView(); }
+                            })
+                            .catch(function() {
+                                if (!isBackgroundSync) { stopAllTimers(); renderLoginView(); }
+                            });
+                    } else if (!isBackgroundSync) {
+                        stopAllTimers();
+                        renderLoginView();
+                    }
+                });
+        }
+
+        function stopAllTimers() {
+            if (statusTimer) { clearInterval(statusTimer); statusTimer = null; }
+            if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
+        }
+
+        function renderLoginView() {
+            var loginCard = document.getElementById('loginCard');
+            var statusCard = document.getElementById('statusCard');
+            if (statusCard) statusCard.style.display = 'none';
+            if (loginCard) loginCard.style.display = 'block';
+        }
+
+        function renderStatusView(data, isBackgroundSync) {
+            var loginCard = document.getElementById('loginCard');
+            var statusCard = document.getElementById('statusCard');
+            if (loginCard) loginCard.style.display = 'none';
+            if (statusCard) statusCard.style.display = 'block';
+
+            var ssidEl = document.getElementById('statusSsid');
+            if (ssidEl) ssidEl.textContent = data.ssid || '{{SSID}}';
+
+            var ipEl = document.getElementById('statusIpVal');
+            if (ipEl) ipEl.textContent = data.ip || '—';
+
+            var macEl = document.getElementById('statusMacVal');
+            if (macEl) macEl.textContent = data.mac || '—';
+
+            var s = data.session || {};
+            var codeEl = document.getElementById('statusCodeVal');
+            if (codeEl) codeEl.textContent = s.code ? s.code : (s.is_permanent ? 'Permanent' : 'Guest Pass');
+
+            var expEl = document.getElementById('statusExpiresVal');
+            if (s.expires_at) {
+                var d = new Date(s.expires_at);
+                var pad = function(n) { return n < 10 ? '0' + n : n; };
+                if (expEl) expEl.textContent = pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            } else {
+                if (expEl) expEl.textContent = 'Unlimited (No Lease)';
+            }
+
+            if (s.remaining_seconds !== null && s.remaining_seconds !== undefined) {
+                var serverRemaining = parseInt(s.remaining_seconds, 10);
+                sessionTotal = parseInt(s.total_seconds || serverRemaining, 10);
+                
+                // Set absolute target end time
+                targetEndTime = Date.now() + (serverRemaining * 1000);
+                sessionRemaining = serverRemaining;
+                
+                if (!isBackgroundSync || !statusTimer) {
+                    startLiveCountdown();
+                } else {
+                    updateCountdownUI();
+                }
+
+                // Start periodic 5s background sync ping if not already running
+                if (!syncTimer) {
+                    syncTimer = setInterval(function() {
+                        checkPortalStatus(true);
+                    }, 5000);
+                }
+            } else {
+                stopAllTimers();
+                var countdownEl = document.getElementById('countdownDisplay');
+                if (countdownEl) countdownEl.textContent = 'Unlimited Access';
+                var bar = document.getElementById('sessionProgressBar');
+                if (bar) bar.style.width = '100%';
+            }
+        }
+
+        function startLiveCountdown() {
+            if (statusTimer) clearInterval(statusTimer);
+            updateCountdownUI();
+            statusTimer = setInterval(function() {
+                if (targetEndTime) {
+                    sessionRemaining = Math.max(0, Math.round((targetEndTime - Date.now()) / 1000));
+                } else {
+                    sessionRemaining--;
+                }
+
+                if (sessionRemaining <= 0) {
+                    stopAllTimers();
+                    checkPortalStatus(false);
+                } else {
+                    updateCountdownUI();
+                }
+            }, 1000);
+        }
+
+        function updateCountdownUI() {
+            var countdownEl = document.getElementById('countdownDisplay');
+            var bar = document.getElementById('sessionProgressBar');
+            if (sessionRemaining <= 0) {
+                if (countdownEl) countdownEl.textContent = 'Session Expired';
+                if (bar) bar.style.width = '0%';
+                return;
+            }
+
+            var h = Math.floor(sessionRemaining / 3600);
+            var m = Math.floor((sessionRemaining % 3600) / 60);
+            var s = sessionRemaining % 60;
+            var pad = function(n) { return n < 10 ? '0' + n : n; };
+
+            var text = (h > 0 ? h + 'h ' : '') + pad(m) + 'm ' + pad(s) + 's remaining';
+            if (countdownEl) countdownEl.textContent = text;
+
+            if (bar && sessionTotal > 0) {
+                var pct = Math.min(100, Math.max(0, (sessionRemaining / sessionTotal) * 100));
+                bar.style.width = pct + '%';
+            }
+        }
+
+        function doPortalLogout() {
+            var btn = document.getElementById('logoutBtn');
+            if (btn) btn.disabled = true;
+            fetch('/api/portal/logout', { method: 'POST' })
+                .then(function() {
+                    if (statusTimer) clearInterval(statusTimer);
+                    window.location.reload();
+                })
+                .catch(function() {
+                    window.location.reload();
+                });
+        }
+
+        function showError(msg) {
+            var el = document.getElementById('errorMsg');
+            if (!el) return;
+            el.textContent = msg;
+            el.classList.add('visible');
+        }
+
+        function hideError() {
+            var el = document.getElementById('errorMsg');
+            if (!el) return;
+            el.classList.remove('visible');
+        }
+
+        function toggleAccessCode() {
+            var input = document.getElementById('accessCode');
+            var btn = document.querySelector('.input-eye-btn');
+            if (!input) return;
+            var showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            if (btn) {
+                btn.innerHTML = showing
+                    ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+                    : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+            }
+        }
+
+        function showSuccess(msg) {
+            var el = document.getElementById('successBox');
+            if (!el) return;
+            if (msg) el.textContent = msg;
+            el.classList.add('visible');
+        }
+
+        function startCooldown(seconds) {
+            var btn = document.getElementById('submitBtn');
+            var btnText = document.getElementById('btnText');
+            var spinner = document.getElementById('btnSpinner');
+            var codeInput = document.getElementById('accessCode');
+
+            if (cooldownTimer) clearInterval(cooldownTimer);
+            btn.disabled = true;
+            if (codeInput) codeInput.disabled = true;
+            if (spinner) spinner.style.display = 'none';
+
+            var remaining = seconds;
+            btnText.textContent = 'Wait ' + remaining + 's...';
+
+            cooldownTimer = setInterval(function() {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(cooldownTimer);
+                    cooldownTimer = null;
+                    btn.disabled = false;
+                    if (codeInput) codeInput.disabled = false;
+                    btnText.textContent = 'Connect to Network';
+                    hideError();
+                } else {
+                    btnText.textContent = 'Wait ' + remaining + 's...';
+                }
+            }, 1000);
+        }
+
+        function submitPortal(e) {
+            e.preventDefault();
+            if (cooldownTimer) return;
+
+            var btn = document.getElementById('submitBtn');
+            var btnText = document.getElementById('btnText');
+            var spinner = document.getElementById('btnSpinner');
+            var codeInput = document.getElementById('accessCode');
+            var code = codeInput ? codeInput.value.trim() : '';
+
+            btn.disabled = true;
+            btnText.textContent = 'Authenticating...';
+            spinner.style.display = 'block';
+            hideError();
+
+            fetch('/api/portal/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            })
+            .then(function(res) {
+                return res.json().then(function(data) {
+                    return { status: res.status, data: data };
+                });
+            })
+            .then(function(resObj) {
+                var data = resObj.data;
+                if (data.ok) {
+                    spinner.style.display = 'none';
+                    btn.style.background = '#22c55e';
+                    btn.style.color = '#ffffff';
+                    btnText.textContent = '✓ Connected!';
+                    showSuccess('✓ Authenticated. Loading status...');
+                    if (data.ap_ip && data.ap_ip !== '{{AP_IP}}') {
+                        AP_IP = data.ap_ip;
+                    }
+                    if (redirectToApStatusIfNeeded()) return;
+                    renderStatusView(data);
+                } else if (data.cooldown) {
+                    startCooldown(parseInt(data.cooldown, 10) || 60);
+                } else {
+                    spinner.style.display = 'none';
+                    showError(data.error || 'Authentication failed. Please check your access code.');
+                    btn.disabled = false;
+                    btnText.textContent = 'Connect to Network';
+                }
+            })
+            .catch(function(err) {
+                spinner.style.display = 'none';
+                showError('Connection error (' + (err && err.message ? err.message : 'Network failure') + '). Please try again.');
+                btn.disabled = false;
+                btnText.textContent = 'Connect to Network';
+            });
+        }
+    </script>
+</body>
+</html>

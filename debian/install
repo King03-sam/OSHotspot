@@ -1,0 +1,15 @@
+install.sh                                  usr/lib/oshotspot/
+oshotspot                                   usr/local/bin/
+Makefile                                    usr/lib/oshotspot/
+config.conf.example                         usr/lib/oshotspot/
+requirements.txt                            usr/lib/oshotspot/
+completions/oshotspot                        etc/bash_completion.d/
+completions/oshotspot.zsh                    usr/share/zsh/site-functions/_oshotspot
+completions/oshotspot.fish                   usr/share/fish/vendor_completions.d/
+configs/                                    usr/lib/oshotspot/configs/
+include/                                    usr/lib/oshotspot/include/
+src/                                        usr/lib/oshotspot/src/
+scripts/                                    usr/lib/oshotspot/scripts/
+systemd/                                    lib/systemd/system/
+web/                                        usr/lib/oshotspot/web/
+events/                                     usr/lib/oshotspot/events/

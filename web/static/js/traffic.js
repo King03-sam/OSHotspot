@@ -5,11 +5,53 @@
  *
  * traffic.js — polls /api/traffic, derives a rolling RX/TX throughput
  * history from the raw byte counters, and draws a full-width live
- * bandwidth chart with axes, gridlines, and labels.
+ * bandwidth chart with axes, gridlines, labels and hover inspection.
  */
 
 (function (OS) {
     'use strict';
+
+    function statCard(label, valueId, initial, subId, subText) {
+        return '<div class="traffic-stat-card">'
+            + '<div class="traffic-stat-label">' + label + '</div>'
+            + '<div class="traffic-stat-value" id="' + valueId + '">' + initial + '</div>'
+            + '<div class="traffic-stat-sub"' + (subId ? ' id="' + subId + '"' : '') + '>' + subText + '</div>'
+            + '</div>';
+    }
+
+    OS.renderTraffic = function () {
+        document.getElementById('content').insertAdjacentHTML('beforeend',
+            '<section class="view" id="view-traffic">'
+            + '<div class="traffic-stats" id="trafficStats">'
+            +     statCard('Download',   'trafficDownSpeed', '0 B/s', 'trafficDownPeak', 'Peak 0 B/s')
+            +     statCard('Upload',     'trafficUpSpeed',   '0 B/s', 'trafficUpPeak',   'Peak 0 B/s')
+            +     statCard('Total Down', 'trafficTotalDown', '0 B',   null, 'Received by AP')
+            +     statCard('Total Up',   'trafficTotalUp',   '0 B',   null, 'Sent by AP')
+            +     statCard('Clients',    'trafficClients',   '0',     null, 'Connected now')
+            + '</div>'
+            + '<div class="card">'
+            +     '<div class="card-header">'
+            +         '<h2 class="card-title">Live Bandwidth</h2>'
+            +         '<div class="card-header-actions traffic-header-meta">'
+            +             '<span class="traffic-readout" id="trafficReadout"></span>'
+            +             '<div class="traffic-legend">'
+            +                 '<span class="traffic-legend-item"><span class="traffic-legend-dot" data-series="rx"></span>Download</span>'
+            +                 '<span class="traffic-legend-item"><span class="traffic-legend-dot" data-series="tx"></span>Upload</span>'
+            +             '</div>'
+            +             '<label class="toggle">'
+            +                 '<input type="checkbox" id="trafficAutoRefresh" checked>'
+            +                 '<span class="toggle-slider"></span>'
+            +                 '<span class="toggle-label">Live</span>'
+            +             '</label>'
+            +         '</div>'
+            +     '</div>'
+            +     '<div class="card-body no-pad">'
+            +         '<div class="traffic-chart-wrap"><canvas id="trafficChart"></canvas></div>'
+            +     '</div>'
+            + '</div>'
+            + '</section>'
+        );
+    };
 
     var chartColors = {
         rxLine: '#ffffff',
@@ -36,6 +78,10 @@
             ? chartColors : lightColors;
     }
 
+    function getFont() {
+        return getComputedStyle(document.body).fontFamily || 'sans-serif';
+    }
+
     function formatRate(bytesPerSec) {
         if (bytesPerSec >= 1073741824) return (bytesPerSec / 1073741824).toFixed(1) + ' GB/s';
         if (bytesPerSec >= 1048576) return (bytesPerSec / 1048576).toFixed(1) + ' MB/s';
@@ -44,17 +90,18 @@
     }
 
     function formatRateAxis(bytesPerSec) {
+        if (bytesPerSec <= 0) return '0';
         if (bytesPerSec >= 1073741824) return (bytesPerSec / 1073741824).toFixed(1) + ' GB/s';
         if (bytesPerSec >= 1048576) return (bytesPerSec / 1048576).toFixed(0) + ' MB/s';
         if (bytesPerSec >= 1024) return (bytesPerSec / 1024).toFixed(0) + ' KB/s';
         return Math.round(bytesPerSec) + ' B/s';
     }
 
-    function formatTime(ts) {
+    function formatTime(ts, withSeconds) {
         var d = new Date(ts * 1000);
-        var h = String(d.getHours()).padStart(2, '0');
-        var m = String(d.getMinutes()).padStart(2, '0');
-        return h + ':' + m;
+        var out = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        if (withSeconds) out += ':' + String(d.getSeconds()).padStart(2, '0');
+        return out;
     }
 
     function niceMax(val) {
@@ -67,8 +114,32 @@
         return 10 * mag;
     }
 
+    function arrayMax(arr) {
+        var m = 0;
+        for (var i = 0; i < arr.length; i++) if (arr[i] > m) m = arr[i];
+        return m;
+    }
+
+    /* Smooth path through points using midpoint quadratic curves (no overshoot). */
+    function traceSmooth(ctx, pts) {
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (var i = 1; i < pts.length; i++) {
+            var p = pts[i - 1], c = pts[i];
+            ctx.quadraticCurveTo(p[0], p[1], (p[0] + c[0]) / 2, (p[1] + c[1]) / 2);
+        }
+        var last = pts[pts.length - 1];
+        ctx.lineTo(last[0], last[1]);
+    }
+
+    /* ---------- Data polling ---------- */
+
+    var _isRefreshingTraffic = false;
+
     OS.refreshTraffic = function () {
+        if (_isRefreshingTraffic) return;
+        _isRefreshingTraffic = true;
         OS.api('/api/traffic').then(function (data) {
+            _isRefreshingTraffic = false;
             if (!data || !data.ap) return;
             var now = data.timestamp || Date.now() / 1000;
             var rx = data.ap.rx_bytes || 0;
@@ -91,22 +162,25 @@
             }
             OS.state.lastTraffic = { ap_rx: rx, ap_tx: tx, ts: now };
 
-            var elDl = OS.$('trafficDownSpeed');
-            var elUl = OS.$('trafficUpSpeed');
-            var elTotalDl = OS.$('trafficTotalDown');
-            var elTotalUl = OS.$('trafficTotalUp');
-            var elClients = OS.$('trafficClients');
-
             var elValTraffic = OS.$('valTraffic');
             if (elValTraffic) {
                 elValTraffic.textContent = '\u2193' + OS.formatBytes(rx) + ' \u2191' + OS.formatBytes(tx);
             }
 
-            if (elDl && history.rx.length > 0) {
-                elDl.textContent = formatRate(history.rx[history.rx.length - 1]);
-            }
-            if (elUl && history.tx.length > 0) {
-                elUl.textContent = formatRate(history.tx[history.tx.length - 1]);
+            var n = history.rx.length;
+            var elDl = OS.$('trafficDownSpeed');
+            var elUl = OS.$('trafficUpSpeed');
+            var elDlPeak = OS.$('trafficDownPeak');
+            var elUlPeak = OS.$('trafficUpPeak');
+            var elTotalDl = OS.$('trafficTotalDown');
+            var elTotalUl = OS.$('trafficTotalUp');
+            var elClients = OS.$('trafficClients');
+
+            if (n > 0) {
+                if (elDl) elDl.textContent = formatRate(history.rx[n - 1]);
+                if (elUl) elUl.textContent = formatRate(history.tx[n - 1]);
+                if (elDlPeak) elDlPeak.textContent = 'Peak ' + formatRate(arrayMax(history.rx));
+                if (elUlPeak) elUlPeak.textContent = 'Peak ' + formatRate(arrayMax(history.tx));
             }
             if (elTotalDl) elTotalDl.textContent = OS.formatBytes(rx);
             if (elTotalUl) elTotalUl.textContent = OS.formatBytes(tx);
@@ -119,132 +193,252 @@
 
             OS.drawTrafficChart();
             OS.drawTrafficSpark();
-        }).catch(function () {});
+        }).catch(function () {
+            _isRefreshingTraffic = false;
+        });
     };
+
+    /* ---------- Chart interaction ---------- */
+
+    var _redrawQueued = false;
+    function queueRedraw() {
+        if (_redrawQueued) return;
+        _redrawQueued = true;
+        requestAnimationFrame(function () {
+            _redrawQueued = false;
+            OS.drawTrafficChart();
+            OS.drawTrafficSpark();
+        });
+    }
+
+    function bindChartEvents(canvas) {
+        if (canvas._trafficBound) return;
+        canvas._trafficBound = true;
+
+        canvas.addEventListener('mousemove', function (e) {
+            var g = canvas._geo;
+            if (!g) return;
+            var rect = canvas.getBoundingClientRect();
+            var x = (e.clientX - rect.left) * g.dpr;
+            if (x < g.padLeft - 10 * g.dpr || x > g.padLeft + g.chartW + 10 * g.dpr) {
+                if (OS.state.trafficHover != null) { OS.state.trafficHover = null; queueRedraw(); }
+                return;
+            }
+            var idx = g.n - 1 - Math.round((g.padLeft + g.chartW - x) / g.stepX);
+            idx = Math.max(0, Math.min(g.n - 1, idx));
+            if (idx !== OS.state.trafficHover) {
+                OS.state.trafficHover = idx;
+                queueRedraw();
+            }
+        });
+
+        canvas.addEventListener('mouseleave', function () {
+            OS.state.trafficHover = null;
+            queueRedraw();
+        });
+
+        if (window.ResizeObserver && canvas.parentElement) {
+            new ResizeObserver(queueRedraw).observe(canvas.parentElement);
+        } else {
+            window.addEventListener('resize', queueRedraw);
+        }
+    }
+
+    function paintLegend(colors) {
+        var dots = document.querySelectorAll('#view-traffic .traffic-legend-dot');
+        for (var i = 0; i < dots.length; i++) {
+            dots[i].style.background = dots[i].getAttribute('data-series') === 'tx'
+                ? colors.txLine : colors.rxLine;
+        }
+    }
+
+    function updateReadout(idx, withSeconds) {
+        var el = OS.$('trafficReadout');
+        if (!el) return;
+        var h = OS.state.trafficHistory;
+        if (idx == null || idx < 0 || idx >= h.rx.length) { el.textContent = ''; return; }
+        el.textContent = formatTime(h.timestamps[idx], true)
+            + '   \u2193 ' + formatRate(h.rx[idx])
+            + '   \u2191 ' + formatRate(h.tx[idx]);
+    }
+
+    /* ---------- Main chart ---------- */
 
     OS.drawTrafficChart = function () {
         var canvas = OS.$('trafficChart');
         if (!canvas) return;
+        bindChartEvents(canvas);
+
         var ctx = canvas.getContext('2d');
         var dpr = window.devicePixelRatio || 1;
-        var displayW = canvas.offsetWidth;
-        var displayH = canvas.offsetHeight || 320;
-        var w = displayW * dpr;
-        var h = displayH * dpr;
-        canvas.width = w;
-        canvas.height = h;
+        var displayW = canvas.clientWidth;
+        var displayH = canvas.clientHeight || 320;
+        if (!displayW) return;
+        var w = Math.round(displayW * dpr);
+        var h = Math.round(displayH * dpr);
+        if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+        }
         ctx.clearRect(0, 0, w, h);
 
         var colors = getColors();
-        var rx = OS.state.trafficHistory.rx;
-        var tx = OS.state.trafficHistory.tx;
-        var timestamps = OS.state.trafficHistory.timestamps;
-        var maxPoints = OS.state.trafficHistory.maxPoints;
+        var font = getFont();
+        paintLegend(colors);
 
-        if (rx.length < 2) {
+        var hist = OS.state.trafficHistory;
+        var rx = hist.rx, tx = hist.tx, ts = hist.timestamps;
+        var n = rx.length;
+
+        if (n < 2) {
+            canvas._geo = null;
+            updateReadout(null);
             ctx.fillStyle = colors.collectText;
-            ctx.font = (12 * dpr) + 'px ' + getComputedStyle(document.body).fontFamily;
+            ctx.font = (12 * dpr) + 'px ' + font;
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.fillText('Collecting traffic data\u2026', w / 2, h / 2);
             return;
         }
 
-        var padLeft = 65 * dpr;
-        var padRight = 20 * dpr;
+        /* Scale */
+        var maxVal = Math.max(1, arrayMax(rx), arrayMax(tx));
+        maxVal = niceMax(maxVal * 1.15);
+        var gridLines = 4;
+
+        /* Layout — left padding fits the widest axis label */
+        ctx.font = (10 * dpr) + 'px ' + font;
+        var labelW = 0;
+        for (var a = 0; a <= gridLines; a++) {
+            labelW = Math.max(labelW, ctx.measureText(formatRateAxis(maxVal * a / gridLines)).width);
+        }
+        var padLeft = labelW + 18 * dpr;
+        var padRight = 18 * dpr;
         var padTop = 16 * dpr;
-        var padBottom = 40 * dpr;
+        var padBottom = 30 * dpr;
         var chartW = w - padLeft - padRight;
         var chartH = h - padTop - padBottom;
+        var baseY = padTop + chartH;
+        var stepX = chartW / Math.max(1, hist.maxPoints - 1);
 
-        var maxVal = 1;
-        for (var i = 0; i < rx.length; i++) {
-            if (rx[i] > maxVal) maxVal = rx[i];
-            if (tx[i] > maxVal) maxVal = tx[i];
-        }
-        maxVal = niceMax(maxVal * 1.15);
+        function xAt(i) { return padLeft + chartW - (n - 1 - i) * stepX; }
+        function yAt(v) { return baseY - (v / maxVal) * chartH; }
 
-        var gridLines = 5;
+        canvas._geo = { dpr: dpr, padLeft: padLeft, chartW: chartW, stepX: stepX, n: n };
 
+        /* Grid */
         ctx.strokeStyle = colors.grid;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = Math.max(1, dpr);
         for (var g = 0; g <= gridLines; g++) {
-            var gy = padTop + (chartH / gridLines) * g;
+            var gy = Math.round(padTop + (chartH / gridLines) * g) + 0.5;
+            ctx.setLineDash(g === gridLines ? [] : [3 * dpr, 4 * dpr]);
             ctx.beginPath();
             ctx.moveTo(padLeft, gy);
             ctx.lineTo(padLeft + chartW, gy);
             ctx.stroke();
         }
+        ctx.setLineDash([]);
 
+        /* Y axis labels */
         ctx.fillStyle = colors.axisText;
-        ctx.font = (10 * dpr) + 'px ' + getComputedStyle(document.body).fontFamily;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         for (var y = 0; y <= gridLines; y++) {
-            var val = maxVal * (1 - y / gridLines);
-            var yPos = padTop + (chartH / gridLines) * y;
-            ctx.fillText(formatRateAxis(val), padLeft - 8 * dpr, yPos);
+            ctx.fillText(
+                formatRateAxis(maxVal * (1 - y / gridLines)),
+                padLeft - 10 * dpr,
+                padTop + (chartH / gridLines) * y
+            );
         }
 
-        ctx.textAlign = 'center';
+        /* X axis labels — anchored on the newest sample, spaced to avoid overlap */
+        var withSeconds = (ts[n - 1] - ts[0]) < 600;
+        var every = Math.max(1, Math.ceil((90 * dpr) / stepX));
         ctx.textBaseline = 'top';
-        var labelEvery = Math.max(1, Math.floor(rx.length / 6));
-        for (var t = 0; t < rx.length; t += labelEvery) {
-            var tx2 = padLeft + (t / (maxPoints - 1)) * chartW;
-            ctx.fillText(formatTime(timestamps[t] || 0), tx2, padTop + chartH + 8 * dpr);
+        for (var t = n - 1; t >= 0; t -= every) {
+            var label = formatTime(ts[t] || 0, withSeconds);
+            var lx = xAt(t);
+            var half = ctx.measureText(label).width / 2;
+            if (t === n - 1) {
+                ctx.textAlign = 'right';
+            } else {
+                if (lx - half < padLeft) break;
+                ctx.textAlign = 'center';
+            }
+            ctx.fillText(label, lx, baseY + 10 * dpr);
         }
-        if ((rx.length - 1) % labelEvery !== 0 && rx.length > 1) {
-            var lastX = padLeft + ((rx.length - 1) / (maxPoints - 1)) * chartW;
-            ctx.fillText(formatTime(timestamps[timestamps.length - 1] || 0), lastX, padTop + chartH + 8 * dpr);
+
+        /* Series */
+        function points(data) {
+            var p = [];
+            for (var i = 0; i < n; i++) p.push([xAt(i), yAt(data[i])]);
+            return p;
         }
 
         function drawArea(data, lineColor, fillColor) {
+            var pts = points(data);
+
+            var grad = ctx.createLinearGradient(0, padTop, 0, baseY);
+            grad.addColorStop(0, fillColor);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+
             ctx.beginPath();
-            ctx.moveTo(padLeft, padTop + chartH);
-            for (var j = 0; j < data.length; j++) {
-                var px = padLeft + (j / (maxPoints - 1)) * chartW;
-                var py = padTop + chartH - (data[j] / maxVal) * chartH;
-                ctx.lineTo(px, py);
-            }
-            ctx.lineTo(padLeft + ((data.length - 1) / (maxPoints - 1)) * chartW, padTop + chartH);
+            traceSmooth(ctx, pts);
+            ctx.lineTo(pts[n - 1][0], baseY);
+            ctx.lineTo(pts[0][0], baseY);
             ctx.closePath();
-            ctx.fillStyle = fillColor;
+            ctx.fillStyle = grad;
             ctx.fill();
 
+            ctx.beginPath();
+            traceSmooth(ctx, pts);
             ctx.strokeStyle = lineColor;
-            ctx.lineWidth = 2 * dpr;
+            ctx.lineWidth = 1.75 * dpr;
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
-            ctx.beginPath();
-            for (var k = 0; k < data.length; k++) {
-                var lx = padLeft + (k / (maxPoints - 1)) * chartW;
-                var ly = padTop + chartH - (data[k] / maxVal) * chartH;
-                if (k === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
-            }
             ctx.stroke();
+
+            /* Live endpoint marker */
+            var end = pts[n - 1];
+            ctx.fillStyle = fillColor;
+            ctx.beginPath();
+            ctx.arc(end[0], end[1], 7 * dpr, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = lineColor;
+            ctx.beginPath();
+            ctx.arc(end[0], end[1], 3 * dpr, 0, Math.PI * 2);
+            ctx.fill();
         }
 
-        drawArea(rx, colors.rxLine, colors.rxFill);
         drawArea(tx, colors.txLine, colors.txFill);
+        drawArea(rx, colors.rxLine, colors.rxFill);
 
-        var legendY = h - 12 * dpr;
-        ctx.font = (11 * dpr) + 'px ' + getComputedStyle(document.body).fontFamily;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        var legendSpacing = 120 * dpr;
-        var legendCenter = w / 2;
+        /* Hover crosshair */
+        var hi = OS.state.trafficHover;
+        if (typeof hi === 'number' && hi >= 0 && hi < n) {
+            var hx = Math.round(xAt(hi)) + 0.5;
+            ctx.strokeStyle = colors.axisText;
+            ctx.lineWidth = Math.max(1, dpr);
+            ctx.setLineDash([2 * dpr, 3 * dpr]);
+            ctx.beginPath();
+            ctx.moveTo(hx, padTop);
+            ctx.lineTo(hx, baseY);
+            ctx.stroke();
+            ctx.setLineDash([]);
 
-        ctx.fillStyle = colors.rxLine;
-        ctx.beginPath();
-        ctx.arc(legendCenter - legendSpacing / 2 - 40 * dpr, legendY, 4 * dpr, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillText('Download', legendCenter - legendSpacing / 2 + 8 * dpr, legendY);
-
-        ctx.fillStyle = colors.txLine;
-        ctx.beginPath();
-        ctx.arc(legendCenter + legendSpacing / 2 - 40 * dpr, legendY, 4 * dpr, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillText('Upload', legendCenter + legendSpacing / 2 + 8 * dpr, legendY);
+            [[tx, colors.txLine], [rx, colors.rxLine]].forEach(function (s) {
+                ctx.fillStyle = s[1];
+                ctx.beginPath();
+                ctx.arc(xAt(hi), yAt(s[0][hi]), 4 * dpr, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            updateReadout(hi);
+        } else {
+            updateReadout(n - 1);
+        }
     };
+
+    /* ---------- Sparkline ---------- */
 
     OS.drawTrafficSpark = function () {
         var canvas = OS.$('trafficSpark');
@@ -255,49 +449,51 @@
         var h = canvas.height = 36 * dpr;
         ctx.clearRect(0, 0, w, h);
 
-        var rx = OS.state.trafficHistory.rx;
-        var tx = OS.state.trafficHistory.tx;
-        if (rx.length < 2) {
-            ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
-            ctx.font = (10 * dpr) + 'px monospace';
-            ctx.fillText('Collecting traffic data\u2026', 8, 20 * dpr);
+        var colors = getColors();
+        var hist = OS.state.trafficHistory;
+        var rx = hist.rx, tx = hist.tx, n = rx.length;
+
+        if (n < 2) {
+            ctx.fillStyle = colors.collectText;
+            ctx.font = (10 * dpr) + 'px ' + getFont();
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Collecting traffic data\u2026', 8 * dpr, h / 2);
             return;
         }
 
-        var max = 1;
-        for (var i = 0; i < rx.length; i++) max = Math.max(max, rx[i], tx[i]);
-        var step = w / (OS.state.trafficHistory.maxPoints - 1);
+        var max = Math.max(1, arrayMax(rx), arrayMax(tx));
+        var step = w / Math.max(1, hist.maxPoints - 1);
+        var pad = 3 * dpr;
 
-        var colors = getColors();
-
-        ctx.beginPath();
-        ctx.moveTo(0, h);
-        for (var j = 0; j < rx.length; j++) {
-            ctx.lineTo(j * step, h - (rx[j] / max) * (h - 4) - 2);
+        function pts(data) {
+            var p = [];
+            for (var i = 0; i < n; i++) {
+                p.push([w - (n - 1 - i) * step, h - pad - (data[i] / max) * (h - pad * 2)]);
+            }
+            return p;
         }
-        ctx.lineTo((rx.length - 1) * step, h);
-        ctx.closePath();
-        ctx.fillStyle = colors.rxFill;
-        ctx.fill();
 
-        ctx.strokeStyle = colors.rxLine;
-        ctx.lineWidth = 1.5 * dpr;
-        ctx.beginPath();
-        for (var k = 0; k < rx.length; k++) {
-            var px = k * step;
-            var py = h - (rx[k] / max) * (h - 4) - 2;
-            if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        }
-        ctx.stroke();
+        function series(data, lineColor, fillColor) {
+            var p = pts(data);
+            ctx.beginPath();
+            traceSmooth(ctx, p);
+            ctx.lineTo(p[n - 1][0], h);
+            ctx.lineTo(p[0][0], h);
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
 
-        ctx.strokeStyle = colors.txLine;
-        ctx.lineWidth = 1.5 * dpr;
-        ctx.beginPath();
-        for (var m = 0; m < tx.length; m++) {
-            var qx = m * step;
-            var qy = h - (tx[m] / max) * (h - 4) - 2;
-            if (m === 0) ctx.moveTo(qx, qy); else ctx.lineTo(qx, qy);
+            ctx.beginPath();
+            traceSmooth(ctx, p);
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 1.5 * dpr;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.stroke();
         }
-        ctx.stroke();
+
+        series(tx, colors.txLine, colors.txFill);
+        series(rx, colors.rxLine, colors.rxFill);
     };
 })(window.OS);
+

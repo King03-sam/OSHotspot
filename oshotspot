@@ -42,8 +42,11 @@ show_help() {
     echo "  config                  Show current configuration"
     echo "  config reset            Reset configuration to defaults"
     echo "  qr          Show QR code to connect your phone"
+    echo "  scan        Scan WiFi channels and recommend least congested"
     echo "  doctor      Run diagnostic checks"
     echo "  interfaces  List available WiFi interfaces"
+    echo "  setup-mail  Configure email alerts (msmtp)"
+    echo "  setup-vpn   Configure Tailscale VPN for remote access"
     echo "  logs        View and follow hotspot logs"
     echo "  web         Launch web dashboard in browser"
     echo "  enable      Enable hotspot at boot"
@@ -62,6 +65,7 @@ show_help() {
     echo "Examples:"
     echo "  sudo oshotspot start"
     echo "  sudo oshotspot status"
+    echo "  sudo oshotspot scan"
     echo "  sudo oshotspot set ssid MyHotspot"
     echo "  sudo oshotspot set password MySecret123"
     echo ""
@@ -199,6 +203,15 @@ main() {
             ;;
         qr)
             exec bash "${SCRIPTS_DIR}/qr.sh"
+            ;;
+        scan)
+            exec bash "${SCRIPTS_DIR}/scan.sh"
+            ;;
+        setup-mail)
+            exec bash "${SCRIPTS_DIR}/setup-mail.sh"
+            ;;
+        setup-vpn)
+            exec bash "${SCRIPTS_DIR}/setup-vpn.sh"
             ;;
         doctor)
             exec bash "${SCRIPTS_DIR}/doctor.sh"

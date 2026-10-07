@@ -87,7 +87,21 @@ stop_hotspot() {
     # Stop watchdog if running
     pkill -f "oshotspot-watchdog" 2>/dev/null || true
 
+    # Stop event collector if running
+    if [[ -f /run/oshotspot-tailer.pid ]]; then
+        local tpid
+        tpid=$(cat /run/oshotspot-tailer.pid 2>/dev/null || true)
+        if [[ -n "${tpid}" ]]; then
+            kill -15 "${tpid}" 2>/dev/null || kill -9 "${tpid}" 2>/dev/null || true
+        fi
+    fi
+    pkill -f "events[.]tailer|events/tailer.py" 2>/dev/null || true
+    rm -f /run/oshotspot-tailer.pid
+
     stop_dnsmasq
+    # Kill existing DoH/DoT connections BEFORE removing firewall rules,
+    # so they don't survive the brief window when rules are absent.
+    "${SCRIPT_DIR}/firewall.sh" cleanup-doh-connections 2>/dev/null || true
     "${SCRIPT_DIR}/firewall.sh" cleanup
     remove_ap_interface "${AP_IFACE}"
 

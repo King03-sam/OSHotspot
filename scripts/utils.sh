@@ -65,6 +65,17 @@ load_config() {
     # shellcheck source=/dev/null
     source "${OSHOTSPOT_CONFIG}"
 
+    # Sanitize: CHANNEL=0 (from a previous ACS attempt, manual edit, or
+    # restored backup) is incompatible with self-managed WiFi drivers.
+    # Rewrite it to a safe fixed channel unconditionally so hostapd never
+    # receives channel=0.
+    if [[ "${CHANNEL:-}" == "0" ]]; then
+        log_warn "CHANNEL=0 is not supported (incompatible with this driver)."
+        log_warn "Automatically correcting to channel 1."
+        CHANNEL="1"
+        sed -i 's/^CHANNEL=0$/CHANNEL="1"/' "${OSHOTSPOT_CONFIG}" 2>/dev/null || true
+    fi
+
     AP_IFACE="${AP_IFACE:-ap0}"
     CHANNEL="${CHANNEL:-6}"
     HW_MODE="${HW_MODE:-g}"
@@ -280,6 +291,14 @@ remove_ap_interface() {
 configure_ap_ip() {
     local iface="$1" ip="$2" cidr="$3"
 
+    # Keep the AP link IPv4-only: disable IPv6 autoconfiguration on the
+    # interface so it can never acquire a (semi)global IPv6 address or
+    # accept RA that an IPv6-capable phone could use to bypass the
+    # IPv4-only DNS redirect / blocking rules.
+    sysctl -w "net.ipv6.conf.${iface}.accept_ra=0"    >/dev/null 2>&1 || true
+    sysctl -w "net.ipv6.conf.${iface}.autoconf=0"     >/dev/null 2>&1 || true
+    sysctl -w "net.ipv6.conf.${iface}.accept_dad=0"   >/dev/null 2>&1 || true
+
     # Check if the IP is already assigned
     if ip -4 addr show dev "${iface}" 2>/dev/null | grep -q "inet ${ip}/${cidr}"; then
         log_info "IP ${ip}/${cidr} already assigned to ${iface}."
@@ -301,9 +320,19 @@ enable_ip_forward() {
     log_step "Enabling IP forwarding..."
     sysctl -w net.ipv4.ip_forward=1 >/dev/null
 
+    # IPv4-only hotspot: do NOT forward IPv6, otherwise any IPv6 route
+    # present upstream could let clients reach the internet over IPv6,
+    # bypassing every IPv4 DNS/DoH/site/app filter this project enforces.
+    sysctl -w net.ipv6.conf.all.forwarding=0 >/dev/null 2>&1 || true
+    sysctl -w net.ipv6.conf.default.forwarding=0 >/dev/null 2>&1 || true
+
     mkdir -p "$(dirname "${OSHOTSPOT_SYSCTL}")"
-    echo "net.ipv4.ip_forward=1" > "${OSHOTSPOT_SYSCTL}"
-    log_info "IP forwarding enabled."
+    cat > "${OSHOTSPOT_SYSCTL}" <<EOF
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=0
+net.ipv6.conf.default.forwarding=0
+EOF
+    log_info "IP forwarding enabled (IPv4=1, IPv6=0)."
 }
 
 disable_ip_forward() {
@@ -325,13 +354,31 @@ generate_hostapd_conf() {
 
     mkdir -p "${OSHOTSPOT_DIR}"
 
-    sed -e "s|__AP_IFACE__|${AP_IFACE}|g" \
-        -e "s|__SSID__|${SSID}|g" \
-        -e "s|__HW_MODE__|${HW_MODE}|g" \
-        -e "s|__CHANNEL__|${CHANNEL}|g" \
-        -e "s|__COUNTRY_CODE__|${COUNTRY_CODE}|g" \
-        -e "s|__PASSWORD__|${PASSWORD}|g" \
-        "${template}" > "${OSHOTSPOT_HOSTAPD_CONF}"
+    local open_wifi="${WIFI_OPEN:-false}"
+
+    if [[ "${open_wifi}" == "true" ]] || [[ -z "${PASSWORD:-}" ]]; then
+        log_info "Configuring OPEN WiFi network (no password)..."
+        sed -e "s|__AP_IFACE__|${AP_IFACE}|g" \
+            -e "s|__SSID__|${SSID}|g" \
+            -e "s|__HW_MODE__|${HW_MODE}|g" \
+            -e "s|__CHANNEL__|${CHANNEL}|g" \
+            -e "s|__COUNTRY_CODE__|${COUNTRY_CODE}|g" \
+            -e "/^auth_algs=/d" \
+            -e "/^wpa=/d" \
+            -e "/^wpa_passphrase=/d" \
+            -e "/^wpa_key_mgmt=/d" \
+            -e "/^rsn_pairwise=/d" \
+            "${template}" > "${OSHOTSPOT_HOSTAPD_CONF}"
+        echo "auth_algs=1" >> "${OSHOTSPOT_HOSTAPD_CONF}"
+    else
+        sed -e "s|__AP_IFACE__|${AP_IFACE}|g" \
+            -e "s|__SSID__|${SSID}|g" \
+            -e "s|__HW_MODE__|${HW_MODE}|g" \
+            -e "s|__CHANNEL__|${CHANNEL}|g" \
+            -e "s|__COUNTRY_CODE__|${COUNTRY_CODE}|g" \
+            -e "s|__PASSWORD__|${PASSWORD}|g" \
+            "${template}" > "${OSHOTSPOT_HOSTAPD_CONF}"
+    fi
 
     chmod 600 "${OSHOTSPOT_HOSTAPD_CONF}"
     log_info "hostapd config written to ${OSHOTSPOT_HOSTAPD_CONF}."
@@ -369,12 +416,67 @@ generate_dnsmasq_conf() {
         -e "s|__AP_IP__|${AP_IP}|g" \
         -e "s|__DNS_PRIMARY__|${DNS_PRIMARY}|g" \
         -e "s|__DNS_SECONDARY__|${DNS_SECONDARY}|g" \
+        -e "s|__LOG_FACILITY__|${OSHOTSPOT_DNSMASQ_LOG}|g" \
         "${template}" > "${OSHOTSPOT_DNSMASQ_CONF}"
 
     chmod 644 "${OSHOTSPOT_DNSMASQ_CONF}"
     log_info "dnsmasq config written to ${OSHOTSPOT_DNSMASQ_CONF}."
+
+    # Create an empty forbidden-domains block file if it doesn't exist,
+    # so dnsmasq's conf-file= directive doesn't cause a startup error.
+    # The web dashboard regenerates this file via scripts/
+    # reload-dns-blocking.sh when the admin manages forbidden domains;
+    # it contains a pair of "address=/domain/<ip>" directives per
+    # domain (0.0.0.0 for A, :: for AAAA) covering the domain and
+    # every subdomain.
+    local blocked_file="${OSHOTSPOT_DIR}/dnsmasq-blocked.conf"
+    if [[ ! -f "${blocked_file}" ]]; then
+        echo "# Forbidden domains block list (managed by OSHotspot dashboard)" > "${blocked_file}"
+        echo "# Per domain: address=/domain/0.0.0.0 + address=/domain/:: (all subdomains)" >> "${blocked_file}"
+    fi
+    chmod 644 "${blocked_file}"
+
+    # Create an empty nftset/ipset directives file if it doesn't exist,
+    # so dnsmasq's conf-file= directive doesn't cause a startup error.
+    local nftset_file="${OSHOTSPOT_DIR}/dnsmasq-nftset.conf"
+    if [[ ! -f "${nftset_file}" ]]; then
+        echo "# Forbidden domains nftset/ipset directives (managed by OSHotspot dashboard)" > "${nftset_file}"
+        echo "# Per domain: nftset=/domain/4#inet#oshotspot#blocked_ips + 6#..." >> "${nftset_file}"
+    fi
+    chmod 644 "${nftset_file}"
+
+    # Generate the custom captive portal domain resolution file.
+    # When CAPTIVE_DOMAIN is set in config.conf, this injects an
+    # address= directive so hotspot clients resolve the domain to AP_IP
+    # without needing an external DNS server or manual /etc/hosts entry.
+    local domain_file="${OSHOTSPOT_DIR}/dnsmasq-captive-domain.conf"
+    local raw_domain="${CAPTIVE_DOMAIN:-}"
+    local clean_domain=""
+    if [[ -n "${raw_domain}" ]]; then
+        clean_domain=$(echo "${raw_domain}" | sed -e 's#^https\?://##' -e 's#/.*##' -e 's#:.*##' | tr '[:upper:]' '[:lower:]' | xargs)
+    fi
+
+    if [[ -n "${clean_domain}" ]]; then
+        printf "# Custom captive portal domain (auto-generated by OSHotspot)\n" > "${domain_file}"
+        printf "# Resolves %s to the AP so portal opens on any HTTP request\n" "${clean_domain}" >> "${domain_file}"
+        # Authoritative local zone: AAAA is not forwarded upstream (avoids
+        # IPv6 bypass). Do NOT use address=/domain/:: — Happy Eyeballs would
+        # prefer :: and break access even when the A record is correct.
+        printf "local=/%s/\n" "${clean_domain}" >> "${domain_file}"
+        printf "address=/%s/%s\n" "${clean_domain}" "${AP_IP}" >> "${domain_file}"
+        if [[ "${clean_domain}" == www.* ]] && [[ ${#clean_domain} -gt 4 ]]; then
+            local root_dom="${clean_domain#www.}"
+            printf "local=/%s/\n" "${root_dom}" >> "${domain_file}"
+            printf "address=/%s/%s\n" "${root_dom}" "${AP_IP}" >> "${domain_file}"
+        fi
+        log_info "Custom captive domain DNS: ${clean_domain} -> ${AP_IP}"
+    else
+        printf "# No custom captive portal domain configured\n" > "${domain_file}"
+    fi
+    chmod 644 "${domain_file}"
 }
 
+# ---------------------------------------------------------------------------
 # Simple PID-file helpers.
 is_running() {
     local pid_file="$1"

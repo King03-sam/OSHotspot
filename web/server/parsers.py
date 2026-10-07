@@ -54,6 +54,7 @@ def parse_status(output):
         "ap_state": "unknown",
         "ap_ip": None,
         "ssid": None,
+        "channel": None,
         "hostapd": False,
         "hostapd_pid": None,
         "hostapd_uptime": None,
@@ -92,6 +93,9 @@ def parse_status(output):
             parts = line.split(":", 1)
             if len(parts) == 2:
                 status["ssid"] = parts[1].strip()
+        elif "Channel:" in line and "Set:" not in line:
+            val = line.split(":", 1)[1].strip()
+            status["channel"] = val
         elif "hostapd:" in line.lower() and "RUNNING" in line:
             status["hostapd"] = True
             m = re.search(r'PID\s+(\d+)', line)

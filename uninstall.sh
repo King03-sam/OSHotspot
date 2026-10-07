@@ -44,6 +44,9 @@ main() {
     log_info "Stopping hotspot if running..."
     /usr/local/bin/oshotspot stop 2>/dev/null || true
 
+    # Stop event collector if still running
+    pkill -f "events/tailer.py" 2>/dev/null || true
+
     # Clean firewall rules BEFORE removing scripts
     if [[ -f /usr/lib/oshotspot/scripts/firewall.sh ]]; then
         log_info "Cleaning up firewall rules..."

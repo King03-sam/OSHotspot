@@ -80,11 +80,12 @@ start_dnsmasq() {
         sleep 1
     fi
 
-    # Let dnsmasq daemonize itself so it writes the PID file properly
-    dnsmasq \
+    # Let dnsmasq daemonize itself with unbuffered line logging for instant real-time live events
+    stdbuf -oL -eL dnsmasq \
         --conf-file="${OSHOTSPOT_DNSMASQ_CONF}" \
         --pid-file="${OSHOTSPOT_PID_DNSMASQ}" \
-        --log-facility="${OSHOTSPOT_DNSMASQ_LOG}"
+        --log-facility="${OSHOTSPOT_DNSMASQ_LOG}" \
+        --log-async=0
 
     local retries=0
     while ! is_running "${OSHOTSPOT_PID_DNSMASQ}" && [[ ${retries} -lt 10 ]]; do
@@ -94,6 +95,10 @@ start_dnsmasq() {
 
     if is_running "${OSHOTSPOT_PID_DNSMASQ}"; then
         log_info "Dedicated dnsmasq started (PID $(cat "${OSHOTSPOT_PID_DNSMASQ}"))."
+        # Record start time so the watchdog skips dnsmasq checks for a
+        # brief grace period after startup, avoiding false-positive
+        # restarts during the window when dnsmasq is still initializing.
+        date +%s > /run/oshotspot-dnsmasq-started
     else
         log_error "dnsmasq failed to start."
         if [[ -f "${OSHOTSPOT_DNSMASQ_LOG}" ]]; then
@@ -147,6 +152,35 @@ start_hotspot() {
         rm -f /tmp/oshotspot_caps.json
     fi
 
+    # Verify the configured channel is supported by the adapter.
+    # This is a soft check -- we warn but never block manual selection.
+    if [[ -n "${caps_json}" ]]; then
+        local supported_channels
+        supported_channels=$(echo "${caps_json}" | python3 -c "
+import sys, json
+try:
+    caps = json.load(sys.stdin)
+    chans = caps.get('channels_2g', []) + caps.get('channels_5g', [])
+    print(' '.join(str(c) for c in chans))
+except Exception:
+    pass
+" 2>/dev/null) || true
+        if [[ -n "${supported_channels}" ]]; then
+            local channel_supported=false
+            for ch in ${supported_channels}; do
+                if [[ "${ch}" == "${CHANNEL}" ]]; then
+                    channel_supported=true
+                    break
+                fi
+            done
+            if ! ${channel_supported}; then
+                log_warn "Channel ${CHANNEL} is not in the adapter's supported list."
+                log_warn "Supported: ${supported_channels}"
+                log_warn "hostapd may fail to start. Continuing anyway (manual override)."
+            fi
+        fi
+    fi
+
     # Tell NetworkManager to ignore ap0 so it doesn't interfere with hostapd
     local nm_conf="/etc/NetworkManager/conf.d/oshotspot.conf"
     if [[ -d /etc/NetworkManager/conf.d ]] && [[ ! -f "${nm_conf}" ]]; then
@@ -181,6 +215,9 @@ start_hotspot() {
     generate_dnsmasq_conf
     enable_ip_forward
     "${SCRIPT_DIR}/firewall.sh" setup
+    if [[ "${CAPTIVE_PORTAL:-false}" == "true" ]]; then
+        "${SCRIPT_DIR}/firewall.sh" captive_setup
+    fi
     sleep 2
     start_hostapd
     start_dnsmasq
@@ -188,14 +225,48 @@ start_hotspot() {
     # Start watchdog (C tool, optional)
     if command -v oshotspot-watchdog &>/dev/null; then
         pkill -f "oshotspot-watchdog" 2>/dev/null || true
-     
+        local _proj_dir="${SCRIPT_DIR}/.."
         nohup oshotspot-watchdog monitor --interval=10 \
+            --project-dir="${_proj_dir}" \
             >> "${OSHOTSPOT_LOG_DIR}/watchdog.log" 2>&1 < /dev/null &
         disown
         log_info "Watchdog started."
     fi
 
-    echo ""
+    # Start captive portal rules if enabled
+    if [[ "${CAPTIVE_PORTAL:-false}" == "true" ]]; then
+        log_step "Setting up Captive Portal..."
+        "${SCRIPT_DIR}/firewall.sh" captive_setup
+        log_info "Captive Portal enabled."
+    fi
+
+    # Start event collector (Python, optional)
+    if command -v python3 &>/dev/null && [[ -f "${SCRIPT_DIR}/../events/tailer.py" ]]; then
+        pkill -f "events[.]tailer|events/tailer.py" 2>/dev/null || true
+        touch "${OSHOTSPOT_DNSMASQ_LOG}"
+        local _python_path="${SCRIPT_DIR}/.."
+        nohup env PYTHONPATH="${_python_path}${PYTHONPATH:+:${PYTHONPATH}}" \
+            python3 -m events.tailer --daemon \
+            --pid-file /run/oshotspot-tailer.pid \
+            >> "${OSHOTSPOT_LOG_DIR}/events.log" 2>&1 < /dev/null &
+        disown
+        log_info "Event collector started."
+    fi
+
+    # Start SPAN log analyzer if enabled
+    if [[ "${SPAN_ENABLED:-false}" == "true" ]] && [[ -n "${SPAN_INTERFACE:-}" ]]; then
+        if command -v python3 &>/dev/null && [[ -f "${SCRIPT_DIR}/../events/span_analyzer.py" ]]; then
+            pkill -f "events[.]span_analyzer|events/span_analyzer.py" 2>/dev/null || true
+            local _python_path="${SCRIPT_DIR}/.."
+            nohup env PYTHONPATH="${_python_path}${PYTHONPATH:+:${PYTHONPATH}}" \
+                python3 -c "import events.span_analyzer; events.span_analyzer.start_span_analyzer('${SPAN_INTERFACE}')" \
+                >> "${OSHOTSPOT_LOG_DIR}/span.log" 2>&1 < /dev/null &
+            disown
+            log_info "SPAN analyzer started on interface ${SPAN_INTERFACE}."
+        fi
+    fi
+
+        echo ""
     log_info "========================================"
     log_info "  Hotspot is running!"
     log_info "  SSID:      ${SSID}"

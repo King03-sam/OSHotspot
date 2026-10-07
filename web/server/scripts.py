@@ -27,16 +27,22 @@ def log_action(action):
         pass
 
 
-def run_script(script_name, timeout=30):
+def run_script(script_name, timeout=30, args=None):
     """Run one of the bash scripts under SCRIPTS_DIR and return
     (returncode, stdout, stderr). Guards against a missing script and
-    against a script that hangs past `timeout` seconds."""
+    against a script that hangs past `timeout` seconds.
+
+    `args` is an optional list of extra arguments appended to the
+    command (e.g. ["app_block_apply"] for firewall.sh)."""
     script = os.path.join(settings.SCRIPTS_DIR, script_name)
     if not os.path.isfile(script):
         return 1, "", "Script not found"
+    cmd = ["bash", script]
+    if args:
+        cmd.extend(args)
     try:
         result = subprocess.run(
-            ["bash", script],
+            cmd,
             capture_output=True, text=True, timeout=timeout
         )
         return result.returncode, result.stdout, result.stderr

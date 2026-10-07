@@ -3,8 +3,8 @@
 # Licensed under Apache License 2.0
 
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -Iinclude -std=gnu99
-LDFLAGS_SCAN = -lnl-genl-3 -lnl-3
+CFLAGS = -Wall -Wextra -O2 -Iinclude -std=gnu99 $(shell pkg-config --cflags libnl-genl-3.0 2>/dev/null)
+LDFLAGS_SCAN = $(shell pkg-config --libs libnl-genl-3.0 2>/dev/null || echo "-lnl-genl-3 -lnl-3")
 
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin

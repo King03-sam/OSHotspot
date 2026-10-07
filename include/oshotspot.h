@@ -42,6 +42,7 @@ struct user_config {
     int  dhcp_range_start;
     int  dhcp_range_end;
     char dhcp_lease[8];
+    bool wifi_open;
 };
 
 /* Process status for watchdog */

@@ -23,7 +23,95 @@ dhcp-lease-max=__DHCP_LEASE_MAX__
 no-ping
 
 dhcp-option=3,__AP_IP__
-dhcp-option=6,__DNS_PRIMARY__,__DNS_SECONDARY__
+dhcp-option=6,__AP_IP__
+
+# Force dnsmasq to use only the admin-configured upstream servers
+# instead of falling back to /etc/resolv.conf.  This prevents DNS
+# leaks when the host's system DNS is changed or unavailable.
+no-resolv
+server=__DNS_PRIMARY__
+server=__DNS_SECONDARY__
+
+# Suppress HTTPS/SVCB (type 65) records from all DNS responses.  This
+# closes a bypass vector where blocked domains' SVCB records leak real
+# IP addresses to browsers before the A/AAAA address= block takes
+# effect.  HTTPS/SVCB is an optional performance hint (HTTP/3, ECH);
+# stripping it causes no connectivity loss -- browsers fall back to
+# the standard A/AAAA query which is correctly blocked by address=.
+filter-rr=SVCB
+
+# Canary domains to disable browser DoH & Apple Private Relay on hotspot
+address=/use-application-dns.net/0.0.0.0
+address=/use-application-dns.net/::
+address=/mask.icloud.com/0.0.0.0
+address=/mask.icloud.com/::
+address=/mask-h2.icloud.com/0.0.0.0
+address=/mask-h2.icloud.com/::
+
+# Sinkhole public DoH resolvers to force fallback to local dnsmasq
+address=/dns.google/0.0.0.0
+address=/dns.google/::
+address=/dns.cloudflare.com/0.0.0.0
+address=/dns.cloudflare.com/::
+address=/one.one.one.one/0.0.0.0
+address=/one.one.one.one/::
+address=/dns.quad9.net/0.0.0.0
+address=/dns.quad9.net/::
+address=/dns.adguard.com/0.0.0.0
+address=/dns.adguard.com/::
+address=/doh.dns.apple.com/0.0.0.0
+address=/doh.dns.apple.com/::
 
 log-dhcp
 log-queries
+# Write all dnsmasq output (startup, DHCP, DNS queries) to OSHotspot's
+# dedicated log file so it can be parsed into structured events.
+log-facility=__LOG_FACILITY__
+
+# Include the forbidden-domains block list (managed by the web dashboard).
+# The file contains a pair of directives per domain:
+#
+#     address=/domain.com/0.0.0.0
+#     address=/domain.com/::
+#
+# which sinkholes A queries (answered 0.0.0.0) and AAAA queries
+# (answered ::, unroutable) for domain.com AND all its subdomains
+# (www., m., api., ...), leaving no IPv4 or IPv6 leak.  Both lines are
+# required: an IPv4-only address= would still forward AAAA queries
+# upstream on dnsmasq 2.9x.  HTTPS/SVCB (type 65) queries are handled
+# globally by filter-rr=SVCB above.  Unlike hosts-file entries,
+# address= covers every subdomain, and unlike addn-hosts it is only
+# read at startup -- hence the reload script performs a full dnsmasq
+# restart when domains change.
+# NOTE: this file must always exist (utils.sh creates an empty one at
+# startup), otherwise dnsmasq refuses to start with conf-file=.
+conf-file=/etc/oshotspot/dnsmasq-blocked.conf
+
+# Include nftset/ipset directives for forbidden domains (managed by the
+# web dashboard).  Each line tells dnsmasq to add the resolved A/AAAA
+# addresses of a forbidden domain into a netfilter set:
+#
+#   nftset=/domain.com/4#ip#oshotspot#blocked_ips
+#   nftset=/domain.com/6#ip6#oshotspot#blocked_ips6
+#
+# or, on legacy iptables systems:
+#
+#   ipset=/domain.com/blocked_ips
+#   ipset=/domain.com/blocked_ips6
+#
+# The firewall then drops FORWARD traffic to IPs in these sets, so
+# clients cannot reach forbidden sites even if they bypass dnsmasq
+# with an external DNS resolver or a cached IP.
+# NOTE: this file must always exist, otherwise dnsmasq refuses to start.
+# IMPORTANT: The nftset family must match the nft table family:
+#   - IPv4 sets live in table 'ip oshotspot' (family=ip)
+#   - IPv6 sets live in table 'ip6 oshotspot' (family=ip6)
+# Using 'inet' family would reference non-existent sets.
+conf-file=/etc/oshotspot/dnsmasq-nftset.conf
+
+# Custom captive portal domain resolution (managed by OSHotspot dashboard).
+# When CAPTIVE_DOMAIN is set, this file contains:
+#     address=/domain/AP_IP
+# so hotspot clients can reach the captive portal via that domain name.
+# NOTE: this file must always exist, otherwise dnsmasq refuses to start.
+conf-file=/etc/oshotspot/dnsmasq-captive-domain.conf

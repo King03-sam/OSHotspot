@@ -52,3 +52,58 @@ DNS_SECONDARY="1.1.1.1"
 # local dnsmasq, and DNS-over-HTTPS resolver IPs are blocked on port 443.
 # Set to "false" to disable DNS redirect and DoH blocking.
 DNS_REDIRECT="true"
+
+# Dashboard Remote Access
+# Bind address for the web dashboard.
+# Use "0.0.0.0" to allow access from all interfaces (required for VPN access).
+# Use "127.0.0.1" to restrict to local access only.
+DASHBOARD_BIND_ADDRESS="0.0.0.0"
+
+# Open WiFi (No password required)
+WIFI_OPEN="false"
+
+# Captive Portal
+CAPTIVE_PORTAL="false"
+CAPTIVE_CODE=""
+CAPTIVE_MESSAGE="Welcome to OSHotspot! Please accept terms or enter access code to connect."
+# Custom domain name for the captive portal (optional)
+# When set, hotspot clients can access the portal via this domain (e.g. wifi.portal)
+# The domain is resolved locally to the AP via dnsmasq — no external DNS needed.
+CAPTIVE_DOMAIN=""
+
+# SPAN Port Switch Log Analysis
+SPAN_ENABLED="false"
+SPAN_INTERFACE=""
+
+# Dashboard inactivity timeout (seconds)
+# Set to 0 to disable auto-shutdown. Default: 7200 (2 hours)
+INACTIVITY_TIMEOUT="7200"
+
+# Email alerts (optional, disabled by default)
+# When enabled, the event collector emails a notification for each alert
+# (unknown device joined, DNS flood). Alerts are always written to
+# /var/log/oshotspot/events.log regardless of this setting.
+#
+# Recommended: use msmtp (lightweight MTA) — run 'sudo oshotspot setup-mail'
+# to configure.  msmtp handles SMTP auth and TLS; OSHotspot sends via
+# 'sendmail' (localhost:25) to msmtp for delivery.
+#
+# Alternative: set SMTP mode to 'direct' and fill SMTP host/port/credentials
+# below.  The backend will connect directly without msmtp.
+#
+# ALERT_EMAIL_ENABLED="false"
+# ALERT_EMAIL_SMTP_MODE="msmtp"     # msmtp (recommended) or direct
+# ALERT_EMAIL_TO="you@example.com"
+# ALERT_EMAIL_FROM="oshotspot@localhost"
+# ALERT_EMAIL_SMTP_HOST=""          # only for mode=direct (e.g. smtp.gmail.com)
+# ALERT_EMAIL_SMTP_PORT="587"       # only for mode=direct
+# ALERT_EMAIL_USERNAME=""           # only for mode=direct
+# ALERT_EMAIL_PASSWORD=""           # only for mode=direct
+# ALERT_EMAIL_TEMPLATE=""           # custom HTML template path (optional)
+# ALERT_EMAIL_CATEGORIES="forbidden_domain,unknown_device,admin_lockout,critical_service"  # high-value surveillance alerts (dns_flood suppressed by default)
+
+# VPN remote access (Tailscale)
+# When enabled, the dashboard is accessible remotely via Tailscale mesh VPN.
+# Run 'sudo oshotspot setup-vpn' to install and configure.
+# VPN_ENABLED="false"
+# VPN_URL=""

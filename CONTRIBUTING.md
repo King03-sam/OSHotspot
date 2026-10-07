@@ -78,7 +78,7 @@ Edit files in `web/static/` — changes are served directly.
 
 ### Python (web server)
 
-- Stdlib only — no pip dependencies
+- Web server itself is stdlib only; the event collector uses two pip deps — `pygtail` and `tenacity` (see `requirements.txt` / `DEV-NOTES.md`)
 - All API routes go through `handler.py`
 - Parse shell script output via `parsers.py`
 
@@ -87,7 +87,9 @@ Edit files in `web/static/` — changes are served directly.
 - Vanilla JS — no frameworks or build tools
 - All modules attach to `window.OS` namespace
 - DOM helpers: `OS.$()`, `OS.esc()`, `OS.formatBytes()`
-- API calls: use `OS.api.fetch()` (handles token injection + timeout)
+- API calls: use `OS.api()` (handles token injection + timeout + SSE)
+- Modules: `core.js`, `api.js`, `app.js`, `nav.js`, `theme.js`, `toast.js`, `status.js`, `clients.js`, `actions.js`, `config.js`, `traffic.js`, `doctor.js`, `qr.js`, `logs.js`, `activity.js`, `policy.js`, `captive.js`, `span.js`, `events.js`, `login.js`, `live.js`, `mail.js`, `notifications.js`, `users.js`, `audit.js`, `vpn.js`, `about.js`
+- Application category blocking (App Block) is implemented inside `policy.js` — its controls are embedded in the Domain Policy page, not a standalone module.
 
 ## Pull Request Guidelines
 
@@ -99,6 +101,35 @@ Edit files in `web/static/` — changes are served directly.
 ## Project Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for a detailed system overview with diagrams.
+
+## Release Packaging
+
+To create a new release:
+
+1. Bump version in `ARCHITECTURE.md` header and `config.conf.example`
+2. Update `debian/changelog` with a new entry
+3. Commit and push, then tag:
+   ```bash
+   git tag -a v4.1 -m "Release v4.1"
+   git push origin v4.1
+   ```
+4. GitHub Actions (`.github/workflows/release.yml`) will:
+   - Build the `.deb` and `.tar.gz` via `package.sh`
+   - Upload both to GitHub Releases (public, no token needed to download)
+
+### Packaging Files
+- `package.sh` — reads `debian/install` as the source of truth; builds tarball + `.deb`
+- `debian/control` — package metadata and dependencies
+- `debian/install` — file list defining install paths
+- `debian/rules` — dpkg-build rules
+
+### Testing the Package Locally
+```bash
+./package.sh v4.0
+# Verify:
+tar tzf dist/oshotspot-v4.0.tar.gz    # check contents
+dpkg-deb -I dist/oshotspot_4.0_all.deb  # check metadata
+```
 
 ## License
 

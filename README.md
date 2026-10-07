@@ -1,5 +1,10 @@
+<p align="center">
+  <img src="public/OSHotspot-official-name-logo.png" alt="OSHotspot" width="600">
+</p>
+
 # OSHotspot
 
+[![Version](https://img.shields.io/github/v/tag/King03-sam/OSHotspot?color=brightgreen)]()
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Linux-lightgrey.svg)](https://linux.org)
 [![Bash](https://img.shields.io/badge/Language-Bash-4EAA25.svg)](https://www.gnu.org/software/bash/)
@@ -11,188 +16,132 @@
 [![Contributions](https://img.shields.io/badge/Contributions-Welcome-orange.svg)](https://github.com/King03-sam/OSHotspot/pulls)
 
 <p align="center">
-  <b>Automatic WiFi Hotspot Manager for Linux</b><br>
-  Share your computer's WiFi Internet connection with any device, even when NetworkManager hotspot fails.
+<b>WiFi Hotspot & Network Security Manager for Linux</b><br>
+Create WiFi hotspots, monitor DNS traffic, enforce domain policies, detect network anomalies, and block encrypted DNS bypass.
 </p>
 
-OSHotspot fixes broken WiFi hotspot sharing on Linux when NetworkManager's built-in hotspot fails — one command, no NetworkManager conflicts.
+> **Big update, October 2026:** after 2 months of quiet work, this sync brings the full OSHotspot stack (dashboard, live Events, authentication, captive portal, VPN, mail alerts, audit), about 4 months of development since the project began. See "What's new in this update" below.
+
+## What's new in this update
+
+- **Dashboard**: real-time overview, traffic, clients, logs and diagnostics in one control center.
+- **Live Events**: DNS and DHCP activity streamed over SSE with a 5 minute live view plus searchable history.
+- **Authentication and audit**: token sessions, role based access, brute force lockout and a full admin action trail.
+- **Captive portal**: voucher codes with PDF export and a live session status view.
+- **Domain policy and IDS**: forbidden and watched domains, SPAN analysis and DoH bypass blocking.
+- **VPN and mail**: Tailscale remote access and SMTP email alerts from the dashboard.
+
+<p align="center">
+  <img src="public/dashboard/dashboard1.png" alt="OSHotspot Dashboard" width="750">
+  <br>
+  <em>The OSHotspot web dashboard: live overview, traffic, clients, SPAN analysis, domain policy and more.</em>
+</p>
+
+OSHotspot fixes broken WiFi hotspot sharing on Linux when NetworkManager's built-in hotspot fails. It provides automated Access Point creation, customizable Captive Portals, and a standalone SPAN Port Network Traffic & Intrusion Detection System (IDS).
 
 ---
 
 ## About OSHotspot
 
-OSHotspot is a lightweight Linux automation tool designed to create a working WiFi hotspot using native networking tools:
+OSHotspot is a lightweight Linux networking tool that creates a working WiFi hotspot using native networking tools:
 
 - `hostapd` → WiFi Access Point management
 - `dnsmasq` → Dedicated DHCP and DNS service
-- `iptables` → Internet connection sharing (NAT)
-- `iw` → Virtual WiFi interface management
-
-This project was created after facing a real Linux networking limitation where the default Ubuntu hotspot feature could not share an active WiFi connection correctly.
-
-OSHotspot provides a reliable alternative by creating a virtual Access Point interface (`ap0`) and routing Internet traffic through the existing WiFi connection, without disabling NetworkManager.
-
-If you have searched for terms like *"networkmanager hotspot not working"* or *"linux wifi hotspot broken"*, this project was built to address those exact failure modes. It is also useful when you need to **share wifi internet linux** without router hardware, or when you are looking for a **hostapd dnsmasq tutorial script** packaged as a single, reusable CLI.
+- `iptables` / `nftables` → NAT, DNS redirect, DoH/DoT/VPN blocking
+- `iw` → Virtual WiFi interface management (`ap0`)
+- `span_analyzer` → Raw packet inspection & anomaly detection (IDS)
+- `Python 3 + SSE` → Real-time web dashboard with live event streaming
 
 ---
 
-## Use Cases
+## Key Features
 
-- Your NetworkManager hotspot creates a network but connected devices get no internet.
-- You need to share your laptop's WiFi internet with a phone or another laptop with no router available.
-- You want a persistent, auto-repairing hotspot that survives suspend/resume.
+- **WiFi AP with NAT & DNS**: One-command hotspot creation with hostapd + dnsmasq, NAT masquerade, and DHCP.
+- **DNS Traffic Intelligence**: Real-time DNS query categorization (messaging, social, entertainment, browsing), noise filtering, and session aggregation for clean event logs.
+- **Domain Policy Enforcement**: Forbidden/watched domain patterns with SMTP email alerts, instant high-priority notifications, and live SSE dashboard updates.
+- **Application Category Blocking**: Block entire app categories (messaging, gaming) by network port and TLS SNI inspection; works even if clients use external DNS or cached IPs.
+- **SPAN Port IDS Analyzer**: Raw packet capture on any interface that detects ARP spoof, port scan, SYN flood, ICMP flood, and traffic burst with live anomaly stream.
+- **Captive Portal System**: Atomic batch voucher code generation (1-50 codes, custom prefixes), First-Use Activation Model (duration starts on first connect), printable A4 PDF vouchers with admin branding, live User Session Status dashboard with glowing white progress bar countdown, permanent code password masking, CORS preflight support, and OS probe handling (iOS/Android/Windows/macOS).
+- **Secure Admin Dashboard**: Token + HttpOnly session cookie auth, PBKDF2-HMAC-SHA256 password hashing, role-based access (superadmin/admin), per-user + per-IP brute-force lockout (IP blocks never disclosed).
+- **Comprehensive Audit Trail**: Every admin action is logged (user, role, timestamp, IP, success/failure), viewable in a dedicated page with filters, pagination, and bulk delete. 90-day rolling retention, cleanup every 72 hours. Superadmin can grant audit access to other admins.
+- **Device Inventory**: Auto-detect unknown devices, label known clients, bulk import/export, MAC deny list with kick/unblock.
+- **Live Bandwidth Monitor**: Real-time upload/download speeds, total RX/TX counters, Canvas sparkline chart.
+- **Network Security Hardening**: DNS-over-HTTPS/DoT blocking, VPN protocol blocking (WireGuard, OpenVPN, IPsec), DNS port 53 redirect via iptables/nftables.
+- **Remote Access via Tailscale VPN**: Access the dashboard remotely from any device on your Tailscale mesh network with no port forwarding required. Start/stop/restart VPN from the dashboard with authentication URL support.
+- **Channel Scanner**: WiFi channel analysis with congestion ranking (1/6/11), 5 GHz support detection, adaptive hostapd config generation.
+- **QR Code & Diagnostics**: Scannable WiFi QR code, system doctor with auto-repair, live log viewer, systemd auto-start.
+- **CLI + Web Dashboard**: 22 CLI commands (`start`, `stop`, `repair`, `monitor`, `scan`, `qr`, `logs`, `doctor`, `web`, `set`, `setup-vpn`, `setup-mail`...) and an 18-view vanilla JS SPA dashboard with no Node.js, no npm, and no build step. Application category blocking controls are embedded in the Domain Policy page.
 
 ---
 
-## Web Dashboard
+## Web Dashboard Pages
 
-![OSHotspot Dashboard](public/dashboard.png)
-
-A **modern web dashboard** launched with a single command:
+Launch the dashboard with:
 
 ```bash
 sudo oshotspot web
 ```
 
-The browser opens automatically with a secure, token-authenticated session. The dashboard provides full hotspot management without touching the terminal.
+The dashboard listens on port `8073`.
 
-| Page | What it does |
+| Page | Description |
 |------|-------------|
-| **Overview** | Live status, service health, network info, traffic sparkline |
-| **Traffic** | Real-time bandwidth chart with download/upload speeds and totals |
-| **Controls** | Start / stop / restart / repair with real-time output |
-| **Clients** | Connected devices table with kick/block and unblock actions |
-| **Configuration** | SSID, password, channel, hardware mode, country code with 5GHz compatibility warning |
-| **QR Code** | Scannable WiFi QR for instant phone connections |
-| **Diagnostics** | System readiness checks |
-| **Logs** | Live hostapd / dnsmasq / web log viewer |
-| **About** | OSHotspot info, technology stack, and credits |
+| **Overview** | Live status, hostapd/dnsmasq health, active client count, traffic sparklines |
+| **Traffic Monitor** | Real-time upload/download bandwidth charts with total RX/TX statistics |
+| **Controls** | Start, stop, restart, and repair hotspot services with live console output |
+| **Clients** | Connected devices table with kick, MAC blocking, known device labeling, and bulk import |
+| **Captive Portal** | Configure access codes (with progressive rate limiting: +60s lockout every 5 failed attempts, capped at 1h), guest mode, custom logo, background color, and welcome message |
+| **SPAN Analysis** | Switch mirror port, packet metrics, real-time traffic & anomaly stream, anomaly history (last 100) |
+| **Configuration** | Edit SSID, password, channel, country code, remote access, inactivity timeout, logos, colors |
+| **Domain Policy** | Edit wildcard lists for domain blocking, watched domains, and noise filtering with bulk import; application category blocking (messaging, gaming) by port and SNI |
+| **Live Activity** | Real-time DNS/HTTP/TLS/alert stream delivered via Server-Sent Events (SSE) |
+| **Events** | Live events feed, historical event search (type/MAC/time filters), and known devices inventory |
+| **User Management** | Create/delete admin accounts, role assignment (superadmin/admin), password reset (superadmin only) |
+| **Audit Log** | Admin action history with filters, pagination, and bulk delete (superadmin or granted audit access) |
+| **QR Code** | Scannable terminal & browser WiFi QR code for instant mobile connections |
+| **Diagnostics** | Run system readiness tests (`oshotspot doctor`) with one-click repair |
+| **Logs** | Live hostapd, dnsmasq, web server, and event log viewer with auto-refresh |
+| **Email Alerts** | Configure SMTP email alerts for domain policy violations and network anomalies (msmtp or direct SMTP) |
+| **VPN** | Tailscale VPN status, connected devices, start/stop/restart controls, remote access setup guide |
+| **About** | Version, author, license, technology stack, and features overview |
 
 ---
 
-## Creator
-
-OSHotspot was created by **OLOJEDE Samuel**. Contributions from the community are welcome and appreciated.
-
-I also created [**OS AI Chat**](https://osaix.vercel.app) and [**OS AI Agent**](https://osaix.vercel.app/agent) (a CLI AI agent).
-
-The project was developed to provide an automated and reliable WiFi hotspot solution for Linux systems using native networking tools.
-
----
-
-# Features
-
-- Automatic WiFi hotspot creation with one command
-- Internet sharing from an existing WiFi connection
-- Works alongside NetworkManager (never disables it)
-- Dedicated dnsmasq instance (no conflicts with Docker, LXC, or libvirt)
-- Virtual AP interface (`ap0`) created via `iw` and `nl80211`
-- Automatic iptables NAT and forwarding rules
-- 802.11n support for better device compatibility
-- Suspend/resume auto-repair
-- Simple CLI: `start`, `stop`, `restart`, `status`, `repair`, `clients`, `monitor`, `config`, `logs`, `qr`, `doctor`, `interfaces`, `enable`, `disable`, `web`, `update`
-- Web dashboard for browser-based management (`oshotspot web`)
-- Kick & block clients — disconnect a device and prevent reconnection via MAC deny list
-- 5GHz compatibility warning — warns if adapter doesn't support 5GHz when that mode is selected
-- Dark / light theme toggle in the dashboard
-- Responsive dashboard design — works on mobile and desktop
-- Diagnostic tool to verify system readiness (`oshotspot doctor`)
-- Auto-detection of WiFi interfaces (supports wlan0, wlp2s0, wlx...)
-- Real-time bandwidth chart with download/upload speed, total transferred, and live canvas chart
-- QR code display to share hotspot with phones instantly
-- Bash, Zsh, and Fish tab completion for the CLI
-- Supports Ubuntu, Debian, Mint, Fedora, Arch, and more
-- Automatic WiFi adapter capability detection via nl80211 with `iw phy` fallback for broad driver compatibility
-- Process watchdog with automatic restart on crash (C tools) — logged to dedicated file
-- Improved web dashboard stability with daemon thread server
-- Graceful fallback to bash if C tools not available
-
----
-
-# How it works
-
-OSHotspot creates a virtual WiFi access point on the same adapter that provides your Internet connection. Your computer acts as a router between the two networks.
-
-```mermaid
-graph TD
-    Internet["Internet"]
-    Router["Internet Router"]
-    WifiClient["WiFi wlp2s0<br/>(existing connection)"]
-    Laptop["Linux Laptop<br/>(router/NAT)"]
-    AP["Virtual AP ap0<br/>192.168.50.1"]
-    Phone["Smartphone<br/>192.168.50.x"]
-
-    Internet --> Router
-    Router --> WifiClient
-    WifiClient --> Laptop
-    Laptop --> AP
-    AP --> Phone
-```
-
-OSHotspot does NOT disable NetworkManager. Your laptop keeps its original WiFi connection and simultaneously broadcasts a second network through `ap0`.
-
----
-
-```mermaid
-graph LR
-    Phone["Phone<br/>192.168.50.x"]
-    AP["ap0"]
-    NAT["iptables<br/>MASQUERADE"]
-    Wifi["wlp2s0"]
-    Router["Internet Router"]
-    Internet["Internet"]
-
-    Phone -->|WiFi| AP
-    AP --> NAT
-    NAT --> Wifi
-    Wifi --> Router
-    Router --> Internet
-```
-
----
-
-# Requirements
-
-## Hardware
-
-Your wireless adapter must support **AP mode**.
-
-Check with:
+## CLI Quick Reference
 
 ```bash
-iw list
-```
-
-Look for:
-
-```
-Supported interface modes:
-        * AP
-```
-
-Example supported hardware:
-
-- Intel Wireless 7265
-- Intel AX200 / AX210
-- Many modern Linux-compatible WiFi adapters
-
-## Software
-
-Required packages:
-
-```bash
-sudo apt install hostapd dnsmasq iw iptables iproute2 qrencode
-```
-
-Optional (for compiling C tools with enhanced driver compatibility):
-
-```bash
-sudo apt install gcc make libnl-genl-3-dev
+sudo oshotspot start       # Start WiFi hotspot and NAT routing
+sudo oshotspot stop        # Stop hotspot services
+sudo oshotspot restart     # Restart hotspot and reload configuration
+sudo oshotspot status      # Display real-time status and connected devices
+sudo oshotspot clients     # List connected devices with MAC & IP
+sudo oshotspot monitor     # Terminal live monitoring dashboard (TUI)
+sudo oshotspot repair      # Automatic network repair & recovery
+sudo oshotspot web         # Launch web management dashboard
+sudo oshotspot doctor      # System readiness diagnostic
+sudo oshotspot interfaces  # List available WiFi network adapters
+sudo oshotspot scan        # Scan WiFi channels and recommend best channel
+sudo oshotspot qr          # Print scannable terminal WiFi QR code
+sudo oshotspot logs        # View and follow hotspot logs (--follow, --lines=N)
+sudo oshotspot enable      # Enable auto-start at boot via systemd
+sudo oshotspot disable     # Disable auto-start at boot
+sudo oshotspot update      # Update OSHotspot to latest version
+sudo oshotspot config      # Print current configuration
+sudo oshotspot config reset # Restore config from example template
+sudo oshotspot set ssid <name>       # Change hotspot SSID (auto-restart if running)
+sudo oshotspot set password <pass>   # Change hotspot password (auto-restart if running)
+sudo oshotspot set wifi_iface <iface> # Set internet WiFi adapter
+sudo oshotspot setup-vpn            # Install and configure Tailscale VPN for remote access
+sudo oshotspot setup-mail           # Configure email alerts (msmtp or direct SMTP)
+sudo oshotspot uninstall [--purge]  # Remove OSHotspot (--purge removes config & logs)
 ```
 
 ---
 
-# Installation
+## Quick Installation
+
+> **Note**: This repository is private. You must have access to
+> `King03-sam/OSHotspot` on GitHub to use the installer.
 
 One-liner install:
 
@@ -200,7 +149,7 @@ One-liner install:
 curl -fsSL https://raw.githubusercontent.com/King03-sam/OSHotspot/main/install.sh | sudo bash
 ```
 
-Or clone and install manually:
+Or manual install:
 
 ```bash
 git clone https://github.com/King03-sam/OSHotspot.git
@@ -209,567 +158,14 @@ chmod +x install.sh oshotspot
 sudo ./install.sh
 ```
 
-The installer will:
+---
 
-1. Install `hostapd`, `dnsmasq`, `iw`, `iptables`, `iproute2`, `qrencode`
-2. Create configuration directory at `/etc/oshotspot/`
-3. Install the `oshotspot` CLI to `/usr/local/bin/`
-4. Install scripts to `/usr/lib/oshotspot/scripts/`
-5. Install the web dashboard to `/usr/lib/oshotspot/web/`
-6. Install Bash, Zsh, and Fish tab completions
-7. Configure NetworkManager to ignore the `ap0` interface
-8. Set up systemd services and suspend/resume hooks
-9. Compile C tools (if gcc + libnl available) for enhanced auto-detection with `iw phy` fallback support
+## Technical Documentation
 
-### Building C tools from source
-
-If you want to compile the C tools manually:
-
-```bash
-sudo apt install gcc libnl-genl-3-dev
-make all
-sudo make install
-```
-
-The C tools provide:
-- WiFi adapter capability scanning via nl80211 with `iw phy` fallback for Realtek/MediaTek/Broadcom drivers
-- Adaptive hostapd config generation (auto-fixes SHORT-GI-20 errors)
-- Process watchdog with automatic restart and dedicated log file
-
-If C tools are not available, OSHotspot falls back to bash-based detection.
-
-# Update
-
-To update OSHotspot to the latest version:
-
-```bash
-sudo oshotspot update
-```
-
-This downloads the latest `install.sh` from GitHub and runs it automatically — same as the initial one-liner install, but preserves your existing configuration.
+For complete technical specifications, architecture details, and API references, see [oshotsop-private-fuc.md](oshotsop-private-fuc.md).
 
 ---
 
-# Configuration
+## License
 
-Edit the configuration file:
-
-```bash
-sudo nano /etc/oshotspot/config.conf
-```
-
-Or use the CLI:
-
-```bash
-sudo oshotspot set ssid MyWiFi
-sudo oshotspot set password MySecretPassword
-```
-
-When the hotspot is running, changes are applied automatically (hotspot restarts).
-
-### Configuration Options
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `SSID` | `OSHotspot` | WiFi network name (1-32 characters) |
-| `PASSWORD` | `ChangeMe123` | WiFi password (minimum 8 characters, WPA2) |
-| `CHANNEL` | `6` | WiFi channel (1-13) |
-| `HW_MODE` | `g` | Hardware mode (`g` for 2.4GHz, `a` for 5GHz) |
-| `COUNTRY_CODE` | `FR` | Country code (FR, US, GB...) - required by some drivers |
-| `HOSTNAME` | `oshotspot` | Hostname shown on the network |
-| `WIFI_IFACE` | *(auto-detected)* | Your internet WiFi interface |
-| `AP_IFACE` | `ap0` | AP interface name (created automatically) |
-| `AP_IP` | `192.168.50.1` | Hotspot gateway IP |
-| `SUBNET` | `192.168.50.0` | Hotspot subnet |
-| `AP_CIDR` | `24` | Subnet CIDR prefix length |
-| `DHCP_RANGE_START` | `192.168.50.10` | DHCP range start |
-| `DHCP_RANGE_END` | `192.168.50.100` | DHCP range end |
-| `DHCP_LEASE` | `12h` | DHCP lease duration |
-| `DNS_PRIMARY` | `8.8.8.8` | Primary DNS server |
-| `DNS_SECONDARY` | `1.1.1.1` | Secondary DNS server |
-
----
-
-# Start Hotspot
-
-```bash
-sudo oshotspot start
-```
-
-Your phone should see:
-
-```
-OSHotspot
-```
-
-Connect using the configured password.
-
-# Stop Hotspot
-
-```bash
-sudo oshotspot stop
-```
-
-# Check Status
-
-```bash
-sudo oshotspot status
-```
-
-Displays: WiFi interface, AP status, hostapd status, dnsmasq status, IP forwarding, NAT rules, and connected clients.
-
-# Show Connected Clients
-
-```bash
-sudo oshotspot clients
-```
-
-Displays a list of all devices connected to the hotspot with their MAC address, IP address, hostname, and connection status.
-
-# Real-time Monitoring
-
-```bash
-sudo oshotspot monitor
-```
-
-Live monitoring view that refreshes every 3 seconds showing:
-
-- Connected clients with MAC, IP, hostname
-- AP interface traffic (RX/TX bytes and speed)
-- hostapd and dnsmasq status
-
-Press `Ctrl+C` to quit.
-
-# Repair Hotspot
-
-After suspend, resume, or driver issues:
-
-```bash
-sudo oshotspot repair
-```
-
-This will stop broken components, wait for the WiFi interface to reappear, recreate the AP interface, and restart everything.
-
-# Restart Hotspot
-
-```bash
-sudo oshotspot restart
-```
-
-# Show QR Code
-
-```bash
-sudo oshotspot qr
-```
-
-Displays a QR code in the terminal that your phone can scan to connect to the hotspot instantly. No need to type the password manually.
-
-# Other Commands
-
-```bash
-sudo oshotspot logs [hostapd|dnsmasq|all] [--follow] [--lines=N]
-sudo oshotspot enable        # Start hotspot at boot
-sudo oshotspot disable       # Stop hotspot at boot
-```
-
-# Web Dashboard
-
-Launch the full-featured web dashboard:
-
-```bash
-sudo oshotspot web
-```
-
-A lightweight Python server starts on `127.0.0.1` and your browser opens automatically. No pip packages needed — just Python 3.
-
-### Pages
-
-- **Overview** — Live status of hostapd, dnsmasq, IP forwarding, NAT. Connected client count (active only). Network info and traffic sparkline.
-- **Traffic** — Real-time bandwidth chart showing download/upload speed, total data transferred, and a live canvas chart with auto-scaling axes and filled area under the curve. 5 stat cards: Download Speed, Upload Speed, Total Down, Total Up, Active Clients.
-- **Controls** — One-click start / stop / restart / repair with real-time console output streamed to the browser.
-- **Clients** — Auto-refreshing table (MAC, IP, hostname, status). **Kick** a client to disconnect them and add their MAC to the deny list. **Unblock** to restore access.
-- **Configuration** — Edit SSID, password, channel, hardware mode (2.4/5 GHz), country code. Server-side validation with live feedback. 5GHz warning if your adapter doesn't support it.
-- **QR Code** — Scannable WiFi QR code for instant phone connections.
-- **Diagnostics** — Run `oshotspot doctor` from the browser.
-- **Logs** — Live hostapd, dnsmasq, and web server log viewer with auto-scroll.
-
-### Security
-
-- Binds to `127.0.0.1` only (no external network exposure)
-- Random session token generated per launch (never persisted)
-- Token required on every API request
-- Auto-shutdown after 2 hours of inactivity
-- All config changes validated server-side before writing
-
-# Diagnostic
-
-```bash
-sudo oshotspot doctor
-```
-
-Runs a full diagnostic check on your system:
-
-```
-OSHotspot Diagnostic v1.0
-
-  [OK]    WiFi adapter detected (wlp2s0)
-  [OK]    AP mode supported (phy0)
-  [OK]    hostapd installed
-  [OK]    dnsmasq installed
-  [OK]    qrencode installed
-  [OK]    IP forwarding enabled
-  [OK]    NAT configured
-  [OK]    Configuration file exists
-  [OK]    NetworkManager configured to ignore ap0
-  [OK]    Systemd service installed
-  [WARN]  Hotspot is not running
-
-  Passed: 9  Warnings: 1  Failed: 0
-  System is ready.
-```
-
-# List WiFi Interfaces
-
-```bash
-sudo oshotspot interfaces
-```
-
-Shows all available WiFi adapters on your system. Useful when you have multiple adapters (built-in + USB):
-
-```
-Available WiFi interfaces:
-
-  wlp2s0          up       18:5e:0f:c7:90:48
-  wlx1234567890   down     aa:bb:cc:dd:ee:ff
-```
-
-# Choose WiFi Interface
-
-If you have multiple WiFi adapters, tell OSHotspot which one to use for internet:
-
-```bash
-sudo oshotspot set wifi_iface wlp2s0
-```
-
----
-
-# Systemd
-
-After installation, you can also manage the hotspot with systemd:
-
-```bash
-sudo systemctl start oshotspot
-sudo systemctl stop oshotspot
-sudo systemctl status oshotspot
-```
-
-A suspend/resume hook is automatically installed so the hotspot repairs itself after the laptop wakes up. This creates `oshotspot-resume.service` dynamically during installation.
-
----
-
-# Bash Completion
-
-Tab completion is installed automatically. After installation, press `<TAB>` to auto-complete commands:
-
-```bash
-sudo oshotspot <TAB>
-# start  stop  restart  repair  status  clients  monitor  config  logs  qr  doctor  interfaces  web  enable  disable  update  set  help
-
-sudo oshotspot set <TAB>
-# ssid  password  wifi_iface
-```
-
-If completion doesn't work immediately, run:
-
-```bash
-source /etc/bash_completion.d/oshotspot
-```
-
----
-
-# Uninstallation
-
-```bash
-sudo ./uninstall.sh
-```
-
-Or use `--purge` to remove everything without prompts:
-
-```bash
-sudo ./uninstall.sh --purge
-```
-
-Or manually:
-
-```bash
-sudo oshotspot stop
-sudo bash /usr/lib/oshotspot/scripts/firewall.sh cleanup
-sudo rm /usr/local/bin/oshotspot
-sudo rm -rf /usr/lib/oshotspot
-sudo rm -f /etc/bash_completion.d/oshotspot
-sudo rm -f /usr/share/zsh/site-functions/_oshotspot
-sudo rm -f /usr/share/fish/vendor_completions.d/oshotspot.fish
-sudo rm -f /etc/NetworkManager/conf.d/oshotspot.conf
-sudo rm -f /etc/sysctl.d/oshotspot.conf
-sudo rm -f /etc/systemd/system/oshotspot*.service
-sudo systemctl daemon-reload
-sudo rm -f /run/oshotspot-hostapd.pid /run/oshotspot-dnsmasq.pid
-sudo rm -rf /etc/oshotspot
-sudo rm -rf /var/log/oshotspot
-```
-
----
-
-## FAQ
-
-### Why does my NetworkManager hotspot show no internet access?
-
-Because NetworkManager's built-in hotspot often fails to set up proper internet sharing when the same WiFi adapter is used for both client and AP roles. OSHotspot solves this by using `hostapd`, `dnsmasq`, and `iptables` directly.
-
-### Can I run a WiFi hotspot without disabling my main WiFi connection?
-
-Yes. OSHotspot creates a virtual AP interface (`ap0`) and keeps your existing WiFi connection active. NetworkManager is never disabled.
-
-### Does OSHotspot work after my laptop wakes from sleep?
-
-Yes. A suspend/resume hook is installed automatically, and the `oshotspot repair` command can restore the hotspot if needed after waking.
-
----
-
-# Troubleshooting
-
-## Phone connects but no Internet
-
-Check IP forwarding:
-
-```bash
-cat /proc/sys/net/ipv4/ip_forward
-```
-
-Expected:
-
-```
-net.ipv4.ip_forward = 1
-```
-
-Check iptables rules:
-
-```bash
-sudo iptables -L FORWARD -v
-sudo iptables -t nat -L POSTROUTING -v
-```
-
-Verify the WiFi interface has internet access:
-
-```bash
-ping -I wlp2s0 8.8.8.8
-```
-
-## DHCP stuck on "Obtaining IP address"
-
-Check if dnsmasq is running:
-
-```bash
-sudo oshotspot status
-```
-
-Check for conflicting services on port 67:
-
-```bash
-sudo ss -lunp | grep :67
-```
-
-If another dnsmasq instance is blocking:
-
-```bash
-sudo oshotspot restart
-```
-
-## hostapd errors
-
-Check the log:
-
-```bash
-sudo cat /var/log/oshotspot/hostapd.log
-```
-
-Common causes:
-
-- Another hostapd instance is already running
-- The AP interface was not created
-- The WiFi adapter does not support the configured mode
-
-## dnsmasq conflicts with existing services
-
-OSHotspot runs its **own dedicated dnsmasq instance** that only serves the `ap0` interface. It does **not** use `systemctl restart dnsmasq` and will not interfere with:
-
-- libvirt / LXC dnsmasq
-- Docker's built-in DNS
-- NetworkManager's DNS
-
-## C scan skipped (no valid data)
-
-If you see `C scan skipped (no valid data), using bash fallback` during startup, it means your WiFi driver doesn't fully implement nl80211 (common with some Realtek, MediaTek, and Broadcom adapters). OSHotspot automatically falls back to bash-based detection. The hotspot will still work correctly — this is expected behavior for those drivers.
-
-## Interface ap0 fails to create
-
-Check your driver supports virtual interfaces:
-
-```bash
-iw phy phy0 info
-```
-
-Try deleting the interface first:
-
-```bash
-sudo iw dev ap0 del
-sudo oshotspot start
-```
-
-Some drivers need the WiFi to be disconnected first:
-
-```bash
-sudo nmcli device disconnect wlp2s0
-sudo oshotspot start
-```
-
-## Suspend / resume problems
-
-After resuming from sleep:
-
-```bash
-sudo oshotspot repair
-```
-
-This will:
-
-1. Stop any broken components
-2. Wait for the WiFi interface to reappear
-3. Recreate the AP interface
-4. Restart hostapd, dnsmasq, and firewall rules
-
-## No WiFi interface found
-
-Your adapter may not be detected:
-
-```bash
-iwconfig
-ip link
-sudo systemctl restart NetworkManager
-```
-
-## Adapter does not support AP mode
-
-```bash
-iw phy phy0 info | grep -A 10 "Supported interface modes"
-```
-
-Look for `AP` in the output. If missing, you need a different adapter or driver.
-
-## Phone connects then disconnects after a few seconds
-
-This is usually caused by missing 802.11n settings or country code.
-
-Check your hostapd config:
-
-```bash
-sudo cat /etc/oshotspot/hostapd.conf
-```
-
-Make sure these lines are present:
-
-```
-country_code=FR
-ieee80211n=1
-ht_capab=[HT20]
-```
-
-**Note**: `[SHORT-GI-20]` may cause "Failed to set beacon parameters" errors on some adapters. OSHotspot auto-detects this and generates the correct config.
-
-Change `FR` to your country code. Then restart:
-
-```bash
-sudo oshotspot stop
-sudo oshotspot start
-```
-
-## Hostname does not change
-
-The hostname is configured in `/etc/oshotspot/config.conf` via the `HOSTNAME` field. It does not change the system hostname automatically.
-
----
-
-# Why not NetworkManager hotspot?
-
-Ubuntu NetworkManager hotspot works for many users, but some WiFi adapters or drivers have limitations when:
-
-- The laptop receives Internet through WiFi
-- The same adapter must create another WiFi network
-- Virtual AP interfaces are required
-
-OSHotspot uses a lower-level approach with `hostapd`, `dnsmasq`, and `iptables` to bypass these limitations, while keeping NetworkManager running for the original connection.
-
-This makes OSHotspot a practical **create access point linux** alternative for users who have tried the built-in NetworkManager option and found it insufficient. It also serves as a reliable fallback when searching for **ubuntu hotspot alternative** solutions that do not require disabling your primary WiFi connection.
-
----
-
-# Supported distributions
-
-Tested on:
-
-- Ubuntu 18.04+
-- Debian 10+
-- Linux Mint
-- Fedora
-- Arch Linux
-
-Any distribution with `hostapd`, `dnsmasq`, `iw`, and `iptables` should work.
-
----
-
-# Project structure
-
-See [ARCHITECTURE.md](ARCHITECTURE.md#file-structure) for the full project tree.
-
----
-
-# Roadmap
-
-Future improvements:
-
-- Multi-language support
-- Bandwidth limiting per client
-- WiFi repeater/extender mode
-
----
-
-# License
-
-Copyright 2026 OLOJEDE Samuel
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at:
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-See the [LICENSE](LICENSE) file for the full license text.
-
----
-
-# Acknowledgments
-
-Thanks to the Linux networking community and open-source projects:
-
-- [hostapd](https://w1.fi/hostapd/)
-- [dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html)
-- [iw](https://wireless.kernel.org/en/users/Documentation/iw)
-- [iptables](https://www.netfilter.org/)
-
-Made with Linux and passion by **OLOJEDE Samuel**
+Copyright 2026 OLOJEDE Samuel. Licensed under the [Apache License 2.0](LICENSE).

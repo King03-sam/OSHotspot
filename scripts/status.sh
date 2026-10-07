@@ -100,6 +100,8 @@ show_status() {
 
     status_line "SSID:" "${SSID:-N/A}" "${NC}"
 
+    status_line "Channel:" "${CHANNEL:-N/A}" "${YELLOW}"
+
     # hostapd
     if is_running "${OSHOTSPOT_PID_HOSTAPD}"; then
         status_line "hostapd:" "RUNNING (PID $(cat "${OSHOTSPOT_PID_HOSTAPD}"))" "${GREEN}"
@@ -125,14 +127,22 @@ show_status() {
 
     # NAT
     local nat_ok=false
+    # 1) iptables exact rule check (legacy or nft backend)
     if command -v iptables &>/dev/null; then
         if iptables -t nat -C POSTROUTING -s "${SUBNET:-192.168.50.0}/${AP_CIDR:-24}" \
             -o "${WIFI_IFACE:-wlp2s0}" -j MASQUERADE 2>/dev/null; then
             nat_ok=true
         fi
     fi
+    # 2) nft oshotspot table (native nft mode)
     if ! ${nat_ok} && command -v nft &>/dev/null; then
-        if nft list ruleset 2>/dev/null | grep -q "masquerade"; then
+        if nft list ruleset 2>/dev/null | grep -qi "masquerade"; then
+            nat_ok=true
+        fi
+    fi
+    # 3) iptables loose list check (any MASQUERADE in POSTROUTING)
+    if ! ${nat_ok} && command -v iptables &>/dev/null; then
+        if iptables -t nat -L POSTROUTING -n 2>/dev/null | grep -q "MASQUERADE"; then
             nat_ok=true
         fi
     fi

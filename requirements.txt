@@ -1,0 +1,7 @@
+# OSHotspot private development dependencies
+# These are specific to the private dev branch pending a possible
+# future stdlib-only reimplementation for the public release.
+# See DEV-NOTES.md for details.
+pygtail>=0.4.0
+tenacity>=8.0.0
+fpdf2>=2.0

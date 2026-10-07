@@ -37,8 +37,7 @@
      * `timeout` overrides the default if supplied.
      */
     OS.api = function (path, method, body, timeout) {
-        var sep = path.indexOf('?') >= 0 ? '&' : '?';
-        var url = path + sep + 'token=' + encodeURIComponent(OS.state.token);
+        var url = path;
         var opts = { method: method || 'GET', headers: {} };
         if (body) {
             opts.headers['Content-Type'] = 'application/json';
@@ -46,10 +45,13 @@
         }
         var ms = timeout || DEFAULT_TIMEOUT;
         return fetchWithTimeout(url, opts, ms).then(function (r) {
+            if (r.status === 401 && path !== '/api/auth/status') {
+                if (OS.showLogin) OS.showLogin(false);
+            }
             var ct = r.headers.get('Content-Type') || '';
             if (ct.indexOf('application/json') >= 0) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error(data.error || 'Request failed');
+                    if (!r.ok) throw new Error(data.error || (data.errors && data.errors.join(' ')) || 'Request failed');
                     return data;
                 });
             }

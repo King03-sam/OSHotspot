@@ -13,6 +13,8 @@
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('oshotspot-theme', theme);
+        var label = document.getElementById('themeCurrent');
+        if (label) label.textContent = theme === 'light' ? 'Light mode' : 'Dark mode';
     }
 
     OS.initTheme = function () {

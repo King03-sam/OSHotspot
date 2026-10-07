@@ -13,6 +13,46 @@
 (function (OS) {
     'use strict';
 
+    OS.renderControls = function () {
+        document.getElementById('content').insertAdjacentHTML('beforeend',
+            '<section class="view" id="view-controls">'
+            + '<div class="card">'
+            +     '<div class="card-header"><h2 class="card-title">Hotspot Lifecycle</h2></div>'
+            +     '<div class="card-body">'
+            +         '<p class="text-muted">Control the hotspot daemon lifecycle. Each action runs the corresponding system script with root privileges through the local OSHotspot web server.</p>'
+            +         '<div class="action-grid">'
+            +             '<button class="action-tile action-start" onclick="doAction(\'start\')">'
+            +                 '<div class="action-tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>'
+            +                 '<div class="action-tile-text"><div class="action-tile-title">Start Hotspot</div><div class="action-tile-sub">Bring up ap0, hostapd, dnsmasq and NAT</div></div>'
+            +             '</button>'
+            +             '<button class="action-tile action-stop" onclick="doAction(\'stop\')">'
+            +                 '<div class="action-tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></div>'
+            +                 '<div class="action-tile-text"><div class="action-tile-title">Stop Hotspot</div><div class="action-tile-sub">Tear down all hotspot services cleanly</div></div>'
+            +             '</button>'
+            +             '<button class="action-tile action-restart" onclick="doAction(\'restart\')">'
+            +                 '<div class="action-tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>'
+            +                 '<div class="action-tile-text"><div class="action-tile-title">Restart Hotspot</div><div class="action-tile-sub">Stop then start, applying new config</div></div>'
+            +             '</button>'
+            +             '<button class="action-tile action-repair" onclick="doAction(\'repair\')">'
+            +                 '<div class="action-tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>'
+            +                 '<div class="action-tile-text"><div class="action-tile-title">Repair Hotspot</div><div class="action-tile-sub">Recover after suspend or driver failure</div></div>'
+            +             '</button>'
+            +         '</div>'
+            +     '</div>'
+            + '</div>'
+            + '<div class="card">'
+            +     '<div class="card-header">'
+            +         '<h2 class="card-title">Last Action Output</h2>'
+            +         '<button class="btn btn-ghost btn-sm" onclick="clearActionOutput()">Clear</button>'
+            +     '</div>'
+            +     '<div class="card-body">'
+            +         '<pre class="console" id="actionOutput"><span class="console-empty">No action executed yet. Pick an operation above to see its output here.</span></pre>'
+            +     '</div>'
+            + '</div>'
+            + '</section>'
+        );
+    };
+
     function appendActionOutput(text) {
         var pre = OS.$('actionOutput');
         if (!pre) return;
@@ -79,7 +119,7 @@
                     var out = (res && res.output) || '';
                     var err = (res && res.error) || '';
                     var msg = cap + ' ' + (ok ? 'completed' : 'failed');
-                    OS.toast(msg, ok ? 'Hotspot state updated' : (err || 'See output below'), ok ? 'success' : 'error');
+                    OS.toast(msg, ok ? 'Hotspot state updated' : (err || 'See output below'), ok ? 'success' : 'error', ok ? {force: true} : undefined);
                     if (out) appendActionOutput(out.trim());
                     if (err) appendActionOutput('[stderr] ' + err.trim());
                     OS.refreshStatus();

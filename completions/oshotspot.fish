@@ -11,13 +11,18 @@ complete -c oshotspot -n "__fish_use_subcommand" -a clients -d "Show connected c
 complete -c oshotspot -n "__fish_use_subcommand" -a monitor -d "Real-time monitoring"
 complete -c oshotspot -n "__fish_use_subcommand" -a config -d "Show current configuration"
 complete -c oshotspot -n "__fish_use_subcommand" -a qr -d "Show QR code to connect phone"
+complete -c oshotspot -n "__fish_use_subcommand" -a scan -d "Scan WiFi channels and recommend least congested"
 complete -c oshotspot -n "__fish_use_subcommand" -a doctor -d "Run diagnostic checks"
 complete -c oshotspot -n "__fish_use_subcommand" -a interfaces -d "List available WiFi interfaces"
+complete -c oshotspot -n "__fish_use_subcommand" -a setup-mail -d "Configure email alerts (msmtp)"
+complete -c oshotspot -n "__fish_use_subcommand" -a setup-vpn -d "Configure VPN remote access (Tailscale)"
 complete -c oshotspot -n "__fish_use_subcommand" -a logs -d "View and follow hotspot logs"
 complete -c oshotspot -n "__fish_use_subcommand" -a web -d "Launch web dashboard in browser"
 complete -c oshotspot -n "__fish_use_subcommand" -a enable -d "Enable hotspot at boot"
 complete -c oshotspot -n "__fish_use_subcommand" -a disable -d "Disable hotspot at boot"
 complete -c oshotspot -n "__fish_use_subcommand" -a set -d "Change configuration setting"
+complete -c oshotspot -n "__fish_use_subcommand" -a update -d "Update OSHotspot to latest version"
+complete -c oshotspot -n "__fish_use_subcommand" -a uninstall -d "Remove OSHotspot from the system"
 complete -c oshotspot -n "__fish_use_subcommand" -a help -d "Show help message"
 
 # set subcommand options

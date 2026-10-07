@@ -176,6 +176,9 @@ static void parse_user_config(const char *path, struct user_config *cfg)
     if (get_config_value(content, "DHCP_LEASE", buf, sizeof(buf)) == 0)
         strncpy(cfg->dhcp_lease, buf, sizeof(cfg->dhcp_lease) - 1);
 
+    if (get_config_value(content, "WIFI_OPEN", buf, sizeof(buf)) == 0)
+        cfg->wifi_open = (strcasecmp(buf, "true") == 0 || strcmp(buf, "1") == 0);
+
     free(content);
 }
 
@@ -297,10 +300,14 @@ void generate_hostapd_conf(const struct wifi_caps *caps,
     fprintf(f, "dtim_period=2\n\n");
 
     fprintf(f, "auth_algs=1\n");
-    fprintf(f, "wpa=2\n");
-    fprintf(f, "wpa_passphrase=%s\n", cfg->password);
-    fprintf(f, "wpa_key_mgmt=WPA-PSK\n");
-    fprintf(f, "rsn_pairwise=CCMP\n\n");
+    if (!cfg->wifi_open && strlen(cfg->password) >= 8) {
+        fprintf(f, "wpa=2\n");
+        fprintf(f, "wpa_passphrase=%s\n", cfg->password);
+        fprintf(f, "wpa_key_mgmt=WPA-PSK\n");
+        fprintf(f, "rsn_pairwise=CCMP\n\n");
+    } else {
+        fprintf(f, "# Open WiFi network (no WPA encryption)\n\n");
+    }
 
     fprintf(f, "macaddr_acl=0\n");
     fprintf(f, "deny_mac_file=/etc/oshotspot/deny_maclist.conf\n");
