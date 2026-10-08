@@ -110,8 +110,8 @@ To create a new release:
 2. Update `debian/changelog` with a new entry
 3. Commit and push, then tag:
    ```bash
-   git tag -a v4.1 -m "Release v4.1"
-   git push origin v4.1
+   git tag -a v5.1 -m "Release v5.1"
+   git push origin v5.1
    ```
 4. GitHub Actions (`.github/workflows/release.yml`) will:
    - Build the `.deb` and `.tar.gz` via `package.sh`
