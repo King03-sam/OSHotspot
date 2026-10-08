@@ -1,5 +1,6 @@
 install.sh                                  usr/lib/oshotspot/
 oshotspot                                   usr/local/bin/
+uninstall.sh                                usr/lib/oshotspot/scripts/
 Makefile                                    usr/lib/oshotspot/
 config.conf.example                         usr/lib/oshotspot/
 requirements.txt                            usr/lib/oshotspot/

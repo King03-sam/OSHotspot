@@ -246,6 +246,8 @@ install_files() {
     done
     if [[ -f "${SRC}/uninstall.sh" ]]; then
         install -m 755 "${SRC}/uninstall.sh" "${scripts_dir}/uninstall.sh"
+    else
+        log_warn "uninstall.sh not found in ${SRC}; 'oshotspot uninstall' will be unavailable."
     fi
     log_info "Scripts installed to ${scripts_dir}/"
 
