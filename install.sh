@@ -118,19 +118,19 @@ install_dependencies() {
     case "$(detect_pkg_manager)" in
         apt)
             apt-get update -qq || log_warn "Some repositories failed to update. Continuing..."
-            apt-get install -y hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-dev msmtp
+            apt-get install -y hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-dev msmtp python3 python3-pip
             ;;
         dnf)
-            dnf install -y hostapd dnsmasq iptables iw iproute qrencode gcc make libnl3-devel msmtp
+            dnf install -y hostapd dnsmasq iptables iw iproute qrencode gcc make libnl3-devel msmtp python3 python3-pip
             ;;
         pacman)
-            pacman -S --noconfirm hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl msmtp
+            pacman -S --noconfirm hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl msmtp python python-pip
             ;;
         zypper)
-            zypper install -y hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-devel msmtp
+            zypper install -y hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-devel msmtp python3 python3-pip
             ;;
         *)
-            log_warn "Unknown package manager. Install manually: hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-dev msmtp"
+            log_warn "Unknown package manager. Install manually: hostapd dnsmasq iptables iw iproute2 qrencode gcc make libnl-genl-3-dev msmtp python3 python3-pip"
             log_warn "Press Enter to continue or Ctrl+C to abort."
             read -r
             ;;
