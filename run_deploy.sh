@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# run_deploy.sh — Wrapper that sources .env then runs deploy.sh.
+# run_deploy.sh, Wrapper that sources .env then runs deploy.sh.
 # Usage: ./run_deploy.sh [VERSION]
 #
 

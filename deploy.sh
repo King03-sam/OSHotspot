@@ -4,7 +4,7 @@
 # Copyright 2026 OLOJEDE Samuel
 # Licensed under the Apache License, Version 2.0
 #
-# deploy.sh — Build and publish a GitHub release from local machine.
+# deploy.sh, Build and publish a GitHub release from local machine.
 # Usage: GITHUB_TOKEN="ghp_..." ./deploy.sh [VERSION]
 #   VERSION defaults to git describe --tags --always (e.g. v5.0)
 #

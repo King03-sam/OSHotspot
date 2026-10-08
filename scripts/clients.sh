@@ -102,7 +102,7 @@ show_clients() {
         IFS='|' read -r mac ip hostname <<< "${client}"
 
         # Every MAC here is associated at L2 with hostapd, so it is
-        # connected and active by definition — no stale ARP lookup needed.
+        # connected and active by definition, no stale ARP lookup needed.
         local status="active"
 
         # Format missing values

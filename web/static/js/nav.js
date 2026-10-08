@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * nav.js — single-page navigation between dashboard sections, plus
+ * nav.js, single-page navigation between dashboard sections, plus
  * the mobile sidebar open/close behavior.
  */
 

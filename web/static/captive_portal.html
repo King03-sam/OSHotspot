@@ -411,19 +411,19 @@
                 <div class="info-grid">
                     <div class="info-row">
                         <span class="info-label">Access Code</span>
-                        <span class="info-value" id="statusCodeVal">—</span>
+                        <span class="info-value" id="statusCodeVal">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Expiration</span>
-                        <span class="info-value" id="statusExpiresVal">—</span>
+                        <span class="info-value" id="statusExpiresVal">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">IP Address</span>
-                        <span class="info-value" id="statusIpVal">—</span>
+                        <span class="info-value" id="statusIpVal">-</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Device MAC</span>
-                        <span class="info-value" id="statusMacVal">—</span>
+                        <span class="info-value" id="statusMacVal">-</span>
                     </div>
                 </div>
 
@@ -527,10 +527,10 @@
             if (ssidEl) ssidEl.textContent = data.ssid || '{{SSID}}';
 
             var ipEl = document.getElementById('statusIpVal');
-            if (ipEl) ipEl.textContent = data.ip || '—';
+            if (ipEl) ipEl.textContent = data.ip || '-';
 
             var macEl = document.getElementById('statusMacVal');
-            if (macEl) macEl.textContent = data.mac || '—';
+            if (macEl) macEl.textContent = data.mac || '-';
 
             var s = data.session || {};
             var codeEl = document.getElementById('statusCodeVal');

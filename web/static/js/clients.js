@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * clients.js — connected-device table on the Clients page, plus the
+ * clients.js, connected-device table on the Clients page, plus the
  * small client-count badges shown elsewhere in the UI, the
  * blocked-devices list, and the "Mark as known" action that lets the
  * admin attach a friendly label to a device MAC.
@@ -135,7 +135,7 @@
                     var c = activeClients[i];
                     var statusHtml = c.status === 'active'
                         ? '<span class="client-active">active</span>'
-                        : '<span class="client-inactive">' + OS.esc(c.status || '—') + '</span>';
+                        : '<span class="client-inactive">' + OS.esc(c.status || '-') + '</span>';
                     var kickBtn = c.status === 'active'
                         ? '<button class="btn btn-ghost btn-sm" onclick="kickClient(\'' + OS.esc(c.mac) + '\')">Kick</button>'
                         : '';
@@ -159,7 +159,7 @@
                         + '<td>' + (i + 1) + '</td>'
                         + '<td class="mono">' + OS.esc(c.mac) + '</td>'
                         + '<td>' + OS.esc(c.ip) + '</td>'
-                        + '<td>' + OS.esc(c.hostname || '—') + '</td>'
+                        + '<td>' + OS.esc(c.hostname || '-') + '</td>'
                         + '<td>' + statusHtml + '</td>'
                         + '<td>' + knownChip + '</td>'
                         + '<td class="kick-cell">' + markBtn + removeBtn + ' ' + kickBtn + '</td>'

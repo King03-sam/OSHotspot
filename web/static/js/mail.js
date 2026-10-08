@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * mail.js — Email Alerts configuration page.
+ * mail.js, Email Alerts configuration page.
  * Manages SMTP mode (msmtp / direct), recipient, sender, credentials,
  * test email, and shows the CLI setup-mail hint.
  */
@@ -36,8 +36,8 @@
             +                 '<div class="form-row">'
             +                     '<label for="mailSmtpMode">SMTP Mode</label>'
             +                     '<select id="mailSmtpMode" onchange="OS.mailToggleSmtpFields()">'
-            +                         '<option value="msmtp">Local MTA (msmtp) — recommended</option>'
-            +                         '<option value="direct">Direct SMTP — requires credentials</option>'
+            +                         '<option value="msmtp">Local MTA (msmtp), recommended</option>'
+            +                         '<option value="direct">Direct SMTP, requires credentials</option>'
             +                     '</select>'
             +                     '<span class="form-hint">msmtp requires <code>sudo oshotspot setup-mail</code> first</span>'
             +                 '</div>'
@@ -149,7 +149,7 @@
             +         '<table class="data-table">'
             +             '<thead><tr><th>Component</th><th>Role</th></tr></thead>'
             +             '<tbody>'
-            +                 '<tr><td style="font-weight:600">msmtp</td><td>Local MTA — handles SMTP auth & TLS</td></tr>'
+            +                 '<tr><td style="font-weight:600">msmtp</td><td>Local MTA, handles SMTP auth & TLS</td></tr>'
             +                 '<tr><td style="font-weight:600">OSHotspot</td><td>Sends via <code>sendmail</code> to msmtp</td></tr>'
             +                 '<tr><td style="font-weight:600">Gmail/Outlook</td><td>Receives relay, delivers to inbox</td></tr>'
             +             '</tbody>'
@@ -159,7 +159,7 @@
             +         '<table class="data-table">'
             +             '<thead><tr><th>Mode</th><th>Auth</th><th>Best for</th></tr></thead>'
             +             '<tbody>'
-            +                 '<tr><td style="font-weight:600">msmtp</td><td>By msmtp (not in dashboard)</td><td>Recommended — password stays outside config.conf</td></tr>'
+            +                 '<tr><td style="font-weight:600">msmtp</td><td>By msmtp (not in dashboard)</td><td>Recommended, password stays outside config.conf</td></tr>'
             +                 '<tr><td style="font-weight:600">direct</td><td>By Python smtplib</td><td>Quick testing, no msmtp needed</td></tr>'
             +             '</tbody>'
             +         '</table>'

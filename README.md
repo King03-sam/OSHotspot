@@ -140,8 +140,7 @@ sudo oshotspot uninstall [--purge]  # Remove OSHotspot (--purge removes config &
 
 ## Quick Installation
 
-> **Note**: This repository is private. You must have access to
-> `King03-sam/OSHotspot` on GitHub to use the installer.
+> **Note**: OSHotspot is open source under Apache 2.0. You need `sudo` on your Linux machine to run the installer.
 
 One-liner install:
 
@@ -162,7 +161,7 @@ sudo ./install.sh
 
 ## Technical Documentation
 
-For complete technical specifications, architecture details, and API references, see [oshotsop-private-fuc.md](oshotsop-private-fuc.md).
+For complete technical specifications, architecture details, and API references, see [oshotspot-fuc.md](oshotspot-fuc.md).
 
 ---
 

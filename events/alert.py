@@ -13,11 +13,11 @@ log (/var/log/oshotspot/events.log).  If email is enabled in
 
 Two SMTP modes are supported:
 
-  msmtp (recommended) — sends via the local ``sendmail`` command
+  msmtp (recommended), sends via the local ``sendmail`` command
     (msmtp as MTA).  SMTP auth/TLS are handled by msmtp, OSHotspot
     never sees the password.
 
-  direct — connects to an external SMTP server using Python's smtplib.
+  direct, connects to an external SMTP server using Python's smtplib.
     Requires SMTP_HOST, SMTP_PORT, and optionally USERNAME/PASSWORD
     in config.conf.
 
@@ -25,8 +25,8 @@ Email alerts are buffered into digests: up to 10 alerts or 60 seconds,
 whichever comes first, to avoid inbox flooding.  HTML emails include the
 dashboard logo when available.
 
-Email is optional and disabled by default.  Any failure here — missing
-mail host, no network, bad credentials — is swallowed so the event
+Email is optional and disabled by default.  Any failure here, missing
+mail host, no network, bad credentials, is swallowed so the event
 collector never crashes because of a mail server hiccup.
 """
 
@@ -46,7 +46,7 @@ CONFIG_FILE = os.environ.get("OSHOTSPOT_CONFIG_FILE", "/etc/oshotspot/config.con
 
 # Digest buffering: batch alerts to avoid inbox flooding
 _DIGEST_MAX = 10          # flush immediately when buffer reaches this size
-_DIGEST_TIMEOUT = 60      # seconds — flush after this even if fewer alerts
+_DIGEST_TIMEOUT = 60      # seconds, flush after this even if fewer alerts
 _MAX_LOGO_BYTES = 100 * 1024  # skip logo embedding if file exceeds this
 
 DEFAULTS = {

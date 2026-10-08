@@ -1082,8 +1082,9 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             # Restart dnsmasq process so conf-file includes are re-read
             reloaded = False
             pid_file = "/run/oshotspot-dnsmasq.pid"
-            # Try calling hostapd.sh restart_dnsmasq if script exists or restart service
-            restart_script = "/mnt/workspace/OSHOTSPOT private/Improved/OShotspot/scripts/hostapd.sh"
+            # Try the installed helper script first, then fall back to
+            # signalling the daemon directly.
+            restart_script = "/usr/lib/oshotspot/scripts/reload-dns-blocking.sh"
             if os.path.isfile(restart_script):
                 res = subprocess.run(["bash", restart_script, "restart_dnsmasq"], check=False)
                 if res.returncode == 0:
@@ -1102,7 +1103,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 subprocess.run(["pkill", "-TERM", "-f", "dnsmasq"], check=False)
 
             # Optional: flush DNS conntrack so clients re-resolve immediately.
-            # conntrack is not installed on all systems — skip quietly.
+            # conntrack is not installed on all systems, skip quietly.
             try:
                 import shutil
                 if shutil.which("conntrack"):
@@ -2061,7 +2062,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         self.send_json({"ok": True, "domain": domain, "timestamp": ts})
 
     def _post_delete_events(self):
-        """POST /api/events/delete — delete N oldest events (superadmin
+        """POST /api/events/delete, delete N oldest events (superadmin
         only).  Body: {count: N}"""
         session = self.check_session_role("superadmin")
         if not session:
@@ -2753,7 +2754,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         }
         codes.append(new_code)
         if not captive.save_captive_codes(codes):
-            self.send_json({"error": "Failed to persist code — check /etc/oshotspot permissions"}, 500)
+            self.send_json({"error": "Failed to persist code, check /etc/oshotspot permissions"}, 500)
             return
 
         self.send_json({"ok": True, "code": new_code})
@@ -2821,7 +2822,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                     break
 
         if not captive.save_captive_codes(codes):
-            self.send_json({"error": "Failed to persist codes — check /etc/oshotspot permissions"}, 500)
+            self.send_json({"error": "Failed to persist codes, check /etc/oshotspot permissions"}, 500)
             return
 
         self.send_json({"ok": True, "count": len(created), "codes": created})
@@ -2858,7 +2859,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
 
         codes = [c for c in codes if c.get("id") != code_id]
         if not captive.save_captive_codes(codes):
-            self.send_json({"error": "Failed to persist revoke — check /etc/oshotspot permissions"}, 500)
+            self.send_json({"error": "Failed to persist revoke, check /etc/oshotspot permissions"}, 500)
             return
 
         mac = (found.get("bound_mac") or "").lower()
@@ -3219,7 +3220,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
     # --- VPN (Tailscale) ---
 
     def _get_vpn_status(self):
-        """GET /api/vpn/status — return Tailscale VPN status."""
+        """GET /api/vpn/status, return Tailscale VPN status."""
         if not self.check_token():
             return
         try:
@@ -3230,7 +3231,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"error": str(exc)}, 500)
 
     def _post_vpn_start(self):
-        """POST /api/vpn/start — start Tailscale."""
+        """POST /api/vpn/start, start Tailscale."""
         if not self.check_token():
             return
         try:
@@ -3243,7 +3244,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": str(exc)}, 500)
 
     def _post_vpn_stop(self):
-        """POST /api/vpn/stop — stop Tailscale."""
+        """POST /api/vpn/stop, stop Tailscale."""
         if not self.check_token():
             return
         try:
@@ -3256,7 +3257,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": str(exc)}, 500)
 
     def _post_vpn_restart(self):
-        """POST /api/vpn/restart — restart Tailscale."""
+        """POST /api/vpn/restart, restart Tailscale."""
         if not self.check_token():
             return
         try:

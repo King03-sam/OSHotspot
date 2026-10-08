@@ -156,11 +156,11 @@
                 badgeClass = 'badge-green';
             }
 
-            var detail = detailText(item.detail) || item.domain || '—';
+            var detail = detailText(item.detail) || item.domain || '-';
             html += '<tr>'
                 + '<td class="mono" style="font-size:12px">' + (item.timestamp || '') + '</td>'
-                + '<td class="mono">' + (item.client_mac || '—') + '</td>'
-                + '<td class="mono">' + (item.ip || '—') + '</td>'
+                + '<td class="mono">' + (item.client_mac || '-') + '</td>'
+                + '<td class="mono">' + (item.ip || '-') + '</td>'
                 + '<td><span class="badge ' + badgeClass + '">' + (item.event_type || 'span') + '</span></td>'
                 + '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + OS.esc(detail) + '">' + OS.esc(detail) + '</td>'
                 + '<td>' + statusBadge + '</td>'

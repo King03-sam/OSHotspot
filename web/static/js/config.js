@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * config.js — loads and saves the hotspot configuration form (SSID,
+ * config.js, loads and saves the hotspot configuration form (SSID,
  * password, channel, hardware mode, country code) and renders the
  * detected WiFi interfaces table.
  */

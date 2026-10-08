@@ -1,4 +1,4 @@
-# OSHotspot — Complete Technical & Functional Specification
+# OSHotspot, Complete Technical & Functional Specification
 
 **Version 5.1**
 
@@ -68,7 +68,7 @@ OSHotspot is built to operate natively on standard Linux distributions without r
   - Automatic HTTP redirect (`302`) for unauthenticated clients.
   - Smooth AJAX/Fetch form submission preventing page shifts or flickering on mobile devices.
 - **Hot Configuration Toggle**:
-  - The Captive Portal can be enabled or disabled at any time via `POST /api/config` (set `CAPTIVE_PORTAL=true` or `false`). Changes take effect instantly — the portal server starts/stops and firewall rules are applied without restarting hostapd or disconnecting clients.
+  - The Captive Portal can be enabled or disabled at any time via `POST /api/config` (set `CAPTIVE_PORTAL=true` or `false`). Changes take effect instantly, the portal server starts/stops and firewall rules are applied without restarting hostapd or disconnecting clients.
 
 ---
 
@@ -103,9 +103,9 @@ OSHotspot is built to operate natively on standard Linux distributions without r
 - **Flicker-Free Page Load**:
   - Prevents dashboard rendering (`#appShell` hidden by default) until session status is verified by `/api/auth/status`.
 - **Logout**:
-  - `GET /api/auth/logout` — clears the session cookie and returns an HTTP 302 redirect to `/`. No request body required.
+  - `GET /api/auth/logout`, clears the session cookie and returns an HTTP 302 redirect to `/`. No request body required.
 - **Brute-Force Protection (per-IP + per-user)**:
-  - **Per-user** (persisted in `auth.db`): progressive lockout tiers — 5 failures → 60s, 10 → 10min, 15 → 30min, 20+ → 1h. Message `invalid` is generic (no username enumeration); `secrets.compare_digest` provides constant-time password comparison.
+  - **Per-user** (persisted in `auth.db`): progressive lockout tiers, 5 failures → 60s, 10 → 10min, 15 → 30min, 20+ → 1h. Message `invalid` is generic (no username enumeration); `secrets.compare_digest` provides constant-time password comparison.
   - **Per-IP** (in-memory, silent): failure tiers 5 → 60s, 10 → 5min, 20 → 15min, 30+ → 1h, with idle entries pruned after 1h. A blocked IP is **never disclosed**: it receives the exact same generic `invalid` response (and audit event) as any wrong password, and loopback addresses (`127.0.0.1`, `::1`) are exempt.
   - **Timing**: a 1-second server-side delay is applied after every failed login attempt to equalize response timing and slow brute-force scripts.
 
@@ -125,7 +125,7 @@ OSHotspot is built to operate natively on standard Linux distributions without r
 ## 7. User Management & Role-Based Access Control (RBAC)
 
 - **Encrypted SQLite Database (`auth.db`)**:
-  - Stores user credentials using PBKDF2-HMAC-SHA256 (100,000 iterations, per-user random 16-byte salt) — never stored in plaintext or weak hash.
+  - Stores user credentials using PBKDF2-HMAC-SHA256 (100,000 iterations, per-user random 16-byte salt), never stored in plaintext or weak hash.
 - **Role Hierarchy**:
   - **Super Admin**: Full administrative control, configuration edits, user account creation, and firewall modifications.
   - **Admin**: Hotspot management, client controls, captive portal settings, and policy views.
@@ -148,7 +148,7 @@ OSHotspot is built to operate natively on standard Linux distributions without r
 
 ## 8a. Application Category Blocking (App Block)
 
-OSHotspot can block entire categories of network applications — not just by DNS domain, but also by **network port** and **TLS SNI inspection** — preventing bypass via external DNS, cached IPs, or VPNs.
+OSHotspot can block entire categories of network applications, not just by DNS domain, but also by **network port** and **TLS SNI inspection**, preventing bypass via external DNS, cached IPs, or VPNs.
 
 - **Supported Categories**:
   | Category ID | Label | Enforcement |
@@ -179,7 +179,7 @@ OSHotspot can block entire categories of network applications — not just by DN
 
 ### DNS Enforcement
 - All DNS traffic from connected clients is transparently forced through OSHotspot's dedicated `dnsmasq` instance.
-- **Port 53 redirect**: `iptables`/`nftables` PREROUTING rules redirect all UDP/TCP port 53 traffic from the AP interface to local dnsmasq — regardless of which DNS server the client is manually configured to use.
+- **Port 53 redirect**: `iptables`/`nftables` PREROUTING rules redirect all UDP/TCP port 53 traffic from the AP interface to local dnsmasq, regardless of which DNS server the client is manually configured to use.
 - **DNS-over-TLS (DoT) block**: TCP/UDP port 853 is blocked, preventing Android Private DNS and OS-level encrypted DNS from bypassing the redirect.
 - **DNS-over-HTTPS (DoH) block**: Known DoH resolver IPs (Cloudflare, Google, Quad9, AdGuard, OpenDNS, NextDNS, Mullvad) are blocked on port 443, forcing browsers back to standard DNS.
 - **VPN protocol blocking**: WireGuard (51820/UDP), OpenVPN (1194/TCP+UDP), IPsec IKE (500/UDP), IPsec NAT-T (4500/UDP), L2TP (1701/UDP), SoftEther (5555/UDP) are all blocked at the FORWARD chain level.
@@ -205,7 +205,7 @@ OSHotspot can block entire categories of network applications — not just by DN
   - `msmtp`: System msmtp MTA (lightweight, no Python dependencies)
 - Digest buffering: Batches alerts (10 alerts or 60 seconds) to prevent email flooding
 - HTML email with dark theme template and optional logo
-- Failures are silent — the event is still logged and pushed via SSE.
+- Failures are silent, the event is still logged and pushed via SSE.
 - Configuration: `ALERT_EMAIL_ENABLED`, `ALERT_EMAIL_TO`, `ALERT_EMAIL_FROM`, `ALERT_EMAIL_SMTP_HOST`, `ALERT_EMAIL_SMTP_PORT`, `ALERT_EMAIL_USERNAME`, `ALERT_EMAIL_PASSWORD`.
 
 ---
@@ -213,10 +213,10 @@ OSHotspot can block entire categories of network applications — not just by DN
 ## 11. Device Inventory & Unknown Device Detection
 
 - **Known Devices table** (`known_devices` in `events.db`): MAC address, label, device type (phone/laptop/tablet/other), notes, first_seen timestamp.
-- **Auto-flagging**: New DHCPACK from an unknown MAC → `unknown_device` event + notification + toast — flagged only once per MAC.
+- **Auto-flagging**: New DHCPACK from an unknown MAC → `unknown_device` event + notification + toast, flagged only once per MAC.
 - **Mark as known**: Click any unknown device in the Clients table to open a modal and assign a label, type, and notes.
 - **Bulk import**: Paste multiple devices at once (`MAC, Label, Type, Notes` per line) via the Clients page.
-- **MAC deny list**: Add/remove MACs from `deny_maclist.conf` — injected into hostapd `deny_acl` — with automatic hostapd restart.
+- **MAC deny list**: Add/remove MACs from `deny_maclist.conf`, injected into hostapd `deny_acl`, with automatic hostapd restart.
 
 ---
 
@@ -234,7 +234,7 @@ OSHotspot can block entire categories of network applications — not just by DN
 - `iw dev <iface> scan` enumerates all nearby access points per channel.
 - Ranks channels 1, 6, 11 (non-overlapping 2.4 GHz) by congestion count.
 - Recommends the least congested channel.
-- 5 GHz support detection via `iw phy` — warns if `HW_MODE=a` is selected on an unsupported adapter.
+- 5 GHz support detection via `iw phy`, warns if `HW_MODE=a` is selected on an unsupported adapter.
 - Adaptive `hostapd.conf` generation: C tool (`oshotspot-gen`) reads hardware capabilities JSON and generates optimal config (HT caps, supported channels, short GI).
 
 ---
@@ -272,11 +272,11 @@ OSHotspot can block entire categories of network applications — not just by DN
 
 ## 15. Event Pipeline & Data Architecture
 
-- **Log tailing**: `pygtail` (rotation-safe, `copytruncate=True`) tails `dnsmasq.log` — recovers from dnsmasq restarts without stale offsets.
+- **Log tailing**: `pygtail` (rotation-safe, `copytruncate=True`) tails `dnsmasq.log`, recovers from dnsmasq restarts without stale offsets.
 - **Domain classification**: Auto-categorizes DNS domains into `noise`, `messaging`, `social`, `entertainment`, `browsing`, `unknown` using 60+ hardcoded roots + admin-editable noise patterns.
 - **Session aggregation**: Consecutive queries from same client → same domain within 5 minutes merged into one row with `request_count`.
 - **SQLite WAL mode**: All three databases (`events.db`, `auth.db`, `live.db`) use Write-Ahead Logging for concurrent reader/writer access without `database is locked` errors.
-- **SSE ring buffer**: `live.db` stores last 1000 events as JSON — used for cross-process SSE delivery and the anomaly history modal.
+- **SSE ring buffer**: `live.db` stores last 1000 events as JSON, used for cross-process SSE delivery and the anomaly history modal.
 - **Retry/backoff**: `tenacity` wraps all SQLite writes with exponential backoff on `OperationalError` (transient lock).
 - **Event Deletion**: Superadmins can delete the N oldest events via `POST /api/events/delete` (calls `delete_oldest_events()` in `events/db.py`). Max 10,000 events per request. This is useful for purging stale data without dropping the entire database.
 
@@ -330,7 +330,7 @@ OSHotspot integrates with Tailscale to provide secure remote access to the dashb
 
 ### Features:
 - **Mesh VPN Access**: Access the dashboard from any device on your Tailscale network
-- **No Port Forwarding**: Uses Tailscale's mesh networking — no router configuration needed
+- **No Port Forwarding**: Uses Tailscale's mesh networking, no router configuration needed
 - **Dashboard Integration**: Start/stop/restart VPN directly from the dashboard VPN page
 - **Authentication URL**: Automatic detection of `NeedsLogin` state with one-click authentication
 - **Firewall Rules**: Automatic Tailscale interface rules added to iptables/nftables
@@ -419,7 +419,7 @@ OSHotspot is distributed via GitHub Releases as both a tarball (`.tar.gz`) and a
 ### Packaging Files
 | File | Purpose |
 |------|---------|
-| `package.sh` | Main packaging script — reads `debian/install` as source of truth, builds tarball + `.deb` |
+| `package.sh` | Main packaging script, reads `debian/install` as source of truth, builds tarball + `.deb` |
 | `debian/control` | Package metadata: dependencies, description, maintainer |
 | `debian/install` | File list defining what gets installed where (source of truth) |
 | `debian/changelog` | Debian changelog with version history |

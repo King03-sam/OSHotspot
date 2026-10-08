@@ -3,11 +3,11 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * events.js — Events page split into two dedicated zones:
- *   1. Live Events   — real-time feed, auto-refresh every 5 s,
+ * events.js, Events page split into two dedicated zones:
+ *   1. Live Events  , real-time feed, auto-refresh every 5 s,
  *                       shows the last 5 minutes of activity.
- *   2. Known Devices  — device inventory table (unchanged).
- *   3. Historical Events — manual search with type / MAC / time-range
+ *   2. Known Devices , device inventory table (unchanged).
+ *   3. Historical Events, manual search with type / MAC / time-range
  *                          filters, up to 500 results.
  *
  * Data comes from /api/events which degrades gracefully when the
@@ -218,7 +218,7 @@
         } else if (ip) {
             lines.push('<span class="text-muted">' + OS.esc(ip) + '</span>');
         } else {
-            lines.push('—');
+            lines.push('-');
         }
         if (hostname) {
             lines.push('<span class="text-muted">' + OS.esc(hostname) + '</span>');
@@ -256,7 +256,7 @@
                 : '<span class="event-chip chip-known">known</span>';
             return '<tr>'
                 + '<td class="mono">' + OS.esc(d.mac) + '</td>'
-                + '<td>' + (d.hostname ? OS.esc(d.hostname) : '<span class="text-muted">—</span>') + '</td>'
+                + '<td>' + (d.hostname ? OS.esc(d.hostname) : '<span class="text-muted">-</span>') + '</td>'
                 + '<td>' + OS.esc(d.label || 'known device') + '</td>'
                 + '<td>' + status + '</td>'
                 + '<td class="mono">' + OS.esc(d.first_seen) + '</td>'

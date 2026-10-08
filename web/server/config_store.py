@@ -72,7 +72,7 @@ def write_config(updates):
 
 def validate_config_update(data):
     """Validate a config PATCH payload coming from the dashboard form.
-    Returns (validated_dict, errors_list) — validated_dict uses the
+    Returns (validated_dict, errors_list), validated_dict uses the
     upper-case keys expected by config.conf."""
     errors = []
     validated = {}

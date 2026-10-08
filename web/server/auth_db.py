@@ -119,7 +119,7 @@ def _init_tables(conn):
             success    INTEGER NOT NULL DEFAULT 1
         );
     """)
-    # Indexes for audit_log (separate statements — executescript batches)
+    # Indexes for audit_log (separate statements, executescript batches)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_ts ON audit_log(timestamp)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(username)")
     # Migrate: add can_view_audit column if missing (existing DBs)

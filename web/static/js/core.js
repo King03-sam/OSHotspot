@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * core.js — shared state, section metadata and small DOM helpers used
+ * core.js, shared state, section metadata and small DOM helpers used
  * by every other module. Loaded first, before anything that depends
  * on OS.$ or OS.state.
  */

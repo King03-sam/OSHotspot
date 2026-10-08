@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * actions.js — the Controls page: triggers start/stop/restart/repair
+ * actions.js, the Controls page: triggers start/stop/restart/repair
  * and streams their output into the on-page console.
  *
  * Buttons are ALWAYS re-enabled after the request settles (success,

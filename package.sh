@@ -4,7 +4,7 @@
 # Copyright 2026 OLOJEDE Samuel
 # Licensed under the Apache License, Version 2.0
 #
-# package.sh — Build release artifacts (tarball + .deb) for OSHotspot.
+# package.sh, Build release artifacts (tarball + .deb) for OSHotspot.
 # Usage: ./package.sh [VERSION]
 #   VERSION defaults to git describe --tags --always (e.g. v4.0-3-gabc1234)
 #
@@ -30,7 +30,7 @@ log_error() { echo -e "\033[0;31m[ERROR]\033[0m $*" >&2; }
 log_info "Building OSHotspot ${VERSION}..."
 
 if [[ ! -f "${SCRIPT_DIR}/debian/install" ]]; then
-    log_error "debian/install not found — cannot determine which files to package"
+    log_error "debian/install not found, cannot determine which files to package"
     exit 1
 fi
 
@@ -77,7 +77,7 @@ tar czf "${TARBALL}" -C "${TMP_DIR}" "oshotspot-${VERSION}"
 log_info "Built: ${TARBALL}"
 log_info "Size:  $(du -h "${TARBALL}" | cut -f1)"
 
-# .deb build disabled — only tarball is published
+# .deb build disabled, only tarball is published
 
 # Cleanup temp dir (after both builds are done)
 rm -rf "${TMP_DIR}"

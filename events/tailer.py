@@ -757,7 +757,7 @@ class Collector:
 
                     # Track client connects/disconnects every 10s.
                     # NOTE: parser.load_leases() returns {ip: mac}, so the
-                    # keys are IPs, not MACs — build a mac -> info map first.
+                    # keys are IPs, not MACs, build a mac -> info map first.
                     # Using leases.get(mac) directly returned a MAC string
                     # (not a dict) and crashed with
                     # "'str' object has no attribute 'get'" on every tick.

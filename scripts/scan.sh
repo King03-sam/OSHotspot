@@ -12,7 +12,7 @@
 # and recommends the least congested non-overlapping channel (1/6/11).
 #
 # If the hotspot is already running, the radio is locked to the AP channel
-# and scanning is not possible — the script reports this clearly.
+# and scanning is not possible, the script reports this clearly.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
@@ -197,7 +197,7 @@ do_scan() {
         if [[ -n "${sig}" ]]; then
             printf "  %-10s %-12s %-20s" "${ch}" "${cnt}" "${sig} dBm"
         else
-            printf "  %-10s %-12s %-20s" "${ch}" "${cnt}" "—"
+            printf "  %-10s %-12s %-20s" "${ch}" "${cnt}" "-"
         fi
         echo -e "${marker}"
     done

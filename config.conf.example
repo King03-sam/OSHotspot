@@ -68,7 +68,7 @@ CAPTIVE_CODE=""
 CAPTIVE_MESSAGE="Welcome to OSHotspot! Please accept terms or enter access code to connect."
 # Custom domain name for the captive portal (optional)
 # When set, hotspot clients can access the portal via this domain (e.g. wifi.portal)
-# The domain is resolved locally to the AP via dnsmasq — no external DNS needed.
+# The domain is resolved locally to the AP via dnsmasq, no external DNS needed.
 CAPTIVE_DOMAIN=""
 
 # SPAN Port Switch Log Analysis
@@ -84,7 +84,7 @@ INACTIVITY_TIMEOUT="7200"
 # (unknown device joined, DNS flood). Alerts are always written to
 # /var/log/oshotspot/events.log regardless of this setting.
 #
-# Recommended: use msmtp (lightweight MTA) — run 'sudo oshotspot setup-mail'
+# Recommended: use msmtp (lightweight MTA), run 'sudo oshotspot setup-mail'
 # to configure.  msmtp handles SMTP auth and TLS; OSHotspot sends via
 # 'sendmail' (localhost:25) to msmtp for delivery.
 #

@@ -215,7 +215,7 @@ graph TD
      MAIN --> HANDLER
 ```
 
-The **Overview** page (`status.js`) renders a "Live Events" card that subscribes to the SSE event bus (`/api/live-stream`) for real-time `dns_event`, `alert`, and `client_change` events — capping at 20 rows with a link to the full Events page.
+The **Overview** page (`status.js`) renders a "Live Events" card that subscribes to the SSE event bus (`/api/live-stream`) for real-time `dns_event`, `alert`, and `client_change` events, capping at 20 rows with a link to the full Events page.
 
 ### API Endpoints
 
@@ -386,7 +386,7 @@ graph TD
 | `SSID` | `OSHotspot` | WiFi network name (1-32 chars) |
 | `PASSWORD` | `ChangeMe123` | WiFi password (min 8 chars, WPA2) |
 | `WIFI_OPEN` | `false` | Open WiFi network (no password) |
-| `CHANNEL` | `6` | WiFi channel — `0` = Auto (ACS), or fixed `1-13` |
+| `CHANNEL` | `6` | WiFi channel, `0` = Auto (ACS), or fixed `1-13` |
 | `HW_MODE` | `g` | Hardware mode (`g` = 2.4GHz, `a` = 5GHz) |
 | `COUNTRY_CODE` | `FR` | ISO 3166-1 alpha-2 country code |
 | `HOSTNAME` | `oshotspot` | Hostname shown on the network |
@@ -459,12 +459,12 @@ sequenceDiagram
 | Token delivery | URL query parameter (`?token=...`) |
 | Request validation | Every API call requires valid token |
 | Security headers | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` |
-| Password protection | PBKDF2-HMAC-SHA256 (100k iterations, per-user random salt) — never stored in plaintext |
+| Password protection | PBKDF2-HMAC-SHA256 (100k iterations, per-user random salt), never stored in plaintext |
 | File permissions | `config.conf` and `hostapd.conf` are `chmod 600` |
 | Inactivity timeout | Auto-shutdown after 2 hours (out-of-process watchdog) |
 | MAC filtering | `deny_maclist.conf` for kick/block clients |
 | DNS enforcement | PREROUTING redirect + DoH IP blocking |
-| RBAC & audit access | `can_view_audit` flag — grants non-superadmin users read-only access to audit log; enforced by `check_session_audit()` |
+| RBAC & audit access | `can_view_audit` flag, grants non-superadmin users read-only access to audit log; enforced by `check_session_audit()` |
 
 ---
 
@@ -575,33 +575,33 @@ OSHotspot/
 ├── .github/
 │   └── workflows/
 │       └── release.yml          # CI: build tarball + .deb on tag push
-└── (root-level docs)            # README.md, ARCHITECTURE.md, oshotsop-private-fuc.md, CONTRIBUTING.md, DEV-NOTES.md, LICENSE
+└── (root-level docs)            # README.md, ARCHITECTURE.md, oshotspot-fuc.md, CONTRIBUTING.md, LICENSE
 ```
 
 ---
 
 ## Key Architectural Decisions
 
-1. **Near-zero dependencies** — The Python web server itself uses only stdlib (`http.server`, `json`, `subprocess`). The event collector additionally uses two small, well-maintained pip packages — `pygtail` (rotation-safe log tailing) and `tenacity` (retry/backoff for SQLite write contention) — installed automatically by `install.sh`. See `DEV-NOTES.md`.
+1. **Near-zero dependencies**: the Python web server itself uses only stdlib (`http.server`, `json`, `subprocess`). The event collector additionally uses two small, well maintained pip packages, `pygtail` (rotation-safe log tailing) and `tenacity` (retry backoff for SQLite write contention), installed automatically by `install.sh` (see `requirements.txt`).
 
-2. **Single source of truth** — `config.conf` is a shell-sourced `KEY="value"` file, readable by both Bash (`source`) and Python (regex parser).
+2. **Single source of truth**, `config.conf` is a shell-sourced `KEY="value"` file, readable by both Bash (`source`) and Python (regex parser).
 
-3. **Scripts as execution layer** — All system operations go through Bash scripts. Both CLI and web server are thin dispatchers invoking the same scripts.
+3. **Scripts as execution layer**, All system operations go through Bash scripts. Both CLI and web server are thin dispatchers invoking the same scripts.
 
-4. **Template-based config generation** — hostapd.conf and dnsmasq.conf are regenerated from templates on every start, ensuring they always match current config.
+4. **Template-based config generation**, hostapd.conf and dnsmasq.conf are regenerated from templates on every start, ensuring they always match current config.
 
-5. **Virtual AP interface** — `ap0` is created via `iw`, allowing the same physical adapter to serve both client connection and AP roles simultaneously.
+5. **Virtual AP interface**, `ap0` is created via `iw`, allowing the same physical adapter to serve both client connection and AP roles simultaneously.
 
-6. **Dual firewall backend** — Auto-detection of iptables vs nftables for cross-distribution compatibility.
+6. **Dual firewall backend**, Auto-detection of iptables vs nftables for cross-distribution compatibility.
 
-7. **DNS policy enforcement** — Two-layer approach: PREROUTING redirect for standard DNS, FORWARD DROP for DoH bypass prevention.
+7. **DNS policy enforcement**, Two-layer approach: PREROUTING redirect for standard DNS, FORWARD DROP for DoH bypass prevention.
 
-8. **Dual watchdog system** — Two independent watchdogs: (1) out-of-process inactivity watchdog that shuts down the dashboard after 2h idle, and (2) C-based process watchdog (`oshotspot-watchdog`) that auto-restarts crashed hostapd/dnsmasq, logged to `watchdog.log`.
+8. **Dual watchdog system**, Two independent watchdogs: (1) out-of-process inactivity watchdog that shuts down the dashboard after 2h idle, and (2) C-based process watchdog (`oshotspot-watchdog`) that auto-restarts crashed hostapd/dnsmasq, logged to `watchdog.log`.
 
-9. **Daemon thread server** — The HTTP server runs `serve_forever()` on a daemon thread with `daemon_threads=True`. Long-running scripts don't block status polling and other API requests, and shutdown is clean via `server.shutdown()`.
+9. **Daemon thread server**, The HTTP server runs `serve_forever()` on a daemon thread with `daemon_threads=True`. Long-running scripts don't block status polling and other API requests, and shutdown is clean via `server.shutdown()`.
 
-10. **Auto-restart on config change** — Both CLI and web dashboard automatically restart the hotspot after configuration updates.
+10. **Auto-restart on config change**, Both CLI and web dashboard automatically restart the hotspot after configuration updates.
 
-11. **Graceful degradation** — C tools are optional. If not compiled (missing gcc or libnl), bash fallback handles everything. When compiled, the C scanner includes an internal `iw phy` fallback for drivers with incomplete nl80211 support (Realtek, MediaTek, Broadcom). The user experience is identical.
+11. **Graceful degradation**, C tools are optional. If not compiled (missing gcc or libnl), bash fallback handles everything. When compiled, the C scanner includes an internal `iw phy` fallback for drivers with incomplete nl80211 support (Realtek, MediaTek, Broadcom). The user experience is identical.
 
-12. **Adaptive hardware support** — C tools detect actual WiFi adapter capabilities (HT, VHT, short GI) and generate hostapd.conf accordingly, preventing common "Failed to set beacon parameters" errors.
+12. **Adaptive hardware support**, C tools detect actual WiFi adapter capabilities (HT, VHT, short GI) and generate hostapd.conf accordingly, preventing common "Failed to set beacon parameters" errors.

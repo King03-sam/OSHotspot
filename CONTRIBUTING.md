@@ -4,7 +4,7 @@ Welcome! Contributions to **OSHotspot** are welcome and appreciated.
 
 ## Project Maintainer
 
-**OLOJEDE Samuel** — [GitHub](https://github.com/King03-sam)
+**OLOJEDE Samuel**, [GitHub](https://github.com/King03-sam)
 
 ## How to Contribute
 
@@ -55,7 +55,7 @@ The dashboard runs without any build step:
 sudo python3 web/serve.py
 ```
 
-Edit files in `web/static/` — changes are served directly.
+Edit files in `web/static/`, changes are served directly.
 
 ## Code Style
 
@@ -78,25 +78,25 @@ Edit files in `web/static/` — changes are served directly.
 
 ### Python (web server)
 
-- Web server itself is stdlib only; the event collector uses two pip deps — `pygtail` and `tenacity` (see `requirements.txt` / `DEV-NOTES.md`)
+- Web server itself is stdlib only; the event collector uses two pip deps, `pygtail` and `tenacity` (see `requirements.txt`)
 - All API routes go through `handler.py`
 - Parse shell script output via `parsers.py`
 
 ### JavaScript (dashboard)
 
-- Vanilla JS — no frameworks or build tools
+- Vanilla JS, no frameworks or build tools
 - All modules attach to `window.OS` namespace
 - DOM helpers: `OS.$()`, `OS.esc()`, `OS.formatBytes()`
 - API calls: use `OS.api()` (handles token injection + timeout + SSE)
 - Modules: `core.js`, `api.js`, `app.js`, `nav.js`, `theme.js`, `toast.js`, `status.js`, `clients.js`, `actions.js`, `config.js`, `traffic.js`, `doctor.js`, `qr.js`, `logs.js`, `activity.js`, `policy.js`, `captive.js`, `span.js`, `events.js`, `login.js`, `live.js`, `mail.js`, `notifications.js`, `users.js`, `audit.js`, `vpn.js`, `about.js`
-- Application category blocking (App Block) is implemented inside `policy.js` — its controls are embedded in the Domain Policy page, not a standalone module.
+- Application category blocking (App Block) is implemented inside `policy.js`, its controls are embedded in the Domain Policy page, not a standalone module.
 
 ## Pull Request Guidelines
 
 - One fix or feature per PR
 - Describe what changed and why
 - Test on a real Linux system before submitting
-- Keep PRs focused — avoid unrelated changes
+- Keep PRs focused, avoid unrelated changes
 
 ## Project Architecture
 
@@ -118,10 +118,10 @@ To create a new release:
    - Upload both to GitHub Releases (public, no token needed to download)
 
 ### Packaging Files
-- `package.sh` — reads `debian/install` as the source of truth; builds tarball + `.deb`
-- `debian/control` — package metadata and dependencies
-- `debian/install` — file list defining install paths
-- `debian/rules` — dpkg-build rules
+- `package.sh`, reads `debian/install` as the source of truth; builds tarball + `.deb`
+- `debian/control`, package metadata and dependencies
+- `debian/install`, file list defining install paths
+- `debian/rules`, dpkg-build rules
 
 ### Testing the Package Locally
 ```bash

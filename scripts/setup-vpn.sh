@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# OSHotspot — Tailscale VPN Setup
+# OSHotspot, Tailscale VPN Setup
 # Installs and configures Tailscale for remote dashboard access.
 #
 
@@ -21,7 +21,7 @@ fi
 
 echo ""
 echo "========================================="
-echo "  OSHotspot — Tailscale VPN Setup"
+echo "  OSHotspot, Tailscale VPN Setup"
 echo "========================================="
 echo ""
 

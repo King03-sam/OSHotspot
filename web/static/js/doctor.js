@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * doctor.js — Diagnostics page: runs the health-check script and
+ * doctor.js, Diagnostics page: runs the health-check script and
  * renders each [OK]/[WARN]/[FAIL] result with a summary pill.
  */
 

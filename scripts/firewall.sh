@@ -11,15 +11,15 @@
 #
 # When DNS_REDIRECT is enabled (default), two extra mechanisms ensure
 # all DNS traffic from hotspot clients flows through the local dnsmasq:
-#   1. DNS REDIRECT  — PREROUTING rules that hijack port 53 (UDP+TCP)
+#   1. DNS REDIRECT , PREROUTING rules that hijack port 53 (UDP+TCP)
 #      from the AP subnet so clients can't bypass dnsmasq with a manual
 #      DNS server.
-#   2. DoH BLOCK     — FORWARD DROP rules that black-hole traffic from
+#   2. DoH BLOCK    , FORWARD DROP rules that black-hole traffic from
 #      the AP subnet to known DNS-over-HTTPS resolver IPs on port 443
-#      (both TCP and UDP/QUIC — modern browsers use HTTP/3), forcing
+#      (both TCP and UDP/QUIC, modern browsers use HTTP/3), forcing
 #      browsers back to standard DNS.
 
-# Known DoH resolver IPs — blocked on port 443 (TCP+UDP) from AP
+# Known DoH resolver IPs, blocked on port 443 (TCP+UDP) from AP
 # clients.  IMPORTANT: this list must only contain addresses that are
 # DEDICATED to DNS services.  Broad provider ranges (e.g. Google's
 # 142.250.0.0/16 or Cloudflare's CDN ranges like 172.64.0.0/16) also
@@ -259,7 +259,7 @@ setup_firewall_nft() {
 }
 
 # -------------------------------------------------------------------
-# DNS redirect — force all port 53 traffic to local dnsmasq
+# DNS redirect, force all port 53 traffic to local dnsmasq
 # -------------------------------------------------------------------
 
 setup_dns_redirect_iptables() {
@@ -296,18 +296,18 @@ setup_dns_redirect_nft() {
 }
 
 # -------------------------------------------------------------------
-# DoH block — drop traffic to known DoH resolver IPs on port 443
+# DoH block, drop traffic to known DoH resolver IPs on port 443
 # -------------------------------------------------------------------
 
 block_doh_iptables() {
     local count=0
     for ip in "${DOH_IPS[@]}"; do
-        # TCP 443 — classic DoH over HTTP/2.
+        # TCP 443, classic DoH over HTTP/2.
         if ! iptables -C FORWARD -i "${AP_IFACE}" -d "$ip" -p tcp --dport 443 -j DROP 2>/dev/null; then
             iptables -I FORWARD -i "${AP_IFACE}" -d "$ip" -p tcp --dport 443 -j DROP
             count=$((count + 1))
         fi
-        # UDP 443 — DoH over HTTP/3 (QUIC), used by modern browsers;
+        # UDP 443, DoH over HTTP/3 (QUIC), used by modern browsers;
         # without this rule the TCP block is trivially bypassed.
         if ! iptables -C FORWARD -i "${AP_IFACE}" -d "$ip" -p udp --dport 443 -j DROP 2>/dev/null; then
             iptables -I FORWARD -i "${AP_IFACE}" -d "$ip" -p udp --dport 443 -j DROP
@@ -379,7 +379,7 @@ kill_doh_connections() {
 }
 
 # -------------------------------------------------------------------
-# DoT block — drop DNS-over-TLS traffic on port 853
+# DoT block, drop DNS-over-TLS traffic on port 853
 # -------------------------------------------------------------------
 
 block_dot_iptables() {
@@ -416,7 +416,7 @@ block_dot_nft() {
 }
 
 # -------------------------------------------------------------------
-# VPN protocol block — drop common VPN traffic from AP clients
+# VPN protocol block, drop common VPN traffic from AP clients
 # -------------------------------------------------------------------
 
 block_vpn_iptables() {
@@ -467,7 +467,7 @@ block_vpn_nft() {
 }
 
 # -------------------------------------------------------------------
-# IPv6 DNS/DoH/DoT/VPN block — close IPv6-side bypasses
+# IPv6 DNS/DoH/DoT/VPN block, close IPv6-side bypasses
 # -------------------------------------------------------------------
 # All the DNS policy above is IPv4-only.  If an AP client somehow has
 # IPv6 connectivity (link-local leaks, an upstream router passing RA,

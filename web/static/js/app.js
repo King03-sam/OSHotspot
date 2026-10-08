@@ -1,9 +1,9 @@
 /*
- * OSHotspot Dashboard — Premium UI controller
+ * OSHotspot Dashboard, Premium UI controller
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * app.js — ties every other module together: the About page loader,
+ * app.js, ties every other module together: the About page loader,
  * the "refresh everything" button, the polling intervals, and the
  * bootstrap that runs once the DOM is ready.
  *
@@ -332,7 +332,7 @@
             }, 200);
         });
 
-        /* Favicon + sidebar branding — independent of Config section DOM. */
+        /* Favicon + sidebar branding, independent of Config section DOM. */
         OS.api('/api/config').then(function (cfg) {
             if (OS.applyAdminBranding) {
                 OS.applyAdminBranding((cfg && cfg.admin_logo_url) || '');

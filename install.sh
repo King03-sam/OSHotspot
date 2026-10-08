@@ -60,13 +60,13 @@ download_source() {
     TEMP_DIR="$(mktemp -d)"
     local archive="${TEMP_DIR}/oshotspot.tar.gz"
 
-    # GitHub Releases asset URLs are public even for private repositories.
+    # GitHub release assets are fetched over HTTPS.
     # Override version with OSHOTSPOT_VERSION env var if needed.
     local version="${OSHOTSPOT_VERSION:-}"
     if [[ -z "${version}" ]]; then
         version=$(curl -fsSL "https://api.github.com/repos/King03-sam/OSHotspot/releases/latest" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/')
     fi
-    # Accept "5.1" or "v5.1" — release assets exist in both forms across versions.
+    # Accept "5.1" or "v5.1": release assets exist in both forms across versions.
     version="${version#v}"
     local candidates=(
         "${REPO_URL}/releases/latest/download/oshotspot-v${version}.tar.gz"
@@ -88,7 +88,7 @@ download_source() {
 
     tar -xzf "${archive}" -C "${TEMP_DIR}"
     # package.sh names the top dir oshotspot-${VERSION} (with or without leading v
-    # depending on how it was invoked) — accept either layout.
+    # depending on how it was invoked), accept either layout.
     if [[ -d "${TEMP_DIR}/oshotspot-v${version}" ]]; then
         SRC="${TEMP_DIR}/oshotspot-v${version}"
     elif [[ -d "${TEMP_DIR}/oshotspot-${version}" ]]; then
@@ -338,7 +338,7 @@ install_files() {
     fi
 
     if [[ "${tailer_was_running}" == "true" && -f "${events_dir}/tailer.py" ]]; then
-        # NOTE: do NOT pass --log-file here — the default
+        # NOTE: do NOT pass --log-file here, the default
         # (/var/log/oshotspot/dnsmasq.log) is the dnsmasq query log to parse.
         # Passing events.log (the alert log) would make the collector tail
         # its own output and no Events would ever reach the dashboard.
@@ -365,7 +365,7 @@ compile_c_tools() {
     cd "${SRC}"
     local installed=0
 
-    # Compile each tool independently — partial success is acceptable
+    # Compile each tool independently, partial success is acceptable
     local libnl_cflags libnl_libs
     libnl_cflags=$(pkg-config --cflags libnl-genl-3.0 2>/dev/null || echo "-I/usr/include/libnl3")
     libnl_libs=$(pkg-config --libs libnl-genl-3.0 2>/dev/null || echo "-lnl-genl-3 -lnl-3")
@@ -438,7 +438,7 @@ check_dnsmasq_conflicts() {
     log_step "Checking for dnsmasq conflicts..."
 
     if systemctl is-active --quiet dnsmasq 2>/dev/null; then
-        log_warn "System dnsmasq is running. This is fine — OSHotspot uses its own dedicated instance."
+        log_warn "System dnsmasq is running. This is fine, OSHotspot uses its own dedicated instance."
     fi
 }
 
@@ -570,7 +570,7 @@ main() {
         if python3 -c "import fpdf" &>/dev/null; then
             echo -e "${GREEN}[OK]${NC} fpdf2 available (PDF code export)"
         else
-            echo -e "${YELLOW}[WARN]${NC} fpdf2 missing (PDF export unavailable) — run: pip3 install fpdf2"
+            echo -e "${YELLOW}[WARN]${NC} fpdf2 missing (PDF export unavailable), run: pip3 install fpdf2"
         fi
 
         if command -v msmtp &>/dev/null; then

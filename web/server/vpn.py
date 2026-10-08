@@ -5,7 +5,7 @@
 #
 # Licensed under the Apache License, Version 2.0
 
-"""Tailscale VPN manager — status, start, stop."""
+"""Tailscale VPN manager, status, start, stop."""
 
 import json
 import re

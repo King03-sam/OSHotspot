@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * toast.js — small transient notifications shown after actions
+ * toast.js, small transient notifications shown after actions
  * (start/stop, config save, refresh, etc).
  *
  * Success toasts are intentionally suppressed by default: every

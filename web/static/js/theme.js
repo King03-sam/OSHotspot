@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * theme.js — dark/light mode, persisted to localStorage and seeded
+ * theme.js, dark/light mode, persisted to localStorage and seeded
  * from the OS-level color scheme preference on first visit.
  */
 

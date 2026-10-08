@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * api.js — single entry point for talking to the backend. Every call
+ * api.js, single entry point for talking to the backend. Every call
  * appends the session token and normalizes the response into either
  * parsed JSON or plain text, rejecting with the parsed error body
  * when the server responds with a non-2xx status.

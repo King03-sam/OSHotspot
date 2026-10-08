@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * logs.js — Logs page: switches between hostapd/dnsmasq/web sources
+ * logs.js, Logs page: switches between hostapd/dnsmasq/web sources
  * and renders the tail of the selected log.
  */
 

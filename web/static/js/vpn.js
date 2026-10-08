@@ -1,5 +1,5 @@
 /**
- * OSHotspot — VPN Page (Tailscale)
+ * OSHotspot, VPN Page (Tailscale)
  * Remote access management via Tailscale mesh VPN.
  */
 (function (OS) {

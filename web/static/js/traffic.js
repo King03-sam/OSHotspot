@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * traffic.js — polls /api/traffic, derives a rolling RX/TX throughput
+ * traffic.js, polls /api/traffic, derives a rolling RX/TX throughput
  * history from the raw byte counters, and draws a full-width live
  * bandwidth chart with axes, gridlines, labels and hover inspection.
  */
@@ -306,7 +306,7 @@
         maxVal = niceMax(maxVal * 1.15);
         var gridLines = 4;
 
-        /* Layout — left padding fits the widest axis label */
+        /* Layout, left padding fits the widest axis label */
         ctx.font = (10 * dpr) + 'px ' + font;
         var labelW = 0;
         for (var a = 0; a <= gridLines; a++) {
@@ -351,7 +351,7 @@
             );
         }
 
-        /* X axis labels — anchored on the newest sample, spaced to avoid overlap */
+        /* X axis labels, anchored on the newest sample, spaced to avoid overlap */
         var withSeconds = (ts[n - 1] - ts[0]) < 600;
         var every = Math.max(1, Math.ceil((90 * dpr) / stepX));
         ctx.textBaseline = 'top';

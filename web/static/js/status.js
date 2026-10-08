@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * status.js — fetches /api/status and reflects the hotspot's current
+ * status.js, fetches /api/status and reflects the hotspot's current
  * state across the topbar, sidebar pills, hero card and stat grid.
  *
  * On error the hero card shows a clear "Connection Error" state

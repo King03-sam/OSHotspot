@@ -3,7 +3,7 @@
  * Copyright 2026 OLOJEDE Samuel
  * Licensed under the Apache License, Version 2.0
  *
- * qr.js — QR Code page: loads the generated WiFi QR image and labels
+ * qr.js, QR Code page: loads the generated WiFi QR image and labels
  * it with the current SSID.
  */
 
