@@ -65,7 +65,7 @@ WIFI_OPEN="false"
 # Captive Portal
 CAPTIVE_PORTAL="false"
 CAPTIVE_CODE=""
-CAPTIVE_MESSAGE="Welcome to OSHotspot! Please accept terms or enter access code to connect."
+CAPTIVE_MESSAGE="Enter access code to connect."
 # Custom domain name for the captive portal (optional)
 # When set, hotspot clients can access the portal via this domain (e.g. wifi.portal)
 # The domain is resolved locally to the AP via dnsmasq, no external DNS needed.

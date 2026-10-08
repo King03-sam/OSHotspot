@@ -223,6 +223,13 @@ setup_config() {
         log_warn "Edit it to set your SSID and password!"
     else
         log_info "Config already exists at ${CONFIG_DIR}/config.conf"
+        # Migrate the stock portal message to the new default. Custom
+        # messages are never touched, only the exact legacy default.
+        local legacy_msg='CAPTIVE_MESSAGE="Welcome to OSHotspot! Please accept terms or enter access code to connect."'
+        if grep -qxF "${legacy_msg}" "${CONFIG_DIR}/config.conf"; then
+            sed -i 's|^CAPTIVE_MESSAGE=.*|CAPTIVE_MESSAGE="Enter access code to connect."|' "${CONFIG_DIR}/config.conf"
+            log_info "Updated stock portal message to the new default."
+        fi
     fi
 }
 
