@@ -125,10 +125,10 @@ To create a new release:
 
 ### Testing the Package Locally
 ```bash
-./package.sh v4.0
+./package.sh v5.1
 # Verify:
-tar tzf dist/oshotspot-v4.0.tar.gz    # check contents
-dpkg-deb -I dist/oshotspot_4.0_all.deb  # check metadata
+tar tzf dist/oshotspot-v5.1.tar.gz    # check contents
+dpkg-deb -I dist/oshotspot_5.1_all.deb  # check metadata
 ```
 
 ## License

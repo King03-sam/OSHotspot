@@ -435,7 +435,7 @@ OSHotspot is distributed via GitHub Releases as both a tarball (`.tar.gz`) and a
 5. Outputs both to `dist/`
 
 ### CI Pipeline (`.github/workflows/release.yml`)
-- **Trigger**: Push of `v*` tags (e.g., `v4.0`)
+- **Trigger**: Push of `v*` tags (e.g., `v5.1`)
 - **Steps**:
   1. Checkout code
   2. Install build dependencies (`dpkg-dev`, `debhelper`, `python3-all`, etc.)
@@ -446,12 +446,12 @@ OSHotspot is distributed via GitHub Releases as both a tarball (`.tar.gz`) and a
 ### Installation
 **From GitHub Release (tarball)**:
 ```bash
-curl -fsSL https://github.com/King03-sam/OSHotspot/releases/latest/download/oshotspot-v4.0.tar.gz | sudo tar xz -C /tmp
-sudo /tmp/oshotspot-4.0/install.sh
+curl -fsSL https://github.com/King03-sam/OSHotspot/releases/latest/download/oshotspot-v5.1.tar.gz | sudo tar xz -C /tmp
+sudo /tmp/oshotspot-v5.1/install.sh
 ```
 
 **From GitHub Release (.deb)**:
 ```bash
-curl -fsSL https://github.com/King03-sam/OSHotspot/releases/latest/download/oshotspot_4.0_all.deb -o /tmp/oshotspot.deb
+curl -fsSL https://github.com/King03-sam/OSHotspot/releases/latest/download/oshotspot_5.1_all.deb -o /tmp/oshotspot.deb
 sudo dpkg -i /tmp/oshotspot.deb
 ```
