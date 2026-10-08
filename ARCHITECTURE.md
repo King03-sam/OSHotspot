@@ -475,7 +475,7 @@ OSHotspot/
 ├── oshotspot                    # CLI entry point (bash)
 ├── Makefile                     # Build system for C tools
 ├── install.sh                   # Installer (local or remote)
-├── package.sh                   # Release packaging (tarball + .deb)
+├── package.sh                   # Release packaging (tarball)
 ├── uninstall.sh                 # Uninstaller (--purge option)
 ├── config.conf.example          # Configuration template
 ├── agents.json                  # AI agent metadata
@@ -567,14 +567,8 @@ OSHotspot/
 │           ├── vpn.js           # Tailscale VPN management
 │           └── about.js         # About page
 ├── debian/
-│   ├── control                  # Package metadata + dependencies
-│   ├── install                  # File list (source of truth for packaging)
-│   ├── rules                    # dpkg-build rules
-│   ├── changelog                # Debian changelog
-│   └── compat                   # debhelper compatibility level
-├── .github/
-│   └── workflows/
-│       └── release.yml          # CI: build tarball + .deb on tag push
+│   └── install                  # File list (source of truth for packaging)
+├── deploy.sh                    # Release publishing (builds tarball, uploads to GitHub Releases)
 └── (root-level docs)            # README.md, ARCHITECTURE.md, oshotspot-fuc.md, CONTRIBUTING.md, LICENSE
 ```
 

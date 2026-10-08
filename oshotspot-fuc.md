@@ -414,34 +414,27 @@ Every significant admin action is recorded with the username, role, timestamp, d
 
 ## 20. Release Packaging & Distribution
 
-OSHotspot is distributed via GitHub Releases as both a tarball (`.tar.gz`) and a Debian package (`.deb`), built automatically by CI on every tagged `v*` push.
+OSHotspot is distributed via GitHub Releases as a tarball (`.tar.gz`), built by `package.sh` and published with `deploy.sh`.
 
 ### Packaging Files
 | File | Purpose |
 |------|---------|
-| `package.sh` | Main packaging script, reads `debian/install` as source of truth, builds tarball + `.deb` |
-| `debian/control` | Package metadata: dependencies, description, maintainer |
+| `package.sh` | Main packaging script, reads `debian/install` as source of truth, builds the tarball |
 | `debian/install` | File list defining what gets installed where (source of truth) |
-| `debian/changelog` | Debian changelog with version history |
-| `debian/rules` | dpkg-build rules (uses `dh` with Python 3 addon) |
-| `debian/compat` | debhelper compatibility level (13) |
-| `.github/workflows/release.yml` | CI pipeline: builds artifacts and uploads to GitHub Releases on tag push |
+| `deploy.sh` | Builds the tarball and publishes the GitHub release with `GITHUB_TOKEN` |
 
 ### Build Process (`package.sh`)
 1. Reads `debian/install` to determine the list of files to include
 2. Creates a clean staging directory with the correct directory structure
 3. Builds a `.tar.gz` tarball (excludes `__pycache__`, `.pyc`, `.o`, `.a` files)
-4. Builds a `.deb` package using dpkg-deb
-5. Outputs both to `dist/`
+4. Outputs the tarball to `dist/`
 
-### CI Pipeline (`.github/workflows/release.yml`)
-- **Trigger**: Push of `v*` tags (e.g., `v5.1`)
+### Release Process (`deploy.sh`)
+- **Usage**: `GITHUB_TOKEN="..." ./deploy.sh v5.1`
 - **Steps**:
-  1. Checkout code
-  2. Install build dependencies (`dpkg-dev`, `debhelper`, `python3-all`, etc.)
-  3. Run `./package.sh <version>`
-  4. Upload `dist/oshotspot-v<version>.tar.gz` as tarball artifact
-  5. Upload `dist/oshotspot_<version>_all.deb` as .deb artifact
+  1. Run `./package.sh <version>`
+  2. Create or update the GitHub release for the tag
+  3. Upload `dist/oshotspot-v<version>.tar.gz` as the release asset
 
 ### Installation
 **From GitHub Release (tarball)**:
@@ -449,9 +442,4 @@ OSHotspot is distributed via GitHub Releases as both a tarball (`.tar.gz`) and a
 curl -fsSL https://github.com/King03-sam/OSHotspot/releases/latest/download/oshotspot-v5.1.tar.gz | sudo tar xz -C /tmp
 sudo /tmp/oshotspot-v5.1/install.sh
 ```
-
-**From GitHub Release (.deb)**:
-```bash
-curl -fsSL https://github.com/King03-sam/OSHotspot/releases/latest/download/oshotspot_5.1_all.deb -o /tmp/oshotspot.deb
-sudo dpkg -i /tmp/oshotspot.deb
 ```

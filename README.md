@@ -19,7 +19,7 @@
 Create WiFi hotspots, monitor DNS traffic, enforce domain policies, detect network anomalies, and block encrypted DNS bypass.
 </p>
 
-> **Big update, October 2026:** after 2 months of quiet work, this sync brings the full OSHotspot stack (dashboard, live Events, authentication, captive portal, VPN, mail alerts, audit), about 4 months of development since the project began. See "What's new in this update" below.
+> **Big update, October 2026:** after 2 months of quiet work, this sync brings the full OSHotspot stack (dashboard, live Events, authentication, captive portal, VPN, mail alerts, audit), about 4 months of development in total, including one month before the first GitHub commit. See "What's new in this update" below.
 
 ## What's new in this update
 

@@ -4,13 +4,13 @@
 # Copyright 2026 OLOJEDE Samuel
 # Licensed under the Apache License, Version 2.0
 #
-# package.sh, Build release artifacts (tarball + .deb) for OSHotspot.
+# package.sh, Build the release tarball for OSHotspot.
 # Usage: ./package.sh [VERSION]
-#   VERSION defaults to git describe --tags --always (e.g. v4.0-3-gabc1234)
+#   VERSION defaults to git describe --tags --always (e.g. v5.1-3-gabc1234)
 #
 # The list of files to include is read from debian/install (single source of
 # truth).  Adding a new file to the project only requires updating that one
-# file and the .deb control metadata.
+# file.
 
 set -euo pipefail
 

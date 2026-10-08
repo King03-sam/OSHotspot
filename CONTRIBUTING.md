@@ -107,28 +107,28 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for a detailed system overview with diagr
 To create a new release:
 
 1. Bump version in `ARCHITECTURE.md` header and `config.conf.example`
-2. Update `debian/changelog` with a new entry
-3. Commit and push, then tag:
+2. Commit and push, then tag:
    ```bash
    git tag -a v5.1 -m "Release v5.1"
    git push origin v5.1
    ```
-4. GitHub Actions (`.github/workflows/release.yml`) will:
-   - Build the `.deb` and `.tar.gz` via `package.sh`
-   - Upload both to GitHub Releases (public, no token needed to download)
+3. Publish the release (needs a `GITHUB_TOKEN` with `repo` scope):
+   ```bash
+   export GITHUB_TOKEN="..."
+   ./deploy.sh v5.1
+   ```
+   This builds the `.tar.gz` via `package.sh` and uploads it to GitHub Releases.
 
 ### Packaging Files
-- `package.sh`, reads `debian/install` as the source of truth; builds tarball + `.deb`
-- `debian/control`, package metadata and dependencies
+- `package.sh`, reads `debian/install` as the source of truth; builds the tarball
 - `debian/install`, file list defining install paths
-- `debian/rules`, dpkg-build rules
+- `deploy.sh`, builds and publishes the GitHub release
 
 ### Testing the Package Locally
 ```bash
 ./package.sh v5.1
 # Verify:
 tar tzf dist/oshotspot-v5.1.tar.gz    # check contents
-dpkg-deb -I dist/oshotspot_5.1_all.deb  # check metadata
 ```
 
 ## License
