@@ -649,7 +649,7 @@ class CaptivePortalHandler(http.server.BaseHTTPRequestHandler):
 
         cfg = parse_config()
         ssid = cfg.get("SSID", "OSHotspot")
-        bg_color = cfg.get("CAPTIVE_BG_COLOR", "#050505").strip() or "#050505"
+        bg_color = cfg.get("CAPTIVE_BG_COLOR", "#ad0b0b").strip() or "#ad0b0b"
         logo_url = cfg.get("CAPTIVE_LOGO_URL", "").strip()
 
         logo_file = os.path.join(settings.STATIC_DIR, "images", "captive_logo.png")
@@ -759,9 +759,9 @@ class CaptivePortalHandler(http.server.BaseHTTPRequestHandler):
 
         cfg = parse_config()
         ssid = cfg.get("SSID", "OSHotspot")
-        message = cfg.get("CAPTIVE_MESSAGE", "Welcome to OSHotspot! Please accept terms or enter access code to connect.")
+        message = cfg.get("CAPTIVE_MESSAGE", "Enter access code to connect.")
         code_required = bool(cfg.get("CAPTIVE_CODE", "").strip())
-        bg_color = cfg.get("CAPTIVE_BG_COLOR", "#050505").strip() or "#050505"
+        bg_color = cfg.get("CAPTIVE_BG_COLOR", "#ad0b0b").strip() or "#ad0b0b"
         logo_url = cfg.get("CAPTIVE_LOGO_URL", "").strip()
 
         # Check for uploaded custom logo file

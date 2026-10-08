@@ -147,7 +147,7 @@ def validate_config_update(data):
         bg = str(data["captive_bg_color"]).strip()
         if bg and not bg.startswith("#"):
             bg = "#" + bg
-        validated["CAPTIVE_BG_COLOR"] = bg if bg else "#050505"
+        validated["CAPTIVE_BG_COLOR"] = bg if bg else "#ad0b0b"
 
     if "captive_domain" in data:
         raw_dom = str(data["captive_domain"]).strip().lower()

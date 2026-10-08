@@ -2537,7 +2537,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
         active = config.get("CAPTIVE_PORTAL", "false").lower() == "true"
         code = config.get("CAPTIVE_CODE", "")
         msg = config.get("CAPTIVE_MESSAGE", "Welcome to OSHotspot!")
-        bg_color = config.get("CAPTIVE_BG_COLOR", "#050505")
+        bg_color = config.get("CAPTIVE_BG_COLOR", "#ad0b0b")
         logo_url = config.get("CAPTIVE_LOGO_URL", "")
         if not logo_url:
             if get_logo_path("captive_logo.png"):

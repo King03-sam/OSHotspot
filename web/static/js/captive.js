@@ -69,8 +69,8 @@
             +                 '<div class="form-row">'
             +                     '<label for="capBgColor">Portal Background Color</label>'
             +                     '<div style="display:flex;align-items:center;gap:10px;">'
-            +                         '<input type="color" id="capBgColorPicker" value="#050505" onchange="OS.$(\'capBgColor\').value = this.value" style="width:40px;height:38px;padding:0;border:none;border-radius:6px;cursor:pointer;background:none;">'
-            +                         '<input type="text" id="capBgColor" value="#050505" placeholder="#050505" oninput="if(/^#[0-9A-Fa-f]{6}$/.test(this.value)) OS.$(\'capBgColorPicker\').value = this.value" style="flex:1;">'
+            +                         '<input type="color" id="capBgColorPicker" value="#ad0b0b" onchange="OS.$(\'capBgColor\').value = this.value" style="width:40px;height:38px;padding:0;border:none;border-radius:6px;cursor:pointer;background:none;">'
+            +                         '<input type="text" id="capBgColor" value="#ad0b0b" placeholder="#ad0b0b" oninput="if(/^#[0-9A-Fa-f]{6}$/.test(this.value)) OS.$(\'capBgColorPicker\').value = this.value" style="flex:1;">'
             +                     '</div>'
             +                 '</div>'
             +                 '<div class="form-row">'
@@ -712,7 +712,7 @@
             if (msg) msg.value = data.message || '';
             if (domainInput) domainInput.value = data.domain || '';
             updateDomainHint();
-            var bg = data.bg_color || '#050505';
+            var bg = data.bg_color || '#ad0b0b';
             if (bgCol) bgCol.value = bg;
             if (bgColPick) bgColPick.value = bg;
 

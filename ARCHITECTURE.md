@@ -404,7 +404,7 @@ graph TD
 | `CAPTIVE_PORTAL` | `false` | Enable captive portal with access code |
 | `CAPTIVE_CODE` | `""` | Optional shared access code required to connect |
 | `CAPTIVE_MESSAGE` | `"Welcome…"` | Welcome message shown on portal page |
-| `CAPTIVE_BG_COLOR` | `"#050505"` | Portal page background color (hex) |
+| `CAPTIVE_BG_COLOR` | `"#ad0b0b"` | Portal page background color (hex) |
 | `CAPTIVE_LOGO_URL` | `""` | Custom portal logo image path |
 | `SPAN_ENABLED` | `false` | Enable SPAN port packet capture & IDS |
 | `SPAN_INTERFACE` | `""` | Network interface connected to SPAN port |
