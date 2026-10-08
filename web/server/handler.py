@@ -3017,10 +3017,10 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
             mock_alerts = [
                 {
                     "level": "ALERT",
-                    "message": "Forbidden domain match: example-social.com (social) for client 192.0.2.42",
+                    "message": "Forbidden domain match: example-social.com (social) for client 192.168.50.42",
                     "extra": {
                         "client_mac": "AA:BB:CC:DD:EE:01",
-                        "client_ip": "192.0.2.42",
+                        "client_ip": "192.168.50.42",
                         "client_hostname": "Phone-Demo",
                         "known_label": "Demo Device",
                         "domain": "example-social.com",
@@ -3033,10 +3033,10 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                 },
                 {
                     "level": "ALERT",
-                    "message": "DNS query flood from client 192.0.2.88 (>50 queries in 5s)",
+                    "message": "DNS query flood from client 192.168.50.88 (>50 queries in 5s)",
                     "extra": {
                         "client_mac": "AA:BB:CC:DD:EE:02",
-                        "client_ip": "192.0.2.88",
+                        "client_ip": "192.168.50.88",
                         "client_hostname": "Laptop-Demo",
                         "known_label": "Demo PC",
                         "query_count": 142,
@@ -3052,7 +3052,7 @@ class OShotspotHandler(http.server.BaseHTTPRequestHandler):
                     "message": "Unknown device joined the hotspot: AA:BB:CC:DD:EE:03 (Tablet-Guest)",
                     "extra": {
                         "client_mac": "AA:BB:CC:DD:EE:03",
-                        "client_ip": "192.0.2.105",
+                        "client_ip": "192.168.50.105",
                         "client_hostname": "Tablet-Guest",
                         "known_label": "unknown device",
                         "category": "unknown_device",
