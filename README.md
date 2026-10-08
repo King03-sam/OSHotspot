@@ -139,7 +139,7 @@ sudo oshotspot uninstall [--purge]  # Remove OSHotspot (--purge removes config &
 
 ## Quick Installation
 
-> You need `sudo` on your Linux machine to run the installer.
+> You need `sudo` to run the installer.
 
 One-liner install:
 
