@@ -47,6 +47,8 @@ info "Asset ready: ${ASSET} ($(du -h "${ASSET}" | cut -f1))"
 BODY=$(cat << EOF
 OSHotspot ${TAG}: WiFi Hotspot & Network Security Manager for Linux
 
+Big update: after 2 months of quiet work, this release brings the full OSHotspot stack to the public repo, about 4 months of development since the project began.
+
 ## What's new in 5.1
 - Captive Portal: Fixed custom domain resolution breaking post-authentication
 - DNS & Connectivity: Fixed dnsmasq upstream forwarder configuration so internet browsing works seamlessly post-auth

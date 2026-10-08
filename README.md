@@ -4,7 +4,6 @@
 
 # OSHotspot
 
-[![Version](https://img.shields.io/github/v/tag/King03-sam/OSHotspot?color=brightgreen)]()
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![OS](https://img.shields.io/badge/OS-Linux-lightgrey.svg)](https://linux.org)
 [![Bash](https://img.shields.io/badge/Language-Bash-4EAA25.svg)](https://www.gnu.org/software/bash/)
