@@ -139,7 +139,7 @@ sudo oshotspot uninstall [--purge]  # Remove OSHotspot (--purge removes config &
 
 ## Quick Installation
 
-> **Note**: OSHotspot is open source under Apache 2.0. You need `sudo` on your Linux machine to run the installer.
+> You need `sudo` on your Linux machine to run the installer.
 
 One-liner install:
 
